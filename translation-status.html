@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cek Status Penerjemahan - SIEC</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar" id="navbar">
+        <div class="container nav-container">
+            <a href="index.html" class="nav-logo">
+                <div class="logo-icon"><i class="fas fa-graduation-cap"></i></div>
+                <div class="logo-text">
+                    <span class="logo-main">SIEC</span>
+                    <span class="logo-sub">Syaf Intensive English Course</span>
+                </div>
+            </a>
+            <button class="nav-toggle" id="navToggle">
+                <span></span><span></span><span></span>
+            </button>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Beranda</a></li>
+                <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Program</a></li>
+                <li><a href="index.html#articles" class="nav-link"><i class="fas fa-newspaper"></i> Artikel</a></li>
+                <li><a href="verify.html" class="nav-link"><i class="fas fa-check-circle"></i> Verifikasi</a></li>
+                <li><a href="translation-status.html" class="nav-link active"><i class="fas fa-search"></i> Cek Status</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="page-hero">
+        <div class="container">
+            <h1><i class="fas fa-truck"></i> Cek Status Penerjemahan</h1>
+            <p>Masukkan kode tracking untuk melihat status penerjemahan dokumen Anda</p>
+        </div>
+    </section>
+
+    <section class="verify-page">
+        <div class="container">
+            <div class="verify-box">
+                <div class="verify-form">
+                    <div class="input-group">
+                        <div class="input-icon">
+                            <i class="fas fa-hashtag"></i>
+                        </div>
+                        <input type="text" id="trackingInput" placeholder="Masukkan Kode Tracking (contoh: TRK-2024-001)" class="verify-input">
+                        <button onclick="checkStatus()" class="btn btn-primary">
+                            <i class="fas fa-search"></i> Cek Status
+                        </button>
+                    </div>
+                </div>
+
+                <div id="statusResult" class="verify-result" style="display:none;"></div>
+            </div>
+        </div>
+    </section>
+
+    <a href="https://wa.me/6282174104447?text=Halo%20SIEC,%20saya%20ingin%20menanyakan%20status%20terjemahan%20saya" class="wa-float" target="_blank">
+        <i class="fab fa-whatsapp"></i>
+        <span class="wa-tooltip">Chat Kami!</span>
+    </a>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2024 SIEC - Syaf Intensive English Course. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/app.js"></script>
+    <script src="js/translation.js"></script>
+</body>
+</html>
