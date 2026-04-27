@@ -16,24 +16,51 @@ function togglePassword() {
 
 async function handleLogin(e) {
     e.preventDefault();
-    const username = document.getElementById('username').value;
-    const password = document.getElementById('password').value;
+
+    const username = document.getElementById('username').value.trim();
+    const password = document.getElementById('password').value.trim();
     const loginBtn = document.getElementById('loginBtn');
     const loginError = document.getElementById('loginError');
 
+    // Kosongkan error dulu
+    loginError.style.display = 'none';
+    loginError.textContent = '';
+
+    // Validasi input
+    if (!username || !password) {
+        loginError.textContent = 'Username dan password harus diisi!';
+        loginError.style.display = 'block';
+        return;
+    }
+
+    // Loading
     loginBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
     loginBtn.disabled = true;
-    loginError.style.display = 'none';
 
     try {
+        console.log('Mencoba login:', username);
+
+        // Query ke Supabase
         const { data, error } = await supabase
             .from('admins')
             .select('*')
             .eq('username', username)
-            .eq('password_hash', password)
-            .single();
+            .eq('password_hash', password);
 
-        if (error || !data) {
+        console.log('Data:', data);
+        console.log('Error:', error);
+
+        // Kalau ada error dari Supabase
+        if (error) {
+            loginError.textContent = 'Koneksi database error: ' + error.message;
+            loginError.style.display = 'block';
+            loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Masuk';
+            loginBtn.disabled = false;
+            return;
+        }
+
+        // Kalau data kosong = username/password salah
+        if (!data || data.length === 0) {
             loginError.textContent = 'Username atau password salah!';
             loginError.style.display = 'block';
             loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Masuk';
@@ -41,16 +68,22 @@ async function handleLogin(e) {
             return;
         }
 
-        // Save session
+        // LOGIN BERHASIL
+        const admin = data[0];
         sessionStorage.setItem('siec_admin', JSON.stringify({
-            id: data.id,
-            username: data.username,
-            full_name: data.full_name
+            id: admin.id,
+            username: admin.username,
+            full_name: admin.full_name
         }));
 
+        console.log('Login berhasil!');
+
+        // Redirect ke dashboard
         window.location.href = 'admin-dashboard.html';
+
     } catch (err) {
-        loginError.textContent = 'Terjadi kesalahan. Coba lagi.';
+        console.log('Catch error:', err);
+        loginError.textContent = 'Terjadi kesalahan: ' + err.message;
         loginError.style.display = 'block';
         loginBtn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Masuk';
         loginBtn.disabled = false;
