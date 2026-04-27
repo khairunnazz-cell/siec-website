@@ -11,7 +11,7 @@ async function loadPublicArticles() {
     if (!grid) return;
 
     try {
-        const { data, error } = await supabase
+        const { data, error } = await db
             .from('articles')
             .select('*')
             .eq('is_published', true)
@@ -23,7 +23,9 @@ async function loadPublicArticles() {
         if (!data || data.length === 0) {
             grid.innerHTML = `
                 <div class="loading-spinner">
-                    <i class="fas fa-newspaper" style="font-size:3rem;color:var(--gray-400);margin-bottom:16px;"></i>
+                    <i class="fas fa-newspaper" 
+                       style="font-size:3rem;color:var(--gray-400);margin-bottom:16px;">
+                    </i>
                     <p>Belum ada artikel.</p>
                 </div>
             `;
@@ -31,7 +33,9 @@ async function loadPublicArticles() {
         }
 
         grid.innerHTML = data.map(article => `
-            <a href="article.html?slug=${article.slug}" class="article-card ${article.layout_type === 'featured' ? 'featured' : ''} ${article.layout_type === 'compact' ? 'compact' : ''}">
+            <a href="article.html?slug=${article.slug}" 
+               class="article-card ${article.layout_type === 'featured' ? 'featured' : ''} 
+                      ${article.layout_type === 'compact' ? 'compact' : ''}">
                 <div class="article-card-image">
                     ${article.cover_image
                         ? `<img src="${article.cover_image}" alt="${article.title}">`
@@ -42,7 +46,10 @@ async function loadPublicArticles() {
                     <span class="article-category">${article.category || 'Umum'}</span>
                     <h3>${article.title}</h3>
                     <p>${article.excerpt || article.content.substring(0, 120) + '...'}</p>
-                    <span class="article-date"><i class="fas fa-calendar"></i> ${formatDate(article.published_at || article.created_at)}</span>
+                    <span class="article-date">
+                        <i class="fas fa-calendar"></i> 
+                        ${formatDate(article.published_at || article.created_at)}
+                    </span>
                 </div>
             </a>
         `).join('');

@@ -5,21 +5,15 @@
 let currentTab = 'translation';
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Tab switching
     document.querySelectorAll('.verify-tab').forEach(tab => {
         tab.addEventListener('click', () => {
             document.querySelectorAll('.verify-tab').forEach(t => t.classList.remove('active'));
             tab.classList.add('active');
             currentTab = tab.dataset.tab;
-            document.getElementById('verifyInput').placeholder =
-                currentTab === 'translation'
-                    ? 'Masukkan ID Dokumen (contoh: SIEC-TR-2024-001)'
-                    : 'Masukkan ID Sertifikat (contoh: SIEC-TF-2024-001)';
             document.getElementById('verifyResult').style.display = 'none';
         });
     });
 
-    // Check URL params
     const params = new URLSearchParams(window.location.search);
     const id = params.get('id');
     const type = params.get('type');
@@ -51,13 +45,13 @@ async function verifyDocument() {
         let data, error;
 
         if (currentTab === 'translation') {
-            ({ data, error } = await supabase
+            ({ data, error } = await db
                 .from('translation_documents')
                 .select('*')
                 .eq('document_id', input)
                 .single());
         } else {
-            ({ data, error } = await supabase
+            ({ data, error } = await db
                 .from('toefl_certificates')
                 .select('*')
                 .eq('certificate_id', input)
@@ -74,11 +68,10 @@ async function verifyDocument() {
                     <span>DOKUMEN TIDAK TERDAFTAR</span>
                 </div>
                 <p style="color:var(--danger);">
-                    Dokumen dengan ID <strong>"${input}"</strong> tidak ditemukan dalam sistem SIEC.
-                    Dokumen ini mungkin tidak valid atau ID yang dimasukkan salah.
+                    ID <strong>"${input}"</strong> tidak ditemukan dalam sistem SIEC.
                 </p>
                 <p style="margin-top:12px;">
-                    <a href="https://wa.me/${WA_NUMBER}?text=Halo%20SIEC,%20saya%20ingin%20memverifikasi%20dokumen%20dengan%20ID:%20${input}" style="color:var(--primary);font-weight:600;">
+                    <a href="https://wa.me/${WA_NUMBER}" style="color:var(--primary);font-weight:600;">
                         <i class="fab fa-whatsapp"></i> Hubungi kami untuk konfirmasi
                     </a>
                 </p>
@@ -90,7 +83,7 @@ async function verifyDocument() {
                 resultDiv.innerHTML = `
                     <div class="result-header">
                         <i class="fas fa-check-circle"></i>
-                        <span>DOKUMEN TERVERIFIKASI</span>
+                        <span>DOKUMEN TERVERIFIKASI ✅</span>
                     </div>
                     <div class="result-details">
                         <div class="result-item">
@@ -106,35 +99,28 @@ async function verifyDocument() {
                             <p>${data.document_title}</p>
                         </div>
                         <div class="result-item">
-                            <label>Jenis Dokumen</label>
+                            <label>Jenis</label>
                             <p>${data.document_type}</p>
                         </div>
                         <div class="result-item">
-                            <label>Bahasa Sumber</label>
-                            <p>${data.source_language}</p>
-                        </div>
-                        <div class="result-item">
-                            <label>Bahasa Target</label>
-                            <p>${data.target_language}</p>
+                            <label>Bahasa</label>
+                            <p>${data.source_language} → ${data.target_language}</p>
                         </div>
                         <div class="result-item">
                             <label>Tanggal Terbit</label>
                             <p>${formatDate(data.issued_date)}</p>
                         </div>
-                        <div class="result-item">
-                            <label>Status</label>
-                            <p><span class="status-badge status-valid">✓ Valid</span></p>
-                        </div>
                     </div>
                     <p style="margin-top:16px;color:var(--success);font-size:0.85rem;">
-                        <i class="fas fa-shield-alt"></i> Dokumen ini resmi diterbitkan oleh SIEC - Syaf Intensive English Course
+                        <i class="fas fa-shield-alt"></i> 
+                        Dokumen resmi diterbitkan oleh SIEC
                     </p>
                 `;
             } else {
                 resultDiv.innerHTML = `
                     <div class="result-header">
                         <i class="fas fa-check-circle"></i>
-                        <span>SERTIFIKAT TERVERIFIKASI</span>
+                        <span>SERTIFIKAT TERVERIFIKASI ✅</span>
                     </div>
                     <div class="result-details">
                         <div class="result-item">
@@ -150,20 +136,22 @@ async function verifyDocument() {
                             <p>${formatDate(data.test_date)}</p>
                         </div>
                         <div class="result-item">
-                            <label>Listening Score</label>
+                            <label>Listening</label>
                             <p>${data.listening_score}</p>
                         </div>
                         <div class="result-item">
-                            <label>Structure Score</label>
+                            <label>Structure</label>
                             <p>${data.structure_score}</p>
                         </div>
                         <div class="result-item">
-                            <label>Reading Score</label>
+                            <label>Reading</label>
                             <p>${data.reading_score}</p>
                         </div>
                         <div class="result-item">
                             <label>Total Score</label>
-                            <p style="font-size:1.3rem;color:var(--primary);">${data.total_score}</p>
+                            <p style="font-size:1.3rem;color:var(--primary);font-weight:800;">
+                                ${data.total_score}
+                            </p>
                         </div>
                         <div class="result-item">
                             <label>Status</label>
@@ -171,7 +159,8 @@ async function verifyDocument() {
                         </div>
                     </div>
                     <p style="margin-top:16px;color:var(--success);font-size:0.85rem;">
-                        <i class="fas fa-shield-alt"></i> Sertifikat ini resmi diterbitkan oleh SIEC - Syaf Intensive English Course
+                        <i class="fas fa-shield-alt"></i> 
+                        Sertifikat resmi diterbitkan oleh SIEC
                     </p>
                 `;
             }
@@ -185,29 +174,4 @@ async function verifyDocument() {
 
     btn.innerHTML = '<i class="fas fa-check-circle"></i> Verifikasi';
     btn.disabled = false;
-}
-
-// Barcode Scanner
-let html5QrcodeScanner = null;
-
-function toggleScanner() {
-    const container = document.getElementById('scannerContainer');
-    if (container.style.display === 'none') {
-        container.style.display = 'block';
-        html5QrcodeScanner = new Html5Qrcode("reader");
-        html5QrcodeScanner.start(
-            { facingMode: "environment" },
-            { fps: 10, qrbox: { width: 250, height: 250 } },
-            (decodedText) => {
-                document.getElementById('verifyInput').value = decodedText;
-                html5QrcodeScanner.stop();
-                container.style.display = 'none';
-                verifyDocument();
-            },
-            () => {}
-        ).catch(err => console.error(err));
-    } else {
-        if (html5QrcodeScanner) html5QrcodeScanner.stop();
-        container.style.display = 'none';
-    }
 }
