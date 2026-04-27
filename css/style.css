@@ -1735,3 +1735,40 @@ img {
         border: 1px solid #ccc;
     }
 }
+/* ============================================
+   LOGO IMAGE STYLES
+   ============================================ */
+
+/* Navbar Logo */
+.nav-logo-img {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    object-fit: contain;
+}
+
+/* Footer Logo */
+.footer-logo-img {
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    object-fit: contain;
+}
+
+/* Admin Login Logo */
+.admin-login-logo {
+    width: 80px;
+    height: 80px;
+    object-fit: contain;
+    margin: 0 auto 16px;
+    display: block;
+    border-radius: 16px;
+}
+
+/* Admin Sidebar Logo */
+.sidebar-logo-img {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    object-fit: contain;
+}
