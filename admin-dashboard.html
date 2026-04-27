@@ -6,563 +6,1026 @@
     <title>Admin Dashboard - SIEC</title>
     <meta name="robots" content="noindex, nofollow">
     <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/admin.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body class="admin-body">
-    <div class="admin-layout">
-        <!-- SIDEBAR -->
-        <aside class="admin-sidebar" id="adminSidebar">
-            <div class="sidebar-header">
-                <div class="logo-icon"><i class="fas fa-graduation-cap"></i></div>
-                <span>SIEC Admin</span>
-                <button class="sidebar-close" id="sidebarClose">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <nav class="sidebar-nav">
-                <a href="#" class="sidebar-link active" data-section="dashboard">
-                    <i class="fas fa-tachometer-alt"></i> Dashboard
-                </a>
-                <a href="#" class="sidebar-link" data-section="articles">
-                    <i class="fas fa-newspaper"></i> Artikel
-                </a>
-                <a href="#" class="sidebar-link" data-section="programs">
-                    <i class="fas fa-book"></i> Program Belajar
-                </a>
-                <a href="#" class="sidebar-link" data-section="translations">
-                    <i class="fas fa-language"></i> Terjemahan
-                </a>
-                <a href="#" class="sidebar-link" data-section="translation-status">
-                    <i class="fas fa-truck"></i> Status Terjemahan
-                </a>
-                <a href="#" class="sidebar-link" data-section="toefl">
-                    <i class="fas fa-certificate"></i> Sertifikat TOEFL
-                </a>
-                <div class="sidebar-divider"></div>
-                <a href="#" class="sidebar-link" onclick="handleLogout()">
-                    <i class="fas fa-sign-out-alt"></i> Logout
-                </a>
-                <a href="index.html" class="sidebar-link">
-                    <i class="fas fa-globe"></i> Lihat Website
-                </a>
-            </nav>
-        </aside>
+<div class="admin-layout">
 
-        <!-- MAIN CONTENT -->
-        <main class="admin-main">
-            <header class="admin-header">
-                <button class="sidebar-toggle" id="sidebarToggle">
-                    <i class="fas fa-bars"></i>
-                </button>
-                <h2 id="pageTitle">Dashboard</h2>
-                <div class="admin-user">
-                    <span id="adminName">Admin</span>
-                    <div class="admin-avatar"><i class="fas fa-user"></i></div>
+    <!-- ===== SIDEBAR ===== -->
+    <aside class="admin-sidebar" id="adminSidebar">
+        <div class="sidebar-header">
+            <div class="logo-icon"><i class="fas fa-graduation-cap"></i></div>
+            <span>SIEC Admin</span>
+            <button class="sidebar-close" id="sidebarClose">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <nav class="sidebar-nav">
+            <a href="#" class="sidebar-link active" data-section="dashboard">
+                <i class="fas fa-tachometer-alt"></i> Dashboard
+            </a>
+            <a href="#" class="sidebar-link" data-section="articles">
+                <i class="fas fa-newspaper"></i> Artikel
+            </a>
+            <a href="#" class="sidebar-link" data-section="programs">
+                <i class="fas fa-book"></i> Program Belajar
+            </a>
+            <a href="#" class="sidebar-link" data-section="translation-clients">
+                <i class="fas fa-users"></i> Laporan Pengguna Jasa
+            </a>
+            <a href="#" class="sidebar-link" data-section="translations">
+                <i class="fas fa-language"></i> Dokumen Terjemahan
+            </a>
+            <a href="#" class="sidebar-link" data-section="translation-status">
+                <i class="fas fa-truck"></i> Status Terjemahan
+            </a>
+            <a href="#" class="sidebar-link" data-section="toefl">
+                <i class="fas fa-certificate"></i> Sertifikat TOEFL
+            </a>
+            <div class="sidebar-divider"></div>
+            <a href="index.html" class="sidebar-link">
+                <i class="fas fa-globe"></i> Lihat Website
+            </a>
+            <a href="#" class="sidebar-link" onclick="handleLogout()">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </nav>
+    </aside>
+
+    <!-- ===== MAIN ===== -->
+    <main class="admin-main">
+        <header class="admin-header">
+            <button class="sidebar-toggle" id="sidebarToggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <h2 id="pageTitle">Dashboard</h2>
+            <div class="admin-user">
+                <span id="adminName">Admin</span>
+                <div class="admin-avatar"><i class="fas fa-user"></i></div>
+            </div>
+        </header>
+
+        <div class="admin-content">
+
+            <!-- ==================== DASHBOARD ==================== -->
+            <section class="admin-section active" id="section-dashboard">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-card-icon gradient-1"><i class="fas fa-newspaper"></i></div>
+                        <div class="stat-card-info">
+                            <h3 id="totalArticles">0</h3><p>Artikel</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon gradient-2"><i class="fas fa-users"></i></div>
+                        <div class="stat-card-info">
+                            <h3 id="totalClients">0</h3><p>Pengguna Jasa</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon gradient-3"><i class="fas fa-file-alt"></i></div>
+                        <div class="stat-card-info">
+                            <h3 id="totalTranslations">0</h3><p>Dokumen Terjemahan</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon gradient-4"><i class="fas fa-certificate"></i></div>
+                        <div class="stat-card-info">
+                            <h3 id="totalCertificates">0</h3><p>Sertifikat TOEFL</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-card-icon gradient-1"><i class="fas fa-book"></i></div>
+                        <div class="stat-card-info">
+                            <h3 id="totalPrograms">0</h3><p>Program Aktif</p>
+                        </div>
+                    </div>
                 </div>
-            </header>
+            </section>
 
-            <div class="admin-content">
-                <!-- DASHBOARD SECTION -->
-                <section class="admin-section active" id="section-dashboard">
-                    <div class="stats-grid">
-                        <div class="stat-card">
-                            <div class="stat-card-icon gradient-1"><i class="fas fa-newspaper"></i></div>
-                            <div class="stat-card-info">
-                                <h3 id="totalArticles">0</h3>
-                                <p>Total Artikel</p>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-card-icon gradient-2"><i class="fas fa-file-alt"></i></div>
-                            <div class="stat-card-info">
-                                <h3 id="totalTranslations">0</h3>
-                                <p>Dokumen Terjemahan</p>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-card-icon gradient-3"><i class="fas fa-certificate"></i></div>
-                            <div class="stat-card-info">
-                                <h3 id="totalCertificates">0</h3>
-                                <p>Sertifikat TOEFL</p>
-                            </div>
-                        </div>
-                        <div class="stat-card">
-                            <div class="stat-card-icon gradient-4"><i class="fas fa-book"></i></div>
-                            <div class="stat-card-info">
-                                <h3 id="totalPrograms">0</h3>
-                                <p>Program Aktif</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
+            <!-- ==================== ARTIKEL ==================== -->
+            <section class="admin-section" id="section-articles">
+                <div class="section-toolbar">
+                    <h3>Kelola Artikel</h3>
+                    <button class="btn btn-primary" onclick="showArticleForm()">
+                        <i class="fas fa-plus"></i> Tambah Artikel
+                    </button>
+                </div>
 
-                <!-- ARTICLES SECTION -->
-                <section class="admin-section" id="section-articles">
-                    <div class="section-toolbar">
-                        <h3>Kelola Artikel</h3>
-                        <button class="btn btn-primary" onclick="showArticleForm()">
-                            <i class="fas fa-plus"></i> Tambah Artikel
-                        </button>
-                    </div>
+                <!-- Form Artikel -->
+                <div id="articleForm" class="admin-form" style="display:none;">
+                    <div class="form-card">
+                        <h4 id="articleFormTitle">Tambah Artikel Baru</h4>
+                        <input type="hidden" id="articleId">
 
-                    <!-- Article Form -->
-                    <div id="articleForm" class="admin-form" style="display:none;">
-                        <div class="form-card">
-                            <h4 id="articleFormTitle">Tambah Artikel Baru</h4>
-                            <input type="hidden" id="articleId">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Judul Artikel</label>
-                                    <input type="text" id="articleTitle" placeholder="Judul artikel..." required>
-                                </div>
-                                <div class="form-group">
-                                    <label>Kategori</label>
-                                    <select id="articleCategory">
-                                        <option value="tips">Tips Belajar</option>
-                                        <option value="grammar">Grammar</option>
-                                        <option value="vocabulary">Vocabulary</option>
-                                        <option value="toefl">TOEFL</option>
-                                        <option value="general">Umum</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Layout Tampilan</label>
-                                    <select id="articleLayout">
-                                        <option value="standard">Standard</option>
-                                        <option value="featured">Featured (Besar)</option>
-                                        <option value="compact">Compact</option>
-                                        <option value="full-width">Full Width</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label>Cover Image URL</label>
-                                    <input type="text" id="articleCover" placeholder="https://...">
-                                </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label><i class="fas fa-heading"></i> Judul Artikel</label>
+                                <input type="text" id="articleTitle" placeholder="Judul artikel..." required>
                             </div>
                             <div class="form-group">
-                                <label>Ringkasan</label>
-                                <textarea id="articleExcerpt" rows="2" placeholder="Ringkasan singkat..."></textarea>
+                                <label><i class="fas fa-tag"></i> Kategori</label>
+                                <select id="articleCategory">
+                                    <option value="tips">Tips Belajar</option>
+                                    <option value="grammar">Grammar</option>
+                                    <option value="vocabulary">Vocabulary</option>
+                                    <option value="toefl">TOEFL</option>
+                                    <option value="translation">Penerjemahan</option>
+                                    <option value="general">Umum</option>
+                                </select>
                             </div>
-                            <div class="form-group">
-                                <label>Konten Artikel (HTML)</label>
-                                <textarea id="articleContent" rows="10" placeholder="Tulis konten artikel di sini..."></textarea>
-                            </div>
-                            <div class="form-group">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="articlePublished"> Publikasikan
+                        </div>
+
+                        <!-- Layout Preview -->
+                        <div class="form-group">
+                            <label><i class="fas fa-th-large"></i> Layout Tampilan Artikel</label>
+                            <div class="layout-options">
+                                <label class="layout-option">
+                                    <input type="radio" name="articleLayout" value="standard" checked>
+                                    <div class="layout-preview standard-preview">
+                                        <div class="lp-img"></div>
+                                        <div class="lp-content">
+                                            <div class="lp-title"></div>
+                                            <div class="lp-text"></div>
+                                            <div class="lp-text short"></div>
+                                        </div>
+                                    </div>
+                                    <span>Standard</span>
+                                </label>
+                                <label class="layout-option">
+                                    <input type="radio" name="articleLayout" value="featured">
+                                    <div class="layout-preview featured-preview">
+                                        <div class="lp-img tall"></div>
+                                        <div class="lp-content wide">
+                                            <div class="lp-title big"></div>
+                                            <div class="lp-text"></div>
+                                            <div class="lp-text"></div>
+                                        </div>
+                                    </div>
+                                    <span>Featured (Besar)</span>
+                                </label>
+                                <label class="layout-option">
+                                    <input type="radio" name="articleLayout" value="compact">
+                                    <div class="layout-preview compact-preview">
+                                        <div class="lp-img small"></div>
+                                        <div class="lp-content">
+                                            <div class="lp-title"></div>
+                                            <div class="lp-text short"></div>
+                                        </div>
+                                    </div>
+                                    <span>Compact</span>
+                                </label>
+                                <label class="layout-option">
+                                    <input type="radio" name="articleLayout" value="full-width">
+                                    <div class="layout-preview fullwidth-preview">
+                                        <div class="lp-img full"></div>
+                                        <div class="lp-content center">
+                                            <div class="lp-title"></div>
+                                            <div class="lp-text"></div>
+                                        </div>
+                                    </div>
+                                    <span>Full Width</span>
                                 </label>
                             </div>
-                            <div class="form-actions">
-                                <button class="btn btn-primary" onclick="saveArticle()">
-                                    <i class="fas fa-save"></i> Simpan
-                                </button>
-                                <button class="btn btn-outline" onclick="hideArticleForm()">
-                                    <i class="fas fa-times"></i> Batal
-                                </button>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label><i class="fas fa-image"></i> Cover Image URL</label>
+                                <input type="text" id="articleCover" placeholder="https://...">
+                            </div>
+                            <div class="form-group">
+                                <label><i class="fas fa-align-left"></i> Ringkasan</label>
+                                <input type="text" id="articleExcerpt" placeholder="Ringkasan singkat...">
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Articles List -->
-                    <div class="data-table-container">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Judul</th>
-                                    <th>Kategori</th>
-                                    <th>Layout</th>
-                                    <th>Status</th>
-                                    <th>Tanggal</th>
-                                    <th>Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="articlesTableBody">
-                                <tr><td colspan="6" class="loading-cell">Memuat data...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
+                        <div class="form-group">
+                            <label><i class="fas fa-file-alt"></i> Konten Artikel</label>
+                            <div class="editor-toolbar">
+                                <button type="button" onclick="insertTag('b')" title="Bold"><b>B</b></button>
+                                <button type="button" onclick="insertTag('i')" title="Italic"><i>I</i></button>
+                                <button type="button" onclick="insertTag('u')" title="Underline"><u>U</u></button>
+                                <button type="button" onclick="insertTag('h2')" title="Heading">H2</button>
+                                <button type="button" onclick="insertTag('h3')" title="Sub Heading">H3</button>
+                                <button type="button" onclick="insertTag('p')" title="Paragraph">P</button>
+                                <button type="button" onclick="insertTag('ul')" title="List">UL</button>
+                                <button type="button" onclick="insertTag('li')" title="Item">LI</button>
+                                <button type="button" onclick="togglePreview()" title="Preview">
+                                    <i class="fas fa-eye"></i> Preview
+                                </button>
+                            </div>
+                            <textarea id="articleContent" rows="12" 
+                                placeholder="Tulis konten artikel di sini (HTML supported)...
+Contoh:
+<h2>Judul Bagian</h2>
+<p>Paragraf pertama...</p>
+<ul>
+  <li>Poin 1</li>
+  <li>Poin 2</li>
+</ul>"></textarea>
+                            <div id="articlePreview" class="article-preview-box" style="display:none;"></div>
+                        </div>
 
-                <!-- PROGRAMS SECTION -->
-                <section class="admin-section" id="section-programs">
-                    <div class="section-toolbar">
-                        <h3>Kelola Program Belajar</h3>
-                        <button class="btn btn-primary" onclick="showProgramForm()">
-                            <i class="fas fa-plus"></i> Tambah Program
-                        </button>
-                    </div>
-
-                    <div id="programForm" class="admin-form" style="display:none;">
-                        <div class="form-card">
-                            <h4 id="programFormTitle">Tambah Program Baru</h4>
-                            <input type="hidden" id="programId">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Nama Program</label>
-                                    <input type="text" id="programTitle" placeholder="Nama program..." required>
-                                </div>
-                                <div class="form-group">
-                                    <label>Tipe</label>
-                                    <select id="programType">
-                                        <option value="private">Private</option>
-                                        <option value="group">Grup</option>
-                                        <option value="toefl">TOEFL</option>
-                                        <option value="translation">Terjemahan</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Level</label>
-                                    <select id="programLevel">
-                                        <option value="all">Semua Level</option>
-                                        <option value="beginner">Beginner</option>
-                                        <option value="intermediate">Intermediate</option>
-                                        <option value="advanced">Advanced</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label>Durasi</label>
-                                    <input type="text" id="programDuration" placeholder="contoh: 3 bulan">
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Jadwal</label>
-                                    <input type="text" id="programSchedule" placeholder="contoh: Sen-Jum, 16:00-18:00">
-                                </div>
-                                <div class="form-group">
-                                    <label>Harga</label>
-                                    <input type="text" id="programPrice" placeholder="contoh: Rp 500.000/bulan">
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Layout Tampilan</label>
-                                    <select id="programLayout">
-                                        <option value="card">Card</option>
-                                        <option value="list">List</option>
-                                        <option value="featured">Featured</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label>Cover Image URL</label>
-                                    <input type="text" id="programCover" placeholder="https://...">
-                                </div>
-                            </div>
-                            <div class="form-group">
-                                <label>Deskripsi</label>
-                                <textarea id="programDesc" rows="3" placeholder="Deskripsi program..."></textarea>
-                            </div>
-                            <div class="form-group">
-                                <label>Konten Detail (HTML)</label>
-                                <textarea id="programContent" rows="6" placeholder="Detail program..."></textarea>
-                            </div>
-                            <div class="form-group">
-                                <label>Fitur (pisahkan dengan koma)</label>
-                                <input type="text" id="programFeatures" placeholder="Contoh: Materi lengkap, Sertifikat, Tutor berpengalaman">
-                            </div>
+                        <div class="form-row">
                             <div class="form-group">
                                 <label class="checkbox-label">
-                                    <input type="checkbox" id="programActive" checked> Aktif
+                                    <input type="checkbox" id="articlePublished">
+                                    <span>Publikasikan Sekarang</span>
                                 </label>
                             </div>
-                            <div class="form-actions">
-                                <button class="btn btn-primary" onclick="saveProgram()">
-                                    <i class="fas fa-save"></i> Simpan
-                                </button>
-                                <button class="btn btn-outline" onclick="hideProgramForm()">
-                                    <i class="fas fa-times"></i> Batal
-                                </button>
-                            </div>
+                        </div>
+
+                        <div class="form-actions">
+                            <button class="btn btn-primary" onclick="saveArticle()">
+                                <i class="fas fa-save"></i> Simpan Artikel
+                            </button>
+                            <button class="btn btn-outline" onclick="hideArticleForm()">
+                                <i class="fas fa-times"></i> Batal
+                            </button>
                         </div>
                     </div>
+                </div>
 
-                    <div class="data-table-container">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Program</th>
-                                    <th>Tipe</th>
-                                    <th>Level</th>
-                                    <th>Harga</th>
-                                    <th>Status</th>
-                                    <th>Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="programsTableBody">
-                                <tr><td colspan="6" class="loading-cell">Memuat data...</td></tr>
-                            </tbody>
-                        </table>
+                <!-- Tabel Artikel -->
+                <div class="data-table-container">
+                    <div class="table-search">
+                        <input type="text" placeholder="Cari artikel..." 
+                               oninput="filterTable(this,'articlesTableBody')">
                     </div>
-                </section>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Judul</th>
+                                <th>Kategori</th>
+                                <th>Layout</th>
+                                <th>Status</th>
+                                <th>Tanggal</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="articlesTableBody">
+                            <tr><td colspan="6" class="loading-cell">
+                                <div class="spinner"></div>
+                            </td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
 
-                <!-- TRANSLATIONS SECTION -->
-                <section class="admin-section" id="section-translations">
-                    <div class="section-toolbar">
-                        <h3>Kelola Dokumen Terjemahan</h3>
-                        <button class="btn btn-primary" onclick="showTranslationForm()">
-                            <i class="fas fa-plus"></i> Tambah Dokumen
+            <!-- ==================== PROGRAM BELAJAR ==================== -->
+            <section class="admin-section" id="section-programs">
+                <div class="section-toolbar">
+                    <h3>Kelola Program Belajar</h3>
+                    <button class="btn btn-primary" onclick="showProgramForm()">
+                        <i class="fas fa-plus"></i> Tambah Program
+                    </button>
+                </div>
+
+                <div id="programForm" class="admin-form" style="display:none;">
+                    <div class="form-card">
+                        <h4 id="programFormTitle">Tambah Program Baru</h4>
+                        <input type="hidden" id="programId">
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Nama Program</label>
+                                <input type="text" id="programTitle" placeholder="Nama program..." required>
+                            </div>
+                            <div class="form-group">
+                                <label>Tipe Program</label>
+                                <select id="programType">
+                                    <option value="private">Private</option>
+                                    <option value="group">Grup</option>
+                                    <option value="toefl">TOEFL</option>
+                                    <option value="translation">Terjemahan</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Layout Program -->
+                        <div class="form-group">
+                            <label><i class="fas fa-th-large"></i> Layout Tampilan Program</label>
+                            <div class="layout-options">
+                                <label class="layout-option">
+                                    <input type="radio" name="programLayout" value="card" checked>
+                                    <div class="layout-preview">
+                                        <div class="lp-img small-full"></div>
+                                        <div class="lp-content padded">
+                                            <div class="lp-title"></div>
+                                            <div class="lp-text"></div>
+                                            <div class="lp-btn"></div>
+                                        </div>
+                                    </div>
+                                    <span>Card</span>
+                                </label>
+                                <label class="layout-option">
+                                    <input type="radio" name="programLayout" value="list">
+                                    <div class="layout-preview" style="flex-direction:row;gap:8px;">
+                                        <div class="lp-img" style="width:60px;height:60px;"></div>
+                                        <div class="lp-content">
+                                            <div class="lp-title"></div>
+                                            <div class="lp-text short"></div>
+                                        </div>
+                                    </div>
+                                    <span>List</span>
+                                </label>
+                                <label class="layout-option">
+                                    <input type="radio" name="programLayout" value="featured">
+                                    <div class="layout-preview">
+                                        <div class="lp-img tall"></div>
+                                        <div class="lp-content">
+                                            <div class="lp-badge"></div>
+                                            <div class="lp-title big"></div>
+                                            <div class="lp-text"></div>
+                                        </div>
+                                    </div>
+                                    <span>Featured</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Level</label>
+                                <select id="programLevel">
+                                    <option value="all">Semua Level</option>
+                                    <option value="beginner">Beginner</option>
+                                    <option value="intermediate">Intermediate</option>
+                                    <option value="advanced">Advanced</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Durasi</label>
+                                <input type="text" id="programDuration" placeholder="contoh: 3 bulan">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Jadwal</label>
+                                <input type="text" id="programSchedule" placeholder="contoh: Sen-Jum, 16:00-18:00">
+                            </div>
+                            <div class="form-group">
+                                <label>Harga</label>
+                                <input type="text" id="programPrice" placeholder="contoh: Rp 500.000/bulan">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Cover Image URL</label>
+                            <input type="text" id="programCover" placeholder="https://...">
+                        </div>
+
+                        <div class="form-group">
+                            <label>Deskripsi</label>
+                            <textarea id="programDesc" rows="3" placeholder="Deskripsi singkat program..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Konten Detail (HTML)</label>
+                            <textarea id="programContent" rows="6" placeholder="Detail lengkap program..."></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Fitur (pisahkan dengan koma)</label>
+                            <input type="text" id="programFeatures" 
+                                   placeholder="Materi lengkap, Sertifikat, Tutor berpengalaman">
+                        </div>
+
+                        <div class="form-group">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="programActive" checked>
+                                <span>Program Aktif</span>
+                            </label>
+                        </div>
+
+                        <div class="form-actions">
+                            <button class="btn btn-primary" onclick="saveProgram()">
+                                <i class="fas fa-save"></i> Simpan Program
+                            </button>
+                            <button class="btn btn-outline" onclick="hideProgramForm()">
+                                <i class="fas fa-times"></i> Batal
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Program</th>
+                                <th>Tipe</th>
+                                <th>Layout</th>
+                                <th>Harga</th>
+                                <th>Status</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="programsTableBody">
+                            <tr><td colspan="6" class="loading-cell">
+                                <div class="spinner"></div>
+                            </td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ==================== LAPORAN PENGGUNA JASA ==================== -->
+            <section class="admin-section" id="section-translation-clients">
+                <div class="section-toolbar">
+                    <h3>Laporan Pengguna Jasa Terjemah</h3>
+                    <div style="display:flex;gap:8px;">
+                        <button class="btn btn-success" onclick="exportClients()">
+                            <i class="fas fa-download"></i> Export CSV
+                        </button>
+                        <button class="btn btn-primary" onclick="showClientForm()">
+                            <i class="fas fa-plus"></i> Tambah
                         </button>
                     </div>
+                </div>
 
-                    <div id="translationForm" class="admin-form" style="display:none;">
-                        <div class="form-card">
-                            <h4>Upload Dokumen Terjemahan</h4>
-                            <input type="hidden" id="transDocId">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Nama Klien</label>
-                                    <input type="text" id="transClientName" required>
-                                </div>
-                                <div class="form-group">
-                                    <label>Judul Dokumen</label>
-                                    <input type="text" id="transDocTitle" required>
-                                </div>
+                <div id="clientForm" class="admin-form" style="display:none;">
+                    <div class="form-card">
+                        <h4>Tambah Laporan Pengguna Jasa</h4>
+                        <input type="hidden" id="clientId">
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Nama Klien</label>
+                                <input type="text" id="clientName" required>
                             </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Bahasa Sumber</label>
-                                    <select id="transSourceLang">
-                                        <option value="Indonesia">Indonesia</option>
-                                        <option value="English">English</option>
-                                        <option value="Arabic">Arabic</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label>Bahasa Target</label>
-                                    <select id="transTargetLang">
-                                        <option value="English">English</option>
-                                        <option value="Indonesia">Indonesia</option>
-                                        <option value="Arabic">Arabic</option>
-                                    </select>
-                                </div>
+                            <div class="form-group">
+                                <label>No. HP / WhatsApp</label>
+                                <input type="text" id="clientPhone" required>
                             </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Jenis Dokumen</label>
-                                    <select id="transDocType">
-                                        <option value="Ijazah">Ijazah</option>
-                                        <option value="Transkrip Nilai">Transkrip Nilai</option>
-                                        <option value="Akta Kelahiran">Akta Kelahiran</option>
-                                        <option value="KTP">KTP</option>
-                                        <option value="Surat Keterangan">Surat Keterangan</option>
-                                        <option value="Kontrak">Kontrak</option>
-                                        <option value="Lainnya">Lainnya</option>
-                                    </select>
-                                </div>
-                                <div class="form-group">
-                                    <label>Tanggal Terbit</label>
-                                    <input type="date" id="transIssuedDate">
-                                </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" id="clientEmail">
+                            </div>
+                            <div class="form-group">
+                                <label>Jenis Dokumen</label>
+                                <select id="clientDocType">
+                                    <option value="Ijazah">Ijazah</option>
+                                    <option value="Transkrip Nilai">Transkrip Nilai</option>
+                                    <option value="Akta Kelahiran">Akta Kelahiran</option>
+                                    <option value="KTP">KTP</option>
+                                    <option value="Surat Keterangan">Surat Keterangan</option>
+                                    <option value="Kontrak">Kontrak</option>
+                                    <option value="Buku">Buku</option>
+                                    <option value="Lainnya">Lainnya</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Bahasa Sumber</label>
+                                <select id="clientSourceLang">
+                                    <option value="Indonesia">Indonesia</option>
+                                    <option value="English">English</option>
+                                    <option value="Arabic">Arabic</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Bahasa Target</label>
+                                <select id="clientTargetLang">
+                                    <option value="English">English</option>
+                                    <option value="Indonesia">Indonesia</option>
+                                    <option value="Arabic">Arabic</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Status</label>
+                                <select id="clientStatus">
+                                    <option value="pending">Pending</option>
+                                    <option value="processing">Proses</option>
+                                    <option value="completed">Selesai</option>
+                                </select>
                             </div>
                             <div class="form-group">
                                 <label>Catatan</label>
-                                <textarea id="transNotes" rows="2"></textarea>
-                            </div>
-                            <div class="form-actions">
-                                <button class="btn btn-primary" onclick="saveTranslation()">
-                                    <i class="fas fa-save"></i> Simpan & Generate ID
-                                </button>
-                                <button class="btn btn-outline" onclick="hideTranslationForm()">Batal</button>
+                                <input type="text" id="clientNotes" placeholder="Catatan...">
                             </div>
                         </div>
-                    </div>
 
-                    <!-- Preview cetak -->
-                    <div id="printPreview" class="print-preview" style="display:none;"></div>
-
-                    <div class="data-table-container">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>ID Dokumen</th>
-                                    <th>Klien</th>
-                                    <th>Dokumen</th>
-                                    <th>Bahasa</th>
-                                    <th>Tanggal</th>
-                                    <th>Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="translationsTableBody">
-                                <tr><td colspan="6" class="loading-cell">Memuat data...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </section>
-
-                <!-- TRANSLATION STATUS SECTION -->
-                <section class="admin-section" id="section-translation-status">
-                    <div class="section-toolbar">
-                        <h3>Kelola Status Penerjemahan</h3>
-                        <button class="btn btn-primary" onclick="showStatusForm()">
-                            <i class="fas fa-plus"></i> Tambah Status
-                        </button>
-                    </div>
-
-                    <div id="statusForm" class="admin-form" style="display:none;">
-                        <div class="form-card">
-                            <h4>Update Status Penerjemahan</h4>
-                            <input type="hidden" id="statusId">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Nama Klien</label>
-                                    <input type="text" id="statusClientName" required>
-                                </div>
-                                <div class="form-group">
-                                    <label>No. HP Klien</label>
-                                    <input type="text" id="statusClientPhone" required>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Jenis Dokumen</label>
-                                    <input type="text" id="statusDocType" required>
-                                </div>
-                                <div class="form-group">
-                                    <label>Status</label>
-                                    <select id="statusValue">
-                                        <option value="received">Dokumen Diterima</option>
-                                        <option value="processing">Sedang Diterjemahkan</option>
-                                        <option value="review">Tahap Review</option>
-                                        <option value="completed">Selesai</option>
-                                        <option value="delivered">Sudah Diserahkan</option>
-                                    </select>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Keterangan</label>
-                                    <input type="text" id="statusDesc" placeholder="Keterangan tambahan...">
-                                </div>
-                                <div class="form-group">
-                                    <label>Estimasi Selesai</label>
-                                    <input type="date" id="statusEstimate">
-                                </div>
-                            </div>
-                            <div class="form-actions">
-                                <button class="btn btn-primary" onclick="saveStatus()">
-                                    <i class="fas fa-save"></i> Simpan
-                                </button>
-                                <button class="btn btn-outline" onclick="hideStatusForm()">Batal</button>
-                            </div>
+                        <div class="form-actions">
+                            <button class="btn btn-primary" onclick="saveClient()">
+                                <i class="fas fa-save"></i> Simpan
+                            </button>
+                            <button class="btn btn-outline" onclick="hideClientForm()">Batal</button>
                         </div>
                     </div>
+                </div>
 
-                    <div class="data-table-container">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>Kode Tracking</th>
-                                    <th>Klien</th>
-                                    <th>Dokumen</th>
-                                    <th>Status</th>
-                                    <th>Estimasi</th>
-                                    <th>Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="statusTableBody">
-                                <tr><td colspan="6" class="loading-cell">Memuat data...</td></tr>
-                            </tbody>
-                        </table>
+                <div class="data-table-container">
+                    <div class="table-search">
+                        <input type="text" placeholder="Cari klien..." 
+                               oninput="filterTable(this,'clientsTableBody')">
                     </div>
-                </section>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Nama</th>
+                                <th>No. HP</th>
+                                <th>Dokumen</th>
+                                <th>Bahasa</th>
+                                <th>Status</th>
+                                <th>Tanggal</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="clientsTableBody">
+                            <tr><td colspan="7" class="loading-cell">
+                                <div class="spinner"></div>
+                            </td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
 
-                <!-- TOEFL CERTIFICATES SECTION -->
-                <section class="admin-section" id="section-toefl">
-                    <div class="section-toolbar">
-                        <h3>Kelola Sertifikat TOEFL Prediction</h3>
-                        <button class="btn btn-primary" onclick="showToeflForm()">
-                            <i class="fas fa-plus"></i> Tambah Sertifikat
-                        </button>
-                    </div>
+            <!-- ==================== DOKUMEN TERJEMAHAN ==================== -->
+            <section class="admin-section" id="section-translations">
+                <div class="section-toolbar">
+                    <h3>Dokumen Terjemahan</h3>
+                    <button class="btn btn-primary" onclick="showTranslationForm()">
+                        <i class="fas fa-plus"></i> Upload Dokumen
+                    </button>
+                </div>
 
-                    <div id="toeflForm" class="admin-form" style="display:none;">
-                        <div class="form-card">
-                            <h4>Upload Sertifikat TOEFL Prediction</h4>
-                            <input type="hidden" id="toeflId">
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Nama Peserta</label>
-                                    <input type="text" id="toeflName" required>
-                                </div>
-                                <div class="form-group">
-                                    <label>Tanggal Tes</label>
-                                    <input type="date" id="toeflTestDate" required>
-                                </div>
-                            </div>
-                            <div class="form-row">
-                                <div class="form-group">
-                                    <label>Email</label>
-                                    <input type="email" id="toeflEmail">
-                                </div>
-                                <div class="form-group">
-                                    <label>No. HP</label>
-                                    <input type="text" id="toeflPhone">
-                                </div>
-                            </div>
-                            <div class="form-row three-cols">
-                                <div class="form-group">
-                                    <label>Listening Score</label>
-                                    <input type="number" id="toeflListening" min="31" max="68" required>
-                                </div>
-                                <div class="form-group">
-                                    <label>Structure Score</label>
-                                    <input type="number" id="toeflStructure" min="31" max="68" required>
-                                </div>
-                                <div class="form-group">
-                                    <label>Reading Score</label>
-                                    <input type="number" id="toeflReading" min="31" max="67" required>
-                                </div>
+                <div id="translationForm" class="admin-form" style="display:none;">
+                    <div class="form-card">
+                        <h4>Upload Dokumen Hasil Terjemahan</h4>
+                        <input type="hidden" id="transDocId">
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Nama Klien</label>
+                                <input type="text" id="transClientName" required>
                             </div>
                             <div class="form-group">
-                                <label>Total Score (otomatis dihitung)</label>
-                                <input type="number" id="toeflTotal" readonly class="readonly-input">
-                            </div>
-                            <div class="form-group">
-                                <label>Catatan</label>
-                                <textarea id="toeflNotes" rows="2"></textarea>
-                            </div>
-                            <div class="form-actions">
-                                <button class="btn btn-primary" onclick="saveToefl()">
-                                    <i class="fas fa-save"></i> Simpan & Generate ID
-                                </button>
-                                <button class="btn btn-outline" onclick="hideToeflForm()">Batal</button>
+                                <label>Judul Dokumen</label>
+                                <input type="text" id="transDocTitle" required>
                             </div>
                         </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Bahasa Sumber</label>
+                                <select id="transSourceLang">
+                                    <option value="Indonesia">Indonesia</option>
+                                    <option value="English">English</option>
+                                    <option value="Arabic">Arabic</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Bahasa Target</label>
+                                <select id="transTargetLang">
+                                    <option value="English">English</option>
+                                    <option value="Indonesia">Indonesia</option>
+                                    <option value="Arabic">Arabic</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Jenis Dokumen</label>
+                                <select id="transDocType">
+                                    <option value="Ijazah">Ijazah</option>
+                                    <option value="Transkrip Nilai">Transkrip Nilai</option>
+                                    <option value="Akta Kelahiran">Akta Kelahiran</option>
+                                    <option value="KTP">KTP</option>
+                                    <option value="Surat Keterangan">Surat Keterangan</option>
+                                    <option value="Kontrak">Kontrak</option>
+                                    <option value="Lainnya">Lainnya</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Tanggal Terbit</label>
+                                <input type="date" id="transIssuedDate">
+                            </div>
+                        </div>
+
+                        <!-- POSISI BARCODE & ID -->
+                        <div class="barcode-position-box">
+                            <h5><i class="fas fa-barcode"></i> Setting Posisi Barcode & ID Verifikasi</h5>
+                            <p class="hint">Drag slider untuk atur posisi barcode dan ID pada dokumen</p>
+
+                            <div class="position-controls">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Posisi Horizontal (Kiri - Kanan)</label>
+                                        <input type="range" id="transBarcodeX" min="0" max="90" value="70"
+                                               oninput="updateBarcodePreview('trans')">
+                                        <span id="transBarcodeXVal">70%</span>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Posisi Vertikal (Atas - Bawah)</label>
+                                        <input type="range" id="transBarcodeY" min="0" max="90" value="85"
+                                               oninput="updateBarcodePreview('trans')">
+                                        <span id="transBarcodeYVal">85%</span>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Ukuran Barcode</label>
+                                        <input type="range" id="transBarcodeSize" min="50" max="200" value="100"
+                                               oninput="updateBarcodePreview('trans')">
+                                        <span id="transBarcodeSizeVal">100px</span>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Tampilkan</label>
+                                        <div style="display:flex;gap:12px;margin-top:8px;">
+                                            <label class="checkbox-label">
+                                                <input type="checkbox" id="transShowBarcode" checked
+                                                       onchange="updateBarcodePreview('trans')">
+                                                <span>Barcode</span>
+                                            </label>
+                                            <label class="checkbox-label">
+                                                <input type="checkbox" id="transShowId" checked
+                                                       onchange="updateBarcodePreview('trans')">
+                                                <span>ID Text</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Preview Area -->
+                            <div class="doc-preview-area" id="transDocPreview">
+                                <div class="doc-preview-paper">
+                                    <div class="doc-preview-content">
+                                        <div class="doc-line"></div>
+                                        <div class="doc-line short"></div>
+                                        <div class="doc-line"></div>
+                                        <div class="doc-line short"></div>
+                                        <div class="doc-line"></div>
+                                    </div>
+                                    <div id="transBarcodePreview" class="barcode-overlay">
+                                        <svg id="transBarcodeImg"></svg>
+                                        <div id="transIdText" class="barcode-id-text">SIEC-TR-2024-XXXX</div>
+                                    </div>
+                                </div>
+                                <p class="preview-hint">Preview posisi barcode pada dokumen</p>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Catatan</label>
+                            <textarea id="transNotes" rows="2"></textarea>
+                        </div>
+
+                        <div class="form-actions">
+                            <button class="btn btn-primary" onclick="saveTranslation()">
+                                <i class="fas fa-save"></i> Simpan & Generate ID + Barcode
+                            </button>
+                            <button class="btn btn-outline" onclick="hideTranslationForm()">Batal</button>
+                        </div>
                     </div>
+                </div>
 
-                    <div id="certPrintPreview" class="print-preview" style="display:none;"></div>
-
-                    <div class="data-table-container">
-                        <table class="data-table">
-                            <thead>
-                                <tr>
-                                    <th>ID Sertifikat</th>
-                                    <th>Nama</th>
-                                    <th>Tanggal Tes</th>
-                                    <th>L/S/R</th>
-                                    <th>Total</th>
-                                    <th>Aksi</th>
-                                </tr>
-                            </thead>
-                            <tbody id="toeflTableBody">
-                                <tr><td colspan="6" class="loading-cell">Memuat data...</td></tr>
-                            </tbody>
-                        </table>
+                <!-- Print Preview -->
+                <div id="printPreview" class="print-preview-modal" style="display:none;">
+                    <div class="print-modal-content">
+                        <div class="print-modal-header">
+                            <h4><i class="fas fa-print"></i> Siap Cetak</h4>
+                            <button onclick="closePrintPreview('printPreview')" class="btn-close">×</button>
+                        </div>
+                        <div id="printPreviewContent"></div>
+                        <div class="print-actions">
+                            <button class="btn btn-primary" onclick="window.print()">
+                                <i class="fas fa-print"></i> Cetak
+                            </button>
+                            <button class="btn btn-outline" onclick="closePrintPreview('printPreview')">
+                                Tutup
+                            </button>
+                        </div>
                     </div>
-                </section>
-            </div>
-        </main>
-    </div>
+                </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
-    <script src="js/app.js"></script>
-    <script src="js/auth.js"></script>
-    <script src="js/admin.js"></script>
+                <div class="data-table-container">
+                    <div class="table-search">
+                        <input type="text" placeholder="Cari dokumen..." 
+                               oninput="filterTable(this,'translationsTableBody')">
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID Dokumen</th>
+                                <th>Klien</th>
+                                <th>Dokumen</th>
+                                <th>Bahasa</th>
+                                <th>Tanggal</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="translationsTableBody">
+                            <tr><td colspan="6" class="loading-cell">
+                                <div class="spinner"></div>
+                            </td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ==================== STATUS TERJEMAHAN ==================== -->
+            <section class="admin-section" id="section-translation-status">
+                <div class="section-toolbar">
+                    <h3>Status Penerjemahan</h3>
+                    <button class="btn btn-primary" onclick="showStatusForm()">
+                        <i class="fas fa-plus"></i> Tambah Status
+                    </button>
+                </div>
+
+                <div id="statusForm" class="admin-form" style="display:none;">
+                    <div class="form-card">
+                        <h4>Tambah / Update Status Penerjemahan</h4>
+                        <input type="hidden" id="statusId">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Nama Klien</label>
+                                <input type="text" id="statusClientName" required>
+                            </div>
+                            <div class="form-group">
+                                <label>No. HP</label>
+                                <input type="text" id="statusClientPhone" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Jenis Dokumen</label>
+                                <input type="text" id="statusDocType" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Status</label>
+                                <select id="statusValue">
+                                    <option value="received">Dokumen Diterima</option>
+                                    <option value="processing">Sedang Diterjemahkan</option>
+                                    <option value="review">Tahap Review</option>
+                                    <option value="completed">Selesai</option>
+                                    <option value="delivered">Sudah Diserahkan</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Keterangan</label>
+                                <input type="text" id="statusDesc" placeholder="Keterangan tambahan...">
+                            </div>
+                            <div class="form-group">
+                                <label>Estimasi Selesai</label>
+                                <input type="date" id="statusEstimate">
+                            </div>
+                        </div>
+                        <div class="form-actions">
+                            <button class="btn btn-primary" onclick="saveStatus()">
+                                <i class="fas fa-save"></i> Simpan
+                            </button>
+                            <button class="btn btn-outline" onclick="hideStatusForm()">Batal</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="data-table-container">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Kode Tracking</th>
+                                <th>Klien</th>
+                                <th>Dokumen</th>
+                                <th>Status</th>
+                                <th>Estimasi</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="statusTableBody">
+                            <tr><td colspan="6" class="loading-cell">
+                                <div class="spinner"></div>
+                            </td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- ==================== SERTIFIKAT TOEFL ==================== -->
+            <section class="admin-section" id="section-toefl">
+                <div class="section-toolbar">
+                    <h3>Sertifikat TOEFL Prediction</h3>
+                    <button class="btn btn-primary" onclick="showToeflForm()">
+                        <i class="fas fa-plus"></i> Upload Sertifikat
+                    </button>
+                </div>
+
+                <div id="toeflForm" class="admin-form" style="display:none;">
+                    <div class="form-card">
+                        <h4>Upload Sertifikat TOEFL Prediction</h4>
+                        <input type="hidden" id="toeflId">
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Nama Peserta</label>
+                                <input type="text" id="toeflName" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Tanggal Tes</label>
+                                <input type="date" id="toeflTestDate" required>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Email</label>
+                                <input type="email" id="toeflEmail">
+                            </div>
+                            <div class="form-group">
+                                <label>No. HP</label>
+                                <input type="text" id="toeflPhone">
+                            </div>
+                        </div>
+
+                        <div class="form-row three-cols">
+                            <div class="form-group">
+                                <label>Listening Score</label>
+                                <input type="number" id="toeflListening" min="0" max="68" 
+                                       oninput="calculateToeflTotal()" placeholder="0-68">
+                            </div>
+                            <div class="form-group">
+                                <label>Structure Score</label>
+                                <input type="number" id="toeflStructure" min="0" max="68" 
+                                       oninput="calculateToeflTotal()" placeholder="0-68">
+                            </div>
+                            <div class="form-group">
+                                <label>Reading Score</label>
+                                <input type="number" id="toeflReading" min="0" max="67" 
+                                       oninput="calculateToeflTotal()" placeholder="0-67">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Total Score (otomatis)</label>
+                            <input type="number" id="toeflTotal" readonly class="readonly-input"
+                                   placeholder="Otomatis dihitung">
+                        </div>
+
+                        <!-- POSISI BARCODE TOEFL -->
+                        <div class="barcode-position-box">
+                            <h5><i class="fas fa-barcode"></i> Setting Posisi Barcode & ID</h5>
+                            <p class="hint">Atur posisi barcode pada sertifikat TOEFL</p>
+
+                            <!-- Ingat Posisi -->
+                            <div class="remember-position">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="toeflRememberPos" checked>
+                                    <span>
+                                        <i class="fas fa-memory"></i> 
+                                        Ingat posisi ini untuk sertifikat berikutnya
+                                    </span>
+                                </label>
+                                <button type="button" class="btn btn-sm btn-outline" 
+                                        onclick="resetToeflPosition()">
+                                    <i class="fas fa-undo"></i> Reset Posisi
+                                </button>
+                            </div>
+
+                            <div class="position-controls">
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Posisi Horizontal</label>
+                                        <input type="range" id="toeflBarcodeX" min="0" max="90" value="70"
+                                               oninput="updateBarcodePreview('toefl')">
+                                        <span id="toeflBarcodeXVal">70%</span>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Posisi Vertikal</label>
+                                        <input type="range" id="toeflBarcodeY" min="0" max="90" value="85"
+                                               oninput="updateBarcodePreview('toefl')">
+                                        <span id="toeflBarcodeYVal">85%</span>
+                                    </div>
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label>Ukuran Barcode</label>
+                                        <input type="range" id="toeflBarcodeSize" min="50" max="200" value="100"
+                                               oninput="updateBarcodePreview('toefl')">
+                                        <span id="toeflBarcodeSizeVal">100px</span>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Tampilkan</label>
+                                        <div style="display:flex;gap:12px;margin-top:8px;">
+                                            <label class="checkbox-label">
+                                                <input type="checkbox" id="toeflShowBarcode" checked
+                                                       onchange="updateBarcodePreview('toefl')">
+                                                <span>Barcode</span>
+                                            </label>
+                                            <label class="checkbox-label">
+                                                <input type="checkbox" id="toeflShowId" checked
+                                                       onchange="updateBarcodePreview('toefl')">
+                                                <span>ID Text</span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Preview Sertifikat TOEFL -->
+                            <div class="doc-preview-area" id="toeflDocPreview">
+                                <div class="doc-preview-paper cert-paper">
+                                    <div class="cert-preview-content">
+                                        <div class="cert-logo"></div>
+                                        <div class="cert-title"></div>
+                                        <div class="cert-name"></div>
+                                        <div class="cert-scores">
+                                            <div class="cert-score-box"></div>
+                                            <div class="cert-score-box"></div>
+                                            <div class="cert-score-box"></div>
+                                        </div>
+                                    </div>
+                                    <div id="toeflBarcodePreview" class="barcode-overlay">
+                                        <svg id="toeflBarcodeImg"></svg>
+                                        <div id="toeflIdText" class="barcode-id-text">SIEC-TF-2024-XXXX</div>
+                                    </div>
+                                </div>
+                                <p class="preview-hint">Preview posisi barcode pada sertifikat</p>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Catatan</label>
+                            <textarea id="toeflNotes" rows="2"></textarea>
+                        </div>
+
+                        <div class="form-actions">
+                            <button class="btn btn-primary" onclick="saveToefl()">
+                                <i class="fas fa-save"></i> Simpan & Generate ID + Barcode
+                            </button>
+                            <button class="btn btn-outline" onclick="hideToeflForm()">Batal</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Print Preview TOEFL -->
+                <div id="certPrintModal" class="print-preview-modal" style="display:none;">
+                    <div class="print-modal-content">
+                        <div class="print-modal-header">
+                            <h4><i class="fas fa-certificate"></i> Preview Sertifikat</h4>
+                            <button onclick="closePrintPreview('certPrintModal')" class="btn-close">×</button>
+                        </div>
+                        <div id="certPrintContent"></div>
+                        <div class="print-actions">
+                            <button class="btn btn-primary" onclick="window.print()">
+                                <i class="fas fa-print"></i> Cetak Sertifikat
+                            </button>
+                            <button class="btn btn-outline" onclick="closePrintPreview('certPrintModal')">
+                                Tutup
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="data-table-container">
+                    <div class="table-search">
+                        <input type="text" placeholder="Cari sertifikat..." 
+                               oninput="filterTable(this,'toeflTableBody')">
+                    </div>
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>ID Sertifikat</th>
+                                <th>Nama</th>
+                                <th>Tanggal Tes</th>
+                                <th>L/S/R</th>
+                                <th>Total</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody id="toeflTableBody">
+                            <tr><td colspan="6" class="loading-cell">
+                                <div class="spinner"></div>
+                            </td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </div><!-- end admin-content -->
+    </main>
+</div><!-- end admin-layout -->
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+<script src="js/app.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/admin.js"></script>
 </body>
 </html>
