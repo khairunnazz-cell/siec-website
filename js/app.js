@@ -3,8 +3,8 @@
 // GANTI URL DAN KEY DENGAN MILIK ANDA!
 // ============================================
 
-const SUPABASE_URL = 'https://xxxxxxxxxxxxxx.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.xxxxxxx';
+const SUPABASE_URL = 'https://yskonhtunugujxinjedv.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inlza29uaHR1bnVndWp4aW5qZWR2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzcyMDQzNDYsImV4cCI6MjA5Mjc4MDM0Nn0.XpoZZj4WwaelH6vmicNtwU6uvzIMwLNKUqU50dcjgkg';
 
 // Inisialisasi Supabase dengan nama berbeda
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -13,7 +13,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
 const db = supabaseClient;
 
 // WhatsApp Number
-const WA_NUMBER = '6281234567890';
+const WA_NUMBER = '6282174104447';
 
 // ============================================
 // NAVBAR
