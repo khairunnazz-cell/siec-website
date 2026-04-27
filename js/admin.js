@@ -821,3 +821,268 @@ async function loadAdminToefl() {
     } catch (e) { console.error(e); }
 }
 async function deleteToefl(id) { if (!confirm('Hapus?')) return; await db.from('toefl_certificates').delete().eq('id', id); showNotification('Dihapus!'); loadAdminToefl(); loadDashboardStats(); }
+// ============================================
+// LIVE FILE PREVIEW + DRAGGABLE QR CODE
+// ============================================
+
+function handleFilePreview(input, type) {
+    const file = input.files[0];
+    if (!file) return;
+
+    if (file.size > 10 * 1024 * 1024) {
+        showNotification('File terlalu besar! Max 10MB', 'error');
+        input.value = '';
+        return;
+    }
+
+    // Save file reference
+    if (type === 'trans') transFileData = file;
+    else toeflFileData = file;
+
+    // Show file info
+    document.getElementById(`${type}FileInfo`).style.display = 'flex';
+    document.getElementById(`${type}FileName`).textContent = file.name;
+
+    // Show live preview, hide small preview
+    document.getElementById(`${type}LivePreview`).style.display = 'block';
+    document.getElementById(`${type}SmallPreview`).style.display = 'none';
+
+    const previewPage = document.getElementById(`${type}PreviewPage`);
+    const previewFrame = document.getElementById(`${type}PreviewFrame`);
+    const wordFallback = document.getElementById(`${type}WordFallback`);
+
+    // PDF file
+    if (file.type === 'application/pdf') {
+        const url = URL.createObjectURL(file);
+        previewFrame.src = url;
+        previewFrame.style.display = 'block';
+        if (wordFallback) wordFallback.style.display = 'none';
+    }
+    // Word file
+    else if (file.name.endsWith('.doc') || file.name.endsWith('.docx')) {
+        previewFrame.style.display = 'none';
+        if (wordFallback) {
+            wordFallback.style.display = 'flex';
+            const nameEl = document.getElementById(`${type}WordName`);
+            if (nameEl) nameEl.textContent = file.name;
+        }
+    }
+
+    // Generate QR preview
+    const sampleId = type === 'trans' ? 'SIEC-TR-2024-0001' : 'SIEC-TF-2024-0001';
+    setTimeout(() => {
+        generateQrWithLogo(`${type}QrCanvas`, sampleId, 80);
+    }, 300);
+
+    // Load saved position for TOEFL
+    if (type === 'toefl') {
+        const saved = localStorage.getItem('siec_toefl_qr_pos');
+        if (saved) {
+            try {
+                const pos = JSON.parse(saved);
+                const drag = document.getElementById('toeflQrDrag');
+                if (drag) {
+                    drag.style.left = pos.x + '%';
+                    drag.style.top = pos.y + '%';
+                }
+                const sizeSlider = document.getElementById('toeflQrSize');
+                if (sizeSlider) sizeSlider.value = pos.size || 80;
+            } catch(e) {}
+        }
+    }
+
+    // Init drag
+    initDrag(type);
+}
+
+function removeFilePreview(type) {
+    if (type === 'trans') {
+        transFileData = null;
+        document.getElementById('transFile').value = '';
+    } else {
+        toeflFileData = null;
+        document.getElementById('toeflFile').value = '';
+    }
+
+    document.getElementById(`${type}FileInfo`).style.display = 'none';
+    document.getElementById(`${type}LivePreview`).style.display = 'none';
+    document.getElementById(`${type}SmallPreview`).style.display = 'block';
+
+    const frame = document.getElementById(`${type}PreviewFrame`);
+    if (frame) frame.src = '';
+}
+
+// ============================================
+// DRAGGABLE QR CODE ON DOCUMENT
+// ============================================
+function initDrag(type) {
+    const dragEl = document.getElementById(`${type}QrDrag`);
+    const container = document.getElementById(`${type}PreviewPage`);
+    if (!dragEl || !container) return;
+
+    let isDragging = false;
+    let startX, startY, origLeft, origTop;
+
+    // Mouse events
+    dragEl.addEventListener('mousedown', startDrag);
+    document.addEventListener('mousemove', doDrag);
+    document.addEventListener('mouseup', stopDrag);
+
+    // Touch events
+    dragEl.addEventListener('touchstart', startDragTouch, { passive: false });
+    document.addEventListener('touchmove', doDragTouch, { passive: false });
+    document.addEventListener('touchend', stopDrag);
+
+    function startDrag(e) {
+        isDragging = true;
+        dragEl.classList.add('dragging');
+        const rect = container.getBoundingClientRect();
+        startX = e.clientX;
+        startY = e.clientY;
+        origLeft = dragEl.offsetLeft;
+        origTop = dragEl.offsetTop;
+        e.preventDefault();
+    }
+
+    function startDragTouch(e) {
+        isDragging = true;
+        dragEl.classList.add('dragging');
+        const touch = e.touches[0];
+        startX = touch.clientX;
+        startY = touch.clientY;
+        origLeft = dragEl.offsetLeft;
+        origTop = dragEl.offsetTop;
+        e.preventDefault();
+    }
+
+    function doDrag(e) {
+        if (!isDragging) return;
+        const dx = e.clientX - startX;
+        const dy = e.clientY - startY;
+        moveDrag(dx, dy);
+    }
+
+    function doDragTouch(e) {
+        if (!isDragging) return;
+        const touch = e.touches[0];
+        const dx = touch.clientX - startX;
+        const dy = touch.clientY - startY;
+        moveDrag(dx, dy);
+        e.preventDefault();
+    }
+
+    function moveDrag(dx, dy) {
+        const containerW = container.offsetWidth;
+        const containerH = container.offsetHeight;
+
+        let newLeft = origLeft + dx;
+        let newTop = origTop + dy;
+
+        // Boundaries
+        newLeft = Math.max(0, Math.min(newLeft, containerW - dragEl.offsetWidth));
+        newTop = Math.max(0, Math.min(newTop, containerH - dragEl.offsetHeight));
+
+        dragEl.style.left = newLeft + 'px';
+        dragEl.style.top = newTop + 'px';
+
+        // Calculate percentage
+        const percX = Math.round((newLeft / containerW) * 100);
+        const percY = Math.round((newTop / containerH) * 100);
+
+        // Update position display
+        const posXEl = document.getElementById(`${type}PosX`);
+        const posYEl = document.getElementById(`${type}PosY`);
+        if (posXEl) posXEl.textContent = percX + '%';
+        if (posYEl) posYEl.textContent = percY + '%';
+
+        // Also update slider values (for save)
+        const sliderX = document.getElementById(`${type}QrX`);
+        const sliderY = document.getElementById(`${type}QrY`);
+        if (sliderX) sliderX.value = percX;
+        if (sliderY) sliderY.value = percY;
+    }
+
+    function stopDrag() {
+        if (!isDragging) return;
+        isDragging = false;
+        dragEl.classList.remove('dragging');
+
+        // Save position for TOEFL
+        if (type === 'toefl' && document.getElementById('toeflRememberPos')?.checked) {
+            const containerW = container.offsetWidth;
+            const containerH = container.offsetHeight;
+            const pos = {
+                x: Math.round((dragEl.offsetLeft / containerW) * 100),
+                y: Math.round((dragEl.offsetTop / containerH) * 100),
+                size: document.getElementById('toeflQrSize')?.value || 80,
+                showId: document.getElementById('toeflShowId')?.checked ?? true
+            };
+            localStorage.setItem('siec_toefl_qr_pos', JSON.stringify(pos));
+        }
+    }
+}
+
+function resizeQr(type) {
+    const size = parseInt(document.getElementById(`${type}QrSize`).value);
+    document.getElementById(`${type}QrSizeVal`).textContent = size + 'px';
+
+    const canvas = document.getElementById(`${type}QrCanvas`);
+    if (canvas) {
+        canvas.width = size;
+        canvas.height = size;
+        const sampleId = type === 'trans' ? 'SIEC-TR-2024-0001' : 'SIEC-TF-2024-0001';
+        generateQrWithLogo(`${type}QrCanvas`, sampleId, size);
+    }
+}
+
+function toggleQrId(type) {
+    const show = document.getElementById(`${type}ShowId`).checked;
+    const idText = document.getElementById(`${type}QrIdText`);
+    if (idText) idText.style.display = show ? 'block' : 'none';
+}
+
+function updateSmallPreview(type) {
+    const x = document.getElementById(`${type}QrX`)?.value || 80;
+    const y = document.getElementById(`${type}QrY`)?.value || 85;
+
+    document.getElementById(`${type}QrXVal`).textContent = x + '%';
+    document.getElementById(`${type}QrYVal`).textContent = y + '%';
+
+    const overlay = document.getElementById(`${type}SmallQr`);
+    if (overlay) {
+        overlay.style.left = x + '%';
+        overlay.style.top = y + '%';
+    }
+
+    // Generate small QR
+    const canvasId = `${type}SmallQrCanvas`;
+    const sampleId = type === 'trans' ? 'SIEC-TR-XXXX' : 'SIEC-TF-XXXX';
+    generateQrWithLogo(canvasId, sampleId, 50);
+}
+
+// Get QR position from either live preview or slider
+function getQrPosition(type) {
+    const livePreview = document.getElementById(`${type}LivePreview`);
+    const isLive = livePreview && livePreview.style.display !== 'none';
+
+    if (isLive) {
+        const dragEl = document.getElementById(`${type}QrDrag`);
+        const container = document.getElementById(`${type}PreviewPage`);
+        if (dragEl && container) {
+            return {
+                x: Math.round((dragEl.offsetLeft / container.offsetWidth) * 100),
+                y: Math.round((dragEl.offsetTop / container.offsetHeight) * 100),
+                size: document.getElementById(`${type}QrSize`)?.value || 80,
+                showId: document.getElementById(`${type}ShowId`)?.checked ?? true
+            };
+        }
+    }
+
+    // Fallback to sliders
+    return {
+        x: document.getElementById(`${type}QrX`)?.value || 80,
+        y: document.getElementById(`${type}QrY`)?.value || 85,
+        size: document.getElementById(`${type}QrSize`)?.value || 80,
+        showId: document.getElementById(`${type}ShowId`)?.checked ?? true
+    };
+}

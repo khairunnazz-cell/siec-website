@@ -272,197 +272,210 @@
             </section>
 
             <!-- ===== DOKUMEN TERJEMAHAN (UPLOAD PDF + QR CODE) ===== -->
-            <section class="admin-section" id="section-translations">
-                <div class="section-toolbar">
-                    <h3>Dokumen Terjemahan</h3>
-                    <button class="btn btn-primary" onclick="showTranslationForm()">
-                        <i class="fas fa-upload"></i> Upload Dokumen
+<section class="admin-section" id="section-translations">
+    <div class="section-toolbar">
+        <h3>Dokumen Terjemahan</h3>
+        <button class="btn btn-primary" onclick="showTranslationForm()">
+            <i class="fas fa-upload"></i> Upload Dokumen
+        </button>
+    </div>
+
+    <div id="translationForm" class="admin-form" style="display:none;">
+        <div class="form-card">
+            <h4><i class="fas fa-file-pdf"></i> Upload Dokumen Hasil Terjemahan</h4>
+            <input type="hidden" id="transDocId">
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Nama Klien</label>
+                    <input type="text" id="transClientName" required>
+                </div>
+                <div class="form-group">
+                    <label>Judul Dokumen</label>
+                    <input type="text" id="transDocTitle" required>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Bahasa Sumber</label>
+                    <select id="transSourceLang">
+                        <option value="Indonesia">Indonesia</option>
+                        <option value="English">English</option>
+                        <option value="Arabic">Arabic</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Bahasa Target</label>
+                    <select id="transTargetLang">
+                        <option value="English">English</option>
+                        <option value="Indonesia">Indonesia</option>
+                        <option value="Arabic">Arabic</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Jenis Dokumen</label>
+                    <select id="transDocType">
+                        <option value="Ijazah">Ijazah</option>
+                        <option value="Transkrip Nilai">Transkrip</option>
+                        <option value="Akta Kelahiran">Akta Kelahiran</option>
+                        <option value="KTP">KTP</option>
+                        <option value="Surat Keterangan">Surat Keterangan</option>
+                        <option value="Kontrak">Kontrak</option>
+                        <option value="Lainnya">Lainnya</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Tanggal Terbit</label>
+                    <input type="date" id="transIssuedDate">
+                </div>
+            </div>
+
+            <!-- UPLOAD FILE -->
+            <div class="upload-box">
+                <h5><i class="fas fa-cloud-upload-alt"></i> Upload File Dokumen</h5>
+                <p class="hint">Upload file PDF atau Word hasil terjemahan, lalu atur posisi QR Code</p>
+                <div class="file-upload-area">
+                    <input type="file" id="transFile" accept=".pdf,.doc,.docx"
+                           onchange="handleFilePreview(this, 'trans')">
+                    <label for="transFile" class="file-upload-label">
+                        <i class="fas fa-file-pdf"></i>
+                        <span>Klik untuk pilih file</span>
+                        <span class="file-hint">PDF, DOC, DOCX (max 10MB)</span>
+                    </label>
+                </div>
+                <div id="transFileInfo" class="file-info" style="display:none;">
+                    <i class="fas fa-file"></i>
+                    <span id="transFileName">-</span>
+                    <button type="button" onclick="removeFilePreview('trans')" class="btn-remove-file">
+                        <i class="fas fa-times"></i>
                     </button>
                 </div>
+            </div>
 
-                <div id="translationForm" class="admin-form" style="display:none;">
-                    <div class="form-card">
-                        <h4><i class="fas fa-file-pdf"></i> Upload Dokumen Hasil Terjemahan</h4>
-                        <input type="hidden" id="transDocId">
-
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Nama Klien</label>
-                                <input type="text" id="transClientName" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Judul Dokumen</label>
-                                <input type="text" id="transDocTitle" required>
-                            </div>
+            <!-- LIVE PREVIEW DOCUMENT + QR OVERLAY -->
+            <div id="transLivePreview" class="live-preview-container" style="display:none;">
+                <div class="live-preview-header">
+                    <h6><i class="fas fa-eye"></i> Preview Dokumen</h6>
+                </div>
+                <div class="drag-instruction">
+                    <i class="fas fa-hand-pointer"></i>
+                    Drag QR Code untuk mengatur posisi pada dokumen
+                </div>
+                <div class="live-preview-doc" id="transPreviewDoc">
+                    <div class="live-preview-page" id="transPreviewPage">
+                        <!-- PDF/Image akan ditampilkan di sini -->
+                        <iframe id="transPreviewFrame" style="display:none;"></iframe>
+                        <canvas id="transPreviewCanvas" style="display:none;"></canvas>
+                        <div id="transWordFallback" class="word-preview-fallback" style="display:none;">
+                            <i class="fas fa-file-word"></i>
+                            <h4>Dokumen Word</h4>
+                            <p id="transWordName">document.docx</p>
                         </div>
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Bahasa Sumber</label>
-                                <select id="transSourceLang">
-                                    <option value="Indonesia">Indonesia</option>
-                                    <option value="English">English</option>
-                                    <option value="Arabic">Arabic</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Bahasa Target</label>
-                                <select id="transTargetLang">
-                                    <option value="English">English</option>
-                                    <option value="Indonesia">Indonesia</option>
-                                    <option value="Arabic">Arabic</option>
-                                </select>
-                            </div>
+                        <!-- DRAGGABLE QR CODE -->
+                        <div id="transQrDrag" class="qr-doc-overlay"
+                             style="left:80%;top:85%;position:absolute;">
+                            <canvas id="transQrCanvas" width="80" height="80"></canvas>
+                            <div id="transQrIdText" class="qr-doc-id">SIEC-TR-2024-XXXX</div>
                         </div>
+                    </div>
+                </div>
+                <div class="position-indicator" id="transPositionInfo">
+                    <span>Posisi: <strong id="transPosX">80%</strong> x <strong id="transPosY">85%</strong></span>
+                    <span>|</span>
+                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;">
+                        <span>Ukuran:</span>
+                        <input type="range" id="transQrSize" min="40" max="150" value="80"
+                               style="width:100px;" oninput="resizeQr('trans')">
+                        <strong id="transQrSizeVal">80px</strong>
+                    </label>
+                    <span>|</span>
+                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;">
+                        <input type="checkbox" id="transShowId" checked onchange="toggleQrId('trans')">
+                        <span>ID</span>
+                    </label>
+                </div>
+            </div>
 
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Jenis Dokumen</label>
-                                <select id="transDocType">
-                                    <option value="Ijazah">Ijazah</option>
-                                    <option value="Transkrip Nilai">Transkrip</option>
-                                    <option value="Akta Kelahiran">Akta Kelahiran</option>
-                                    <option value="KTP">KTP</option>
-                                    <option value="Surat Keterangan">Surat Keterangan</option>
-                                    <option value="Kontrak">Kontrak</option>
-                                    <option value="Lainnya">Lainnya</option>
-                                </select>
-                            </div>
-                            <div class="form-group">
-                                <label>Tanggal Terbit</label>
-                                <input type="date" id="transIssuedDate">
-                            </div>
-                        </div>
-
-                        <!-- UPLOAD FILE PDF/WORD -->
-                        <div class="upload-box">
-                            <h5><i class="fas fa-cloud-upload-alt"></i> Upload File Dokumen</h5>
-                            <p class="hint">Upload file PDF atau Word hasil terjemahan Anda</p>
-                            <div class="file-upload-area" id="transFileArea">
-                                <input type="file" id="transFile" accept=".pdf,.doc,.docx" 
-                                       onchange="handleFileSelect(this, 'trans')">
-                                <label for="transFile" class="file-upload-label">
-                                    <i class="fas fa-file-pdf"></i>
-                                    <span>Klik untuk pilih file</span>
-                                    <span class="file-hint">PDF, DOC, DOCX (max 10MB)</span>
-                                </label>
-                            </div>
-                            <div id="transFileInfo" class="file-info" style="display:none;">
-                                <i class="fas fa-file"></i>
-                                <span id="transFileName">-</span>
-                                <button type="button" onclick="removeFile('trans')" class="btn-remove-file">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                            <!-- PDF Preview -->
-                            <div id="transPdfPreview" class="pdf-preview-container" style="display:none;">
-                                <iframe id="transPdfFrame" class="pdf-frame"></iframe>
-                            </div>
-                        </div>
-
-                        <!-- QR CODE POSITION -->
-                        <div class="qr-position-box">
-                            <h5><i class="fas fa-qrcode"></i> Setting Posisi QR Code & ID</h5>
-                            <p class="hint">Atur posisi QR Code pada dokumen</p>
-
-                            <div class="position-controls">
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label>Posisi Horizontal</label>
-                                        <input type="range" id="transQrX" min="5" max="95" value="85"
-                                               oninput="updateQrPreview('trans')">
-                                        <span id="transQrXVal">85%</span>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Posisi Vertikal</label>
-                                        <input type="range" id="transQrY" min="5" max="95" value="90"
-                                               oninput="updateQrPreview('trans')">
-                                        <span id="transQrYVal">90%</span>
-                                    </div>
-                                </div>
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label>Ukuran QR Code</label>
-                                        <input type="range" id="transQrSize" min="40" max="150" value="80"
-                                               oninput="updateQrPreview('trans')">
-                                        <span id="transQrSizeVal">80px</span>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Tampilkan</label>
-                                        <div style="display:flex;gap:12px;margin-top:8px;">
-                                            <label class="checkbox-label">
-                                                <input type="checkbox" id="transShowQr" checked 
-                                                       onchange="updateQrPreview('trans')">
-                                                <span>QR Code</span>
-                                            </label>
-                                            <label class="checkbox-label">
-                                                <input type="checkbox" id="transShowId" checked 
-                                                       onchange="updateQrPreview('trans')">
-                                                <span>ID Text</span>
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Preview -->
-                            <div class="doc-preview-area">
-                                <div class="doc-preview-paper" id="transDocPreview">
-                                    <div class="doc-preview-content">
-                                        <div class="doc-line"></div>
-                                        <div class="doc-line short"></div>
-                                        <div class="doc-line"></div>
-                                        <div class="doc-line short"></div>
-                                        <div class="doc-line"></div>
-                                    </div>
-                                    <div id="transQrOverlay" class="qr-overlay">
-                                        <canvas id="transQrCanvas"></canvas>
-                                        <div id="transIdText" class="qr-id-text">SIEC-TR-2024-XXXX</div>
-                                    </div>
-                                </div>
-                                <p class="preview-hint">Preview posisi QR Code pada dokumen</p>
-                            </div>
-                        </div>
-
+            <!-- Fallback: jika belum upload file, tampilkan preview kecil -->
+            <div id="transSmallPreview" class="qr-position-box">
+                <h5><i class="fas fa-qrcode"></i> Setting Posisi QR Code</h5>
+                <p class="hint">Upload file di atas untuk preview langsung, atau atur posisi di sini</p>
+                <div class="position-controls">
+                    <div class="form-row">
                         <div class="form-group">
-                            <label>Catatan</label>
-                            <textarea id="transNotes" rows="2"></textarea>
+                            <label>Posisi Horizontal</label>
+                            <input type="range" id="transQrX" min="5" max="95" value="80"
+                                   oninput="updateSmallPreview('trans')">
+                            <span id="transQrXVal">80%</span>
                         </div>
-
-                        <div class="form-actions">
-                            <button class="btn btn-primary" onclick="saveTranslation()">
-                                <i class="fas fa-save"></i> Upload & Generate QR Code
-                            </button>
-                            <button class="btn btn-outline" onclick="hideTranslationForm()">Batal</button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Print Preview Modal -->
-                <div id="printPreview" class="print-preview-modal" style="display:none;">
-                    <div class="print-modal-content">
-                        <div class="print-modal-header">
-                            <h4><i class="fas fa-print"></i> Preview Cetak</h4>
-                            <button onclick="closePrintPreview('printPreview')" class="btn-close">×</button>
-                        </div>
-                        <div id="printPreviewContent"></div>
-                        <div class="print-actions">
-                            <button class="btn btn-primary" onclick="printDocument()">
-                                <i class="fas fa-print"></i> Cetak
-                            </button>
-                            <button class="btn btn-outline" onclick="closePrintPreview('printPreview')">Tutup</button>
+                        <div class="form-group">
+                            <label>Posisi Vertikal</label>
+                            <input type="range" id="transQrY" min="5" max="95" value="85"
+                                   oninput="updateSmallPreview('trans')">
+                            <span id="transQrYVal">85%</span>
                         </div>
                     </div>
                 </div>
-
-                <div class="data-table-container">
-                    <table class="data-table">
-                        <thead><tr><th>ID</th><th>Klien</th><th>Dokumen</th><th>Bahasa</th><th>File</th><th>Tanggal</th><th>Aksi</th></tr></thead>
-                        <tbody id="translationsTableBody"><tr><td colspan="7" class="loading-cell"><div class="spinner"></div></td></tr></tbody>
-                    </table>
+                <div class="doc-preview-area">
+                    <div class="small-doc-preview" id="transSmallDocPreview">
+                        <div class="doc-preview-content">
+                            <div class="doc-line"></div>
+                            <div class="doc-line short"></div>
+                            <div class="doc-line"></div>
+                            <div class="doc-line short"></div>
+                            <div class="doc-line"></div>
+                            <div class="doc-line"></div>
+                            <div class="doc-line short"></div>
+                        </div>
+                        <div id="transSmallQr" class="qr-overlay" style="left:80%;top:85%;transform:translate(-50%,-50%);">
+                            <canvas id="transSmallQrCanvas" width="50" height="50"></canvas>
+                            <div class="qr-id-text">SIEC-TR-XXXX</div>
+                        </div>
+                    </div>
                 </div>
-            </section>
+            </div>
 
+            <div class="form-group">
+                <label>Catatan</label>
+                <textarea id="transNotes" rows="2"></textarea>
+            </div>
+
+            <div class="form-actions">
+                <button class="btn btn-primary" onclick="saveTranslation()">
+                    <i class="fas fa-save"></i> Upload & Generate QR Code
+                </button>
+                <button class="btn btn-outline" onclick="hideTranslationForm()">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print Preview -->
+    <div id="printPreview" class="print-preview-modal" style="display:none;">
+        <div class="print-modal-content">
+            <div class="print-modal-header">
+                <h4><i class="fas fa-print"></i> Preview Cetak</h4>
+                <button onclick="closePrintPreview('printPreview')" class="btn-close">×</button>
+            </div>
+            <div id="printPreviewContent"></div>
+            <div class="print-actions">
+                <button class="btn btn-primary" onclick="printDocument()"><i class="fas fa-print"></i> Cetak</button>
+                <button class="btn btn-outline" onclick="closePrintPreview('printPreview')">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="data-table-container">
+        <table class="data-table">
+            <thead><tr><th>ID</th><th>Klien</th><th>Dokumen</th><th>Bahasa</th><th>File</th><th>Tanggal</th><th>Aksi</th></tr></thead>
+            <tbody id="translationsTableBody"><tr><td colspan="7" class="loading-cell"><div class="spinner"></div></td></tr></tbody>
+        </table>
+    </div>
+</section>
             <!-- ===== STATUS TERJEMAHAN ===== -->
             <section class="admin-section" id="section-translation-status">
                 <div class="section-toolbar">
@@ -501,172 +514,171 @@
                 </div>
             </section>
 
-            <!-- ===== SERTIFIKAT TOEFL (UPLOAD PDF + QR CODE) ===== -->
-            <section class="admin-section" id="section-toefl">
-                <div class="section-toolbar">
-                    <h3>Sertifikat TOEFL Prediction</h3>
-                    <button class="btn btn-primary" onclick="showToeflForm()">
-                        <i class="fas fa-upload"></i> Upload Sertifikat
+            <!-- ===== SERTIFIKAT TOEFL ===== -->
+<section class="admin-section" id="section-toefl">
+    <div class="section-toolbar">
+        <h3>Sertifikat TOEFL Prediction</h3>
+        <button class="btn btn-primary" onclick="showToeflForm()">
+            <i class="fas fa-upload"></i> Upload Sertifikat
+        </button>
+    </div>
+
+    <div id="toeflForm" class="admin-form" style="display:none;">
+        <div class="form-card">
+            <h4><i class="fas fa-certificate"></i> Upload Sertifikat TOEFL</h4>
+            <input type="hidden" id="toeflId">
+
+            <div class="form-row">
+                <div class="form-group"><label>Nama Peserta</label><input type="text" id="toeflName" required></div>
+                <div class="form-group"><label>Tanggal Tes</label><input type="date" id="toeflTestDate" required></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Email</label><input type="email" id="toeflEmail"></div>
+                <div class="form-group"><label>No. HP</label><input type="text" id="toeflPhone"></div>
+            </div>
+            <div class="form-row three-cols">
+                <div class="form-group"><label>Listening</label><input type="number" id="toeflListening" min="0" max="68" oninput="calculateToeflTotal()"></div>
+                <div class="form-group"><label>Structure</label><input type="number" id="toeflStructure" min="0" max="68" oninput="calculateToeflTotal()"></div>
+                <div class="form-group"><label>Reading</label><input type="number" id="toeflReading" min="0" max="67" oninput="calculateToeflTotal()"></div>
+            </div>
+            <div class="form-group">
+                <label>Total Score (otomatis)</label>
+                <input type="number" id="toeflTotal" readonly class="readonly-input">
+            </div>
+
+            <!-- UPLOAD FILE PDF -->
+            <div class="upload-box">
+                <h5><i class="fas fa-cloud-upload-alt"></i> Upload File Sertifikat PDF</h5>
+                <p class="hint">Upload sertifikat TOEFL (PDF), lalu atur posisi QR Code langsung di dokumen</p>
+                <div class="file-upload-area">
+                    <input type="file" id="toeflFile" accept=".pdf"
+                           onchange="handleFilePreview(this, 'toefl')">
+                    <label for="toeflFile" class="file-upload-label">
+                        <i class="fas fa-file-pdf"></i>
+                        <span>Klik untuk pilih file PDF</span>
+                        <span class="file-hint">PDF (max 10MB)</span>
+                    </label>
+                </div>
+                <div id="toeflFileInfo" class="file-info" style="display:none;">
+                    <i class="fas fa-file-pdf"></i>
+                    <span id="toeflFileName">-</span>
+                    <button type="button" onclick="removeFilePreview('toefl')" class="btn-remove-file">
+                        <i class="fas fa-times"></i>
                     </button>
                 </div>
+            </div>
 
-                <div id="toeflForm" class="admin-form" style="display:none;">
-                    <div class="form-card">
-                        <h4><i class="fas fa-certificate"></i> Upload Sertifikat TOEFL Prediction</h4>
-                        <input type="hidden" id="toeflId">
+            <!-- LIVE PREVIEW TOEFL -->
+            <div id="toeflLivePreview" class="live-preview-container" style="display:none;">
+                <div class="live-preview-header">
+                    <h6><i class="fas fa-eye"></i> Preview Sertifikat</h6>
+                    <div class="remember-position" style="background:transparent;padding:0;margin:0;">
+                        <label class="checkbox-label" style="color:white;font-size:0.8rem;">
+                            <input type="checkbox" id="toeflRememberPos" checked>
+                            <span><i class="fas fa-memory"></i> Ingat posisi</span>
+                        </label>
+                    </div>
+                </div>
+                <div class="drag-instruction">
+                    <i class="fas fa-hand-pointer"></i>
+                    Drag QR Code untuk mengatur posisi pada sertifikat
+                </div>
+                <div class="live-preview-doc" id="toeflPreviewDoc">
+                    <div class="live-preview-page" id="toeflPreviewPage">
+                        <iframe id="toeflPreviewFrame" style="display:none;"></iframe>
+                        <canvas id="toeflPreviewCanvas" style="display:none;"></canvas>
 
-                        <div class="form-row">
-                            <div class="form-group"><label>Nama Peserta</label><input type="text" id="toeflName" required></div>
-                            <div class="form-group"><label>Tanggal Tes</label><input type="date" id="toeflTestDate" required></div>
+                        <!-- DRAGGABLE QR CODE -->
+                        <div id="toeflQrDrag" class="qr-doc-overlay"
+                             style="left:80%;top:85%;position:absolute;">
+                            <canvas id="toeflQrCanvas" width="80" height="80"></canvas>
+                            <div id="toeflQrIdText" class="qr-doc-id">SIEC-TF-2024-XXXX</div>
                         </div>
-                        <div class="form-row">
-                            <div class="form-group"><label>Email</label><input type="email" id="toeflEmail"></div>
-                            <div class="form-group"><label>No. HP</label><input type="text" id="toeflPhone"></div>
-                        </div>
-                        <div class="form-row three-cols">
-                            <div class="form-group"><label>Listening</label><input type="number" id="toeflListening" min="0" max="68" oninput="calculateToeflTotal()"></div>
-                            <div class="form-group"><label>Structure</label><input type="number" id="toeflStructure" min="0" max="68" oninput="calculateToeflTotal()"></div>
-                            <div class="form-group"><label>Reading</label><input type="number" id="toeflReading" min="0" max="67" oninput="calculateToeflTotal()"></div>
+                    </div>
+                </div>
+                <div class="position-indicator" id="toeflPositionInfo">
+                    <span>Posisi: <strong id="toeflPosX">80%</strong> x <strong id="toeflPosY">85%</strong></span>
+                    <span>|</span>
+                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;">
+                        <span>Ukuran:</span>
+                        <input type="range" id="toeflQrSize" min="40" max="150" value="80"
+                               style="width:100px;" oninput="resizeQr('toefl')">
+                        <strong id="toeflQrSizeVal">80px</strong>
+                    </label>
+                    <span>|</span>
+                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;">
+                        <input type="checkbox" id="toeflShowId" checked onchange="toggleQrId('toefl')">
+                        <span>ID</span>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Fallback small preview -->
+            <div id="toeflSmallPreview" class="qr-position-box">
+                <h5><i class="fas fa-qrcode"></i> Setting Posisi QR Code</h5>
+                <p class="hint">Upload file di atas untuk preview langsung</p>
+                <div class="position-controls">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Posisi Horizontal</label>
+                            <input type="range" id="toeflQrX" min="5" max="95" value="80" oninput="updateSmallPreview('toefl')">
+                            <span id="toeflQrXVal">80%</span>
                         </div>
                         <div class="form-group">
-                            <label>Total Score (otomatis)</label>
-                            <input type="number" id="toeflTotal" readonly class="readonly-input">
-                        </div>
-
-                        <!-- UPLOAD FILE PDF SERTIFIKAT -->
-                        <div class="upload-box">
-                            <h5><i class="fas fa-cloud-upload-alt"></i> Upload File Sertifikat PDF</h5>
-                            <p class="hint">Upload sertifikat TOEFL yang sudah dibuat (PDF)</p>
-                            <div class="file-upload-area" id="toeflFileArea">
-                                <input type="file" id="toeflFile" accept=".pdf" 
-                                       onchange="handleFileSelect(this, 'toefl')">
-                                <label for="toeflFile" class="file-upload-label">
-                                    <i class="fas fa-file-pdf"></i>
-                                    <span>Klik untuk pilih file PDF</span>
-                                    <span class="file-hint">PDF (max 10MB)</span>
-                                </label>
-                            </div>
-                            <div id="toeflFileInfo" class="file-info" style="display:none;">
-                                <i class="fas fa-file-pdf"></i>
-                                <span id="toeflFileName">-</span>
-                                <button type="button" onclick="removeFile('toefl')" class="btn-remove-file">
-                                    <i class="fas fa-times"></i>
-                                </button>
-                            </div>
-                            <div id="toeflPdfPreview" class="pdf-preview-container" style="display:none;">
-                                <iframe id="toeflPdfFrame" class="pdf-frame"></iframe>
-                            </div>
-                        </div>
-
-                        <!-- QR CODE POSITION TOEFL -->
-                        <div class="qr-position-box">
-                            <h5><i class="fas fa-qrcode"></i> Setting Posisi QR Code & ID</h5>
-
-                            <div class="remember-position">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="toeflRememberPos" checked>
-                                    <span><i class="fas fa-memory"></i> Ingat posisi untuk sertifikat berikutnya</span>
-                                </label>
-                                <button type="button" class="btn btn-sm btn-outline" onclick="resetToeflPosition()">
-                                    <i class="fas fa-undo"></i> Reset
-                                </button>
-                            </div>
-
-                            <div class="position-controls">
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label>Posisi Horizontal</label>
-                                        <input type="range" id="toeflQrX" min="5" max="95" value="85"
-                                               oninput="updateQrPreview('toefl')">
-                                        <span id="toeflQrXVal">85%</span>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Posisi Vertikal</label>
-                                        <input type="range" id="toeflQrY" min="5" max="95" value="90"
-                                               oninput="updateQrPreview('toefl')">
-                                        <span id="toeflQrYVal">90%</span>
-                                    </div>
-                                </div>
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label>Ukuran QR Code</label>
-                                        <input type="range" id="toeflQrSize" min="40" max="150" value="80"
-                                               oninput="updateQrPreview('toefl')">
-                                        <span id="toeflQrSizeVal">80px</span>
-                                    </div>
-                                    <div class="form-group">
-                                        <label>Tampilkan</label>
-                                        <div style="display:flex;gap:12px;margin-top:8px;">
-                                            <label class="checkbox-label">
-                                                <input type="checkbox" id="toeflShowQr" checked onchange="updateQrPreview('toefl')">
-                                                <span>QR Code</span>
-                                            </label>
-                                            <label class="checkbox-label">
-                                                <input type="checkbox" id="toeflShowId" checked onchange="updateQrPreview('toefl')">
-                                                <span>ID Text</span>
-                                            </label>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="doc-preview-area">
-                                <div class="doc-preview-paper cert-paper" id="toeflDocPreview">
-                                    <div class="cert-preview-content">
-                                        <div class="cert-logo-mini">
-                                            <img src="assets/logo.png" alt="SIEC" onerror="this.innerHTML='SIEC'">
-                                        </div>
-                                        <div class="cert-title"></div>
-                                        <div class="cert-name"></div>
-                                        <div class="cert-scores">
-                                            <div class="cert-score-box"></div>
-                                            <div class="cert-score-box"></div>
-                                            <div class="cert-score-box"></div>
-                                        </div>
-                                    </div>
-                                    <div id="toeflQrOverlay" class="qr-overlay">
-                                        <canvas id="toeflQrCanvas"></canvas>
-                                        <div id="toeflIdText" class="qr-id-text">SIEC-TF-2024-XXXX</div>
-                                    </div>
-                                </div>
-                                <p class="preview-hint">Preview posisi QR Code pada sertifikat</p>
-                            </div>
-                        </div>
-
-                        <div class="form-group"><label>Catatan</label><textarea id="toeflNotes" rows="2"></textarea></div>
-
-                        <div class="form-actions">
-                            <button class="btn btn-primary" onclick="saveToefl()">
-                                <i class="fas fa-save"></i> Upload & Generate QR Code
-                            </button>
-                            <button class="btn btn-outline" onclick="hideToeflForm()">Batal</button>
+                            <label>Posisi Vertikal</label>
+                            <input type="range" id="toeflQrY" min="5" max="95" value="85" oninput="updateSmallPreview('toefl')">
+                            <span id="toeflQrYVal">85%</span>
                         </div>
                     </div>
                 </div>
-
-                <!-- Print Preview TOEFL -->
-                <div id="certPrintModal" class="print-preview-modal" style="display:none;">
-                    <div class="print-modal-content">
-                        <div class="print-modal-header">
-                            <h4><i class="fas fa-certificate"></i> Preview Sertifikat</h4>
-                            <button onclick="closePrintPreview('certPrintModal')" class="btn-close">×</button>
+                <div class="doc-preview-area">
+                    <div class="small-doc-preview">
+                        <div class="cert-preview-content">
+                            <div class="cert-logo-mini"><img src="assets/logo.png" alt="SIEC"></div>
+                            <div class="cert-title"></div>
+                            <div class="cert-name"></div>
+                            <div class="cert-scores"><div class="cert-score-box"></div><div class="cert-score-box"></div><div class="cert-score-box"></div></div>
                         </div>
-                        <div id="certPrintContent"></div>
-                        <div class="print-actions">
-                            <button class="btn btn-primary" onclick="printDocument()"><i class="fas fa-print"></i> Cetak</button>
-                            <a id="certDownloadLink" class="btn btn-success" style="display:none"><i class="fas fa-download"></i> Download PDF</a>
-                            <button class="btn btn-outline" onclick="closePrintPreview('certPrintModal')">Tutup</button>
+                        <div id="toeflSmallQr" class="qr-overlay" style="left:80%;top:85%;transform:translate(-50%,-50%);">
+                            <canvas id="toeflSmallQrCanvas" width="50" height="50"></canvas>
+                            <div class="qr-id-text">SIEC-TF-XXXX</div>
                         </div>
                     </div>
                 </div>
+            </div>
 
-                <div class="data-table-container">
-                    <table class="data-table">
-                        <thead><tr><th>ID</th><th>Nama</th><th>Tanggal</th><th>L/S/R</th><th>Total</th><th>File</th><th>Aksi</th></tr></thead>
-                        <tbody id="toeflTableBody"><tr><td colspan="7" class="loading-cell"><div class="spinner"></div></td></tr></tbody>
-                    </table>
-                </div>
-            </section>
+            <div class="form-group"><label>Catatan</label><textarea id="toeflNotes" rows="2"></textarea></div>
+
+            <div class="form-actions">
+                <button class="btn btn-primary" onclick="saveToefl()"><i class="fas fa-save"></i> Upload & Generate QR Code</button>
+                <button class="btn btn-outline" onclick="hideToeflForm()">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Print Preview TOEFL -->
+    <div id="certPrintModal" class="print-preview-modal" style="display:none;">
+        <div class="print-modal-content">
+            <div class="print-modal-header">
+                <h4><i class="fas fa-certificate"></i> Preview Sertifikat</h4>
+                <button onclick="closePrintPreview('certPrintModal')" class="btn-close">×</button>
+            </div>
+            <div id="certPrintContent"></div>
+            <div class="print-actions">
+                <button class="btn btn-primary" onclick="printDocument()"><i class="fas fa-print"></i> Cetak</button>
+                <a id="certDownloadLink" class="btn btn-success" style="display:none" target="_blank"><i class="fas fa-download"></i> Download PDF</a>
+                <button class="btn btn-outline" onclick="closePrintPreview('certPrintModal')">Tutup</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="data-table-container">
+        <table class="data-table">
+            <thead><tr><th>ID</th><th>Nama</th><th>Tanggal</th><th>L/S/R</th><th>Total</th><th>File</th><th>Aksi</th></tr></thead>
+            <tbody id="toeflTableBody"><tr><td colspan="7" class="loading-cell"><div class="spinner"></div></td></tr></tbody>
+        </table>
+    </div>
+</section>
 
         </div>
     </main>

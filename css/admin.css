@@ -780,3 +780,225 @@
     color: var(--gray-500);
     font-size: 0.8rem;
 }
+/* ============================================
+   LIVE DOCUMENT PREVIEW WITH QR OVERLAY
+   ============================================ */
+
+/* Preview Container */
+.live-preview-container {
+    margin-top: 16px;
+    border: 2px solid var(--gray-300);
+    border-radius: 12px;
+    overflow: hidden;
+    background: var(--gray-200);
+}
+
+.live-preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    background: var(--gray-800);
+    color: white;
+}
+
+.live-preview-header h6 {
+    font-size: 0.85rem;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.live-preview-pages {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.8rem;
+}
+
+.live-preview-pages button {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: rgba(255,255,255,0.2);
+    color: white;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+
+.live-preview-pages button:hover {
+    background: var(--primary);
+}
+
+/* Document Area with QR overlay */
+.live-preview-doc {
+    position: relative;
+    width: 100%;
+    min-height: 500px;
+    background: #525659;
+    display: flex;
+    justify-content: center;
+    padding: 20px;
+    overflow: auto;
+}
+
+.live-preview-page {
+    position: relative;
+    background: white;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    width: 100%;
+    max-width: 600px;
+}
+
+/* PDF Canvas/Image */
+.live-preview-page canvas {
+    width: 100% !important;
+    height: auto !important;
+    display: block;
+}
+
+.live-preview-page iframe {
+    width: 100%;
+    height: 700px;
+    border: none;
+    display: block;
+}
+
+/* QR Overlay on document */
+.qr-doc-overlay {
+    position: absolute;
+    cursor: grab;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 4px;
+    border: 2px dashed transparent;
+    border-radius: 8px;
+    transition: border-color 0.2s;
+}
+
+.qr-doc-overlay:hover {
+    border-color: var(--primary);
+    background: rgba(37, 99, 235, 0.05);
+}
+
+.qr-doc-overlay.dragging {
+    cursor: grabbing;
+    border-color: var(--danger);
+    background: rgba(239, 68, 68, 0.05);
+    z-index: 20;
+}
+
+.qr-doc-overlay canvas {
+    border-radius: 4px;
+    pointer-events: none;
+}
+
+.qr-doc-id {
+    font-size: 8px;
+    color: #000;
+    font-family: monospace;
+    text-align: center;
+    margin-top: 2px;
+    font-weight: 700;
+    pointer-events: none;
+    background: rgba(255,255,255,0.8);
+    padding: 1px 4px;
+    border-radius: 2px;
+}
+
+/* Drag instruction */
+.drag-instruction {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px;
+    background: #fff3cd;
+    color: #856404;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-top: 1px solid #ffc107;
+}
+
+.drag-instruction i {
+    font-size: 1rem;
+}
+
+/* Position indicator */
+.position-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 8px 16px;
+    background: var(--gray-100);
+    border-top: 1px solid var(--gray-300);
+    font-size: 0.8rem;
+    color: var(--gray-600);
+}
+
+.position-indicator strong {
+    color: var(--primary);
+}
+
+/* Word doc preview fallback */
+.word-preview-fallback {
+    padding: 40px;
+    text-align: center;
+    background: white;
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+}
+
+.word-preview-fallback i {
+    font-size: 4rem;
+    color: #2b579a;
+}
+
+.word-preview-fallback h4 {
+    color: var(--dark);
+}
+
+.word-preview-fallback p {
+    color: var(--gray-600);
+    font-size: 0.9rem;
+}
+
+/* Small preview in position box (when no file uploaded) */
+.small-doc-preview {
+    width: 250px;
+    height: 340px;
+    background: white;
+    border: 2px solid var(--gray-300);
+    border-radius: 4px;
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.small-doc-preview .doc-preview-content {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .live-preview-doc {
+        min-height: 350px;
+        padding: 10px;
+    }
+    
+    .live-preview-page iframe {
+        height: 450px;
+    }
+}
