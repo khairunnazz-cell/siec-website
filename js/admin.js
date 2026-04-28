@@ -41,10 +41,12 @@ document.addEventListener('DOMContentLoaded', () => {
     loadAdminStatus();
     loadAdminToefl();
 
-    setTimeout(() => {
+        // Tunggu QR library siap baru init preview
+    waitForQrLibrary(function() {
+        console.log('QR Library ready, initializing previews...');
         updateSmallPreview('trans');
         updateSmallPreview('toefl');
-    }, 500);
+    }, 8000);
 });
 
 // ============================================
@@ -147,39 +149,140 @@ function calculateToeflTotal() {
 }
 
 // ============================================
-// QR CODE WITH LOGO
+// QR CODE GENERATOR - ROBUST VERSION
 // ============================================
-function generateQrWithLogo(canvasId, text, size) {
-    var canvas = document.getElementById(canvasId);
-    if (!canvas) return;
 
-    var qrSize = Math.max(size || 80, 40);
+// Cek apakah QRCode library sudah load
+function isQrLibraryReady() {
+    return typeof QRCode !== 'undefined';
+}
 
-    QRCode.toCanvas(canvas, text, {
-        width: qrSize,
-        margin: 1,
-        color: { dark: '#000000', light: '#ffffff' },
-        errorCorrectionLevel: 'H'
-    }, function(error) {
-        if (error) {
-            console.error('QR Error:', error);
-            return;
+// Tunggu library siap
+function waitForQrLibrary(callback, maxWait) {
+    var waited = 0;
+    var interval = 100;
+    var max = maxWait || 5000;
+
+    var timer = setInterval(function() {
+        waited += interval;
+        if (isQrLibraryReady()) {
+            clearInterval(timer);
+            callback();
+        } else if (waited >= max) {
+            clearInterval(timer);
+            console.error('QR Library timeout - not loaded after ' + max + 'ms');
+            // Coba load manual
+            loadQrLibraryManual(callback);
         }
+    }, interval);
+}
 
-        var ctx = canvas.getContext('2d');
-        var logo = new Image();
-        logo.crossOrigin = 'anonymous';
+// Load library manual jika semua CDN gagal
+function loadQrLibraryManual(callback) {
+    var script = document.createElement('script');
+    script.src = 'https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js';
+    script.onload = function() {
+        console.log('QR Library loaded manually');
+        if (callback) callback();
+    };
+    script.onerror = function() {
+        console.error('All QR CDN failed - using canvas fallback');
+        if (callback) callback();
+    };
+    document.head.appendChild(script);
+}
 
-        logo.onload = function() {
+function generateQrCode(canvasId, text, size) {
+    var canvas = document.getElementById(canvasId);
+    if (!canvas) {
+        console.warn('Canvas not found:', canvasId);
+        return;
+    }
+
+    var qrSize = Math.max(parseInt(size) || 80, 40);
+
+    // Set ukuran canvas
+    canvas.width = qrSize;
+    canvas.height = qrSize;
+    canvas.style.width = qrSize + 'px';
+    canvas.style.height = qrSize + 'px';
+    canvas.style.display = 'block';
+
+    // Jika library belum siap, tunggu
+    if (!isQrLibraryReady()) {
+        console.log('QR library not ready, waiting...');
+        waitForQrLibrary(function() {
+            generateQrCode(canvasId, text, size);
+        }, 5000);
+        return;
+    }
+
+    // Pastikan text tidak kosong
+    if (!text || text.trim() === '') {
+        text = 'https://siec-website.vercel.app';
+    }
+
+    try {
+        QRCode.toCanvas(canvas, text, {
+            width: qrSize,
+            height: qrSize,
+            margin: 1,
+            color: {
+                dark: '#000000',
+                light: '#ffffff'
+            },
+            errorCorrectionLevel: 'H'
+        }, function(error) {
+            if (error) {
+                console.error('QR Generate Error:', error);
+                drawFallbackQr(canvas, qrSize, text);
+                return;
+            }
+            console.log('QR OK:', canvasId);
+            addLogoToQr(canvas, qrSize);
+        });
+    } catch(e) {
+        console.error('QR Exception:', e);
+        drawFallbackQr(canvas, qrSize, text);
+    }
+}
+
+// Fallback jika QR gagal generate
+function drawFallbackQr(canvas, size, text) {
+    var ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#f8fafc';
+    ctx.fillRect(0, 0, size, size);
+    ctx.strokeStyle = '#2563eb';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(2, 2, size - 4, size - 4);
+    ctx.fillStyle = '#2563eb';
+    ctx.font = 'bold ' + Math.max(size * 0.12, 8) + 'px Arial';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('QR CODE', size / 2, size / 2 - 8);
+    ctx.font = Math.max(size * 0.08, 6) + 'px Arial';
+    ctx.fillStyle = '#666';
+    ctx.fillText('SIEC', size / 2, size / 2 + 10);
+}
+
+function addLogoToQr(canvas, qrSize) {
+    var ctx = canvas.getContext('2d');
+    var logo = new Image();
+    logo.crossOrigin = 'anonymous';
+
+    logo.onload = function() {
+        try {
             var logoSize = qrSize * 0.25;
             var logoX = (canvas.width - logoSize) / 2;
             var logoY = (canvas.height - logoSize) / 2;
 
+            // Background putih
             ctx.fillStyle = '#ffffff';
             ctx.beginPath();
-            ctx.arc(canvas.width / 2, canvas.height / 2, logoSize / 2 + 3, 0, Math.PI * 2);
+            ctx.arc(canvas.width / 2, canvas.height / 2, logoSize / 2 + 4, 0, Math.PI * 2);
             ctx.fill();
 
+            // Logo bulat
             ctx.save();
             ctx.beginPath();
             ctx.arc(canvas.width / 2, canvas.height / 2, logoSize / 2, 0, Math.PI * 2);
@@ -187,33 +290,49 @@ function generateQrWithLogo(canvasId, text, size) {
             ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
             ctx.restore();
 
+            // Border
             ctx.strokeStyle = '#2563eb';
-            ctx.lineWidth = 1;
+            ctx.lineWidth = 2;
             ctx.beginPath();
-            ctx.arc(canvas.width / 2, canvas.height / 2, logoSize / 2 + 1, 0, Math.PI * 2);
+            ctx.arc(canvas.width / 2, canvas.height / 2, logoSize / 2 + 2, 0, Math.PI * 2);
             ctx.stroke();
-        };
 
-        logo.onerror = function() {
-            var ctx2 = canvas.getContext('2d');
+            console.log('Logo added to QR:', canvas.id);
+        } catch(e) {
+            console.error('Logo draw error:', e);
+        }
+    };
+
+    logo.onerror = function() {
+        // Tulis teks SIEC jika logo tidak ada
+        try {
             var logoSize = qrSize * 0.22;
             var cx = canvas.width / 2;
             var cy = canvas.height / 2;
 
-            ctx2.fillStyle = '#ffffff';
-            ctx2.beginPath();
-            ctx2.arc(cx, cy, logoSize / 2 + 3, 0, Math.PI * 2);
-            ctx2.fill();
+            ctx.fillStyle = '#ffffff';
+            ctx.beginPath();
+            ctx.arc(cx, cy, logoSize / 2 + 4, 0, Math.PI * 2);
+            ctx.fill();
 
-            ctx2.fillStyle = '#2563eb';
-            ctx2.font = 'bold ' + (logoSize * 0.4) + 'px Arial';
-            ctx2.textAlign = 'center';
-            ctx2.textBaseline = 'middle';
-            ctx2.fillText('SIEC', cx, cy);
-        };
+            ctx.fillStyle = '#2563eb';
+            ctx.font = 'bold ' + Math.max(logoSize * 0.35, 7) + 'px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('SIEC', cx, cy);
 
-        logo.src = LOGO_URL;
-    });
+            ctx.strokeStyle = '#2563eb';
+            ctx.lineWidth = 1.5;
+            ctx.beginPath();
+            ctx.arc(cx, cy, logoSize / 2 + 2, 0, Math.PI * 2);
+            ctx.stroke();
+        } catch(e) {
+            console.error('Fallback logo error:', e);
+        }
+    };
+
+    // Coba load logo
+    logo.src = LOGO_URL + '?t=' + Date.now(); // cache busting
 }
 
 // ============================================
@@ -265,7 +384,7 @@ function handleFilePreview(input, type) {
 
     var sampleId = type === 'trans' ? 'SIEC-TR-2024-0001' : 'SIEC-TF-2024-0001';
     setTimeout(function() {
-        generateQrWithLogo(type + 'QrCanvas', sampleId, 80);
+        generateQrCode(type + 'QrCanvas', sampleId, 80);
     }, 300);
 
     if (type === 'toefl') {
@@ -475,7 +594,7 @@ function resizeQr(type) {
         canvas.width = size;
         canvas.height = size;
         var sampleId = type === 'trans' ? 'SIEC-TR-2024-0001' : 'SIEC-TF-2024-0001';
-        generateQrWithLogo(type + 'QrCanvas', sampleId, size);
+        generateQrCode(type + 'QrCanvas', sampleId, size);
     }
 }
 
@@ -506,9 +625,21 @@ function updateSmallPreview(type) {
         overlay.style.top = y + '%';
     }
 
+    // Generate QR - tunggu library siap
     var canvasId = type + 'SmallQrCanvas';
-    var sampleId = type === 'trans' ? 'SIEC-TR-XXXX' : 'SIEC-TF-XXXX';
-    generateQrWithLogo(canvasId, sampleId, 50);
+    var canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+
+    var sampleText = window.location.origin + '/verify.html?id=SIEC-SAMPLE-001';
+
+    if (isQrLibraryReady()) {
+        generateQrCode(canvasId, sampleText, 50);
+    } else {
+        // Tunggu library load
+        waitForQrLibrary(function() {
+            generateQrCode(canvasId, sampleText, 50);
+        }, 8000);
+    }
 }
 
 function getQrPosition(type) {
@@ -1021,7 +1152,7 @@ function showTranslationPrint(doc) {
     modal.style.display = 'flex';
 
     setTimeout(function() {
-        generateQrWithLogo('printQrTrans', verifyUrl, parseInt(pos.size) || 100);
+        generateQrCode('printQrTrans', verifyUrl, parseInt(pos.size) || 100);
     }, 200);
 }
 
@@ -1321,7 +1452,7 @@ function showCertPrint(cert) {
     modal.style.display = 'flex';
 
     setTimeout(function() {
-        generateQrWithLogo('printQrToefl', verifyUrl, parseInt(pos.size) || 120);
+        generateQrCode('printQrToefl', verifyUrl, parseInt(pos.size) || 120);
     }, 200);
 }
 
