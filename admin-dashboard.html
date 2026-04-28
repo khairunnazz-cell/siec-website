@@ -369,7 +369,7 @@
                     <div class="live-preview-page" id="transPreviewPage">
                         <!-- PDF/Image akan ditampilkan di sini -->
                         <iframe id="transPreviewFrame" style="display:none;"></iframe>
-                        <canvas id="transPreviewCanvas" style="display:none;"></canvas>
+                        <canvas id="transPreviewCanvas" style="display:none;"></div>
                         <div id="transWordFallback" class="word-preview-fallback" style="display:none;">
                             <i class="fas fa-file-word"></i>
                             <h4>Dokumen Word</h4>
@@ -379,7 +379,7 @@
                         <!-- DRAGGABLE QR CODE -->
                         <div id="transQrDrag" class="qr-doc-overlay"
                              style="left:80%;top:85%;position:absolute;">
-                            <canvas id="transQrCanvas" width="80" height="80"></canvas>
+                            <div id="transQrCanvas" width="80" height="80"></div>
                             <div id="transQrIdText" class="qr-doc-id">SIEC-TR-2024-XXXX</div>
                         </div>
                     </div>
@@ -433,7 +433,7 @@
                             <div class="doc-line short"></div>
                         </div>
                         <div id="transSmallQr" class="qr-overlay" style="left:80%;top:85%;transform:translate(-50%,-50%);">
-                            <canvas id="transSmallQrCanvas" width="50" height="50"></canvas>
+                            <div id="transSmallQrCanvas" width="50" height="50"></div>
                             <div class="qr-id-text">SIEC-TR-XXXX</div>
                         </div>
                     </div>
@@ -586,12 +586,12 @@
                 <div class="live-preview-doc" id="toeflPreviewDoc">
                     <div class="live-preview-page" id="toeflPreviewPage">
                         <iframe id="toeflPreviewFrame" style="display:none;"></iframe>
-                        <canvas id="toeflPreviewCanvas" style="display:none;"></canvas>
+                        <canvas id="toeflPreviewCanvas" style="display:none;"></div>
 
                         <!-- DRAGGABLE QR CODE -->
                         <div id="toeflQrDrag" class="qr-doc-overlay"
                              style="left:80%;top:85%;position:absolute;">
-                            <canvas id="toeflQrCanvas" width="80" height="80"></canvas>
+                            <div id="toeflQrCanvas" width="80" height="80"></div>
                             <div id="toeflQrIdText" class="qr-doc-id">SIEC-TF-2024-XXXX</div>
                         </div>
                     </div>
@@ -640,7 +640,7 @@
                             <div class="cert-scores"><div class="cert-score-box"></div><div class="cert-score-box"></div><div class="cert-score-box"></div></div>
                         </div>
                         <div id="toeflSmallQr" class="qr-overlay" style="left:80%;top:85%;transform:translate(-50%,-50%);">
-                            <canvas id="toeflSmallQrCanvas" width="50" height="50"></canvas>
+                            <div id="toeflSmallQrCanvas" width="50" height="50"></div>
                             <div class="qr-id-text">SIEC-TF-XXXX</div>
                         </div>
                     </div>
@@ -686,7 +686,46 @@
 
 <!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<!-- QR Code Library - Multiple CDN Fallback -->
+<script>
+// Load QR Code library dengan fallback
+(function() {
+    var cdns = [
+        'https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js',
+        'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
+        'https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.js'
+    ];
+    
+    var loaded = false;
+    
+    function tryLoad(index) {
+        if (index >= cdns.length || loaded) return;
+        
+        var script = document.createElement('script');
+        script.src = cdns[index];
+        script.onload = function() {
+            if (typeof QRCode !== 'undefined') {
+                loaded = true;
+                console.log('QR Code library loaded from:', cdns[index]);
+            }
+        };
+        script.onerror = function() {
+            console.log('Failed CDN:', cdns[index], 'trying next...');
+            tryLoad(index + 1);
+        };
+        document.head.appendChild(script);
+    }
+    
+    tryLoad(0);
+})();
+</script>
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="js/qr.js"></script>
 <script src="js/app.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/admin.js"></script>

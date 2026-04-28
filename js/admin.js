@@ -1,37 +1,154 @@
 // ============================================
-// SIEC - Admin Dashboard
-// Versi Bersih - Tanpa Error
+// SIEC Admin - Clean Version
+// QR Code menggunakan Google Charts API
+// (Tidak perlu library external)
 // ============================================
 
-// Logo URL
-const LOGO_URL = 'assets/logo.png';
+var LOGO_URL = 'assets/logo.png';
+var transFileData = null;
+var toeflFileData = null;
 
-// File references
-let transFileData = null;
-let toeflFileData = null;
+// ============================================
+// QR CODE - GOOGLE CHARTS API (SELALU WORKS)
+// ============================================
+function generateQrCode(canvasId, text, size) {
+    var canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+
+    var qrSize = Math.max(parseInt(size) || 80, 40);
+    canvas.width = qrSize;
+    canvas.height = qrSize;
+    canvas.style.display = 'block';
+
+    var ctx = canvas.getContext('2d');
+
+    // Buat URL Google Charts QR
+    var encodedText = encodeURIComponent(text || window.location.origin);
+    var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=' +
+                qrSize + 'x' + qrSize +
+                '&data=' + encodedText +
+                '&margin=4' +
+                '&ecc=H';
+
+    var qrImg = new Image();
+    qrImg.crossOrigin = 'anonymous';
+
+    qrImg.onload = function() {
+        // Gambar QR ke canvas
+        ctx.drawImage(qrImg, 0, 0, qrSize, qrSize);
+        // Tambah logo di tengah
+        addLogoToCanvas(canvas, qrSize);
+    };
+
+    qrImg.onerror = function() {
+        // Fallback: gambar kotak sederhana dengan teks
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, qrSize, qrSize);
+        ctx.strokeStyle = '#000000';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(4, 4, qrSize - 8, qrSize - 8);
+        ctx.fillStyle = '#2563eb';
+        ctx.font = 'bold ' + Math.max(qrSize * 0.15, 8) + 'px Arial';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('QR', qrSize / 2, qrSize / 2 - 8);
+        ctx.font = Math.max(qrSize * 0.12, 6) + 'px Arial';
+        ctx.fillText('SIEC', qrSize / 2, qrSize / 2 + 8);
+    };
+
+    qrImg.src = qrUrl;
+}
+
+function addLogoToCanvas(canvas, qrSize) {
+    var ctx = canvas.getContext('2d');
+    var logo = new Image();
+    logo.crossOrigin = 'anonymous';
+
+    logo.onload = function() {
+        var logoSize = qrSize * 0.22;
+        var cx = canvas.width / 2;
+        var cy = canvas.height / 2;
+
+        // Background putih bulat
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(cx, cy, logoSize / 2 + 3, 0, Math.PI * 2);
+        ctx.fill();
+
+        // Logo bulat
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(cx, cy, logoSize / 2, 0, Math.PI * 2);
+        ctx.clip();
+        ctx.drawImage(logo, cx - logoSize/2, cy - logoSize/2, logoSize, logoSize);
+        ctx.restore();
+
+        // Border biru
+        ctx.strokeStyle = '#2563eb';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(cx, cy, logoSize / 2 + 1, 0, Math.PI * 2);
+        ctx.stroke();
+    };
+
+    logo.onerror = function() {
+        // Tulis teks SIEC jika logo tidak ada
+        var ctx2 = canvas.getContext('2d');
+        var logoSize = qrSize * 0.22;
+        var cx = canvas.width / 2;
+        var cy = canvas.height / 2;
+
+        ctx2.fillStyle = '#ffffff';
+        ctx2.beginPath();
+        ctx2.arc(cx, cy, logoSize/2 + 3, 0, Math.PI * 2);
+        ctx2.fill();
+
+        ctx2.fillStyle = '#2563eb';
+        ctx2.font = 'bold ' + Math.max(logoSize * 0.35, 7) + 'px Arial';
+        ctx2.textAlign = 'center';
+        ctx2.textBaseline = 'middle';
+        ctx2.fillText('SIEC', cx, cy);
+    };
+
+    logo.src = LOGO_URL;
+}
+
+// Alias - supaya kode lama tetap works
+function generateQrWithLogo(canvasId, text, size) {
+    generateQrCode(canvasId, text, size);
+}
 
 // ============================================
 // INIT
 // ============================================
-document.addEventListener('DOMContentLoaded', () => {
-    const admin = checkAuth();
+document.addEventListener('DOMContentLoaded', function() {
+    var admin = checkAuth();
     if (!admin) return;
-    document.getElementById('adminName').textContent = admin.full_name;
 
-    document.querySelectorAll('.sidebar-link[data-section]').forEach(link => {
-        link.addEventListener('click', (e) => {
+    var adminNameEl = document.getElementById('adminName');
+    if (adminNameEl) adminNameEl.textContent = admin.full_name;
+
+    document.querySelectorAll('.sidebar-link[data-section]').forEach(function(link) {
+        link.addEventListener('click', function(e) {
             e.preventDefault();
             switchSection(link.dataset.section);
         });
     });
 
-    document.getElementById('sidebarToggle')?.addEventListener('click', () => {
-        document.getElementById('adminSidebar').classList.toggle('active');
-    });
+    var sidebarToggle = document.getElementById('sidebarToggle');
+    var sidebarClose = document.getElementById('sidebarClose');
+    var adminSidebar = document.getElementById('adminSidebar');
 
-    document.getElementById('sidebarClose')?.addEventListener('click', () => {
-        document.getElementById('adminSidebar').classList.remove('active');
-    });
+    if (sidebarToggle) {
+        sidebarToggle.addEventListener('click', function() {
+            adminSidebar.classList.toggle('active');
+        });
+    }
+    if (sidebarClose) {
+        sidebarClose.addEventListener('click', function() {
+            adminSidebar.classList.remove('active');
+        });
+    }
 
     loadDashboardStats();
     loadAdminArticles();
@@ -41,12 +158,10 @@ document.addEventListener('DOMContentLoaded', () => {
     loadAdminStatus();
     loadAdminToefl();
 
-        // Tunggu QR library siap baru init preview
-    waitForQrLibrary(function() {
-        console.log('QR Library ready, initializing previews...');
+    setTimeout(function() {
         updateSmallPreview('trans');
         updateSmallPreview('toefl');
-    }, 8000);
+    }, 1000);
 });
 
 // ============================================
@@ -60,11 +175,11 @@ function switchSection(section) {
         l.classList.remove('active');
     });
 
-    var sectionEl = document.getElementById('section-' + section);
-    if (sectionEl) sectionEl.classList.add('active');
+    var el = document.getElementById('section-' + section);
+    if (el) el.classList.add('active');
 
-    var linkEl = document.querySelector('[data-section="' + section + '"]');
-    if (linkEl) linkEl.classList.add('active');
+    var link = document.querySelector('[data-section="' + section + '"]');
+    if (link) link.classList.add('active');
 
     var titles = {
         'dashboard': 'Dashboard',
@@ -83,7 +198,7 @@ function switchSection(section) {
 }
 
 // ============================================
-// DASHBOARD STATS
+// DASHBOARD
 // ============================================
 async function loadDashboardStats() {
     try {
@@ -98,20 +213,18 @@ async function loadDashboardStats() {
         document.getElementById('totalTranslations').textContent = t.count || 0;
         document.getElementById('totalCertificates').textContent = cert.count || 0;
         document.getElementById('totalPrograms').textContent = p.count || 0;
-    } catch (e) {
-        console.error(e);
-    }
+    } catch(e) { console.error(e); }
 }
 
 // ============================================
-// UTILITY FUNCTIONS
+// UTILITY
 // ============================================
 function insertTag(tag) {
     var t = document.getElementById('articleContent');
     var s = t.selectionStart;
     var e = t.selectionEnd;
     var sel = t.value.substring(s, e);
-    t.value = t.value.substring(0, s) + '<' + tag + '>' + sel + '</' + tag + '>' + t.value.substring(e);
+    t.value = t.value.substring(0,s) + '<'+tag+'>'+sel+'</'+tag+'>' + t.value.substring(e);
     t.focus();
 }
 
@@ -133,14 +246,6 @@ function printDocument() {
     window.print();
 }
 
-function filterTable(input, tbodyId) {
-    var search = input.value.toLowerCase();
-    var rows = document.querySelectorAll('#' + tbodyId + ' tr');
-    rows.forEach(function(row) {
-        row.style.display = row.textContent.toLowerCase().includes(search) ? '' : 'none';
-    });
-}
-
 function calculateToeflTotal() {
     var l = parseFloat(document.getElementById('toeflListening').value) || 0;
     var s = parseFloat(document.getElementById('toeflStructure').value) || 0;
@@ -149,194 +254,7 @@ function calculateToeflTotal() {
 }
 
 // ============================================
-// QR CODE GENERATOR - ROBUST VERSION
-// ============================================
-
-// Cek apakah QRCode library sudah load
-function isQrLibraryReady() {
-    return typeof QRCode !== 'undefined';
-}
-
-// Tunggu library siap
-function waitForQrLibrary(callback, maxWait) {
-    var waited = 0;
-    var interval = 100;
-    var max = maxWait || 5000;
-
-    var timer = setInterval(function() {
-        waited += interval;
-        if (isQrLibraryReady()) {
-            clearInterval(timer);
-            callback();
-        } else if (waited >= max) {
-            clearInterval(timer);
-            console.error('QR Library timeout - not loaded after ' + max + 'ms');
-            // Coba load manual
-            loadQrLibraryManual(callback);
-        }
-    }, interval);
-}
-
-// Load library manual jika semua CDN gagal
-function loadQrLibraryManual(callback) {
-    var script = document.createElement('script');
-    script.src = 'https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js';
-    script.onload = function() {
-        console.log('QR Library loaded manually');
-        if (callback) callback();
-    };
-    script.onerror = function() {
-        console.error('All QR CDN failed - using canvas fallback');
-        if (callback) callback();
-    };
-    document.head.appendChild(script);
-}
-
-function generateQrCode(canvasId, text, size) {
-    var canvas = document.getElementById(canvasId);
-    if (!canvas) {
-        console.warn('Canvas not found:', canvasId);
-        return;
-    }
-
-    var qrSize = Math.max(parseInt(size) || 80, 40);
-
-    // Set ukuran canvas
-    canvas.width = qrSize;
-    canvas.height = qrSize;
-    canvas.style.width = qrSize + 'px';
-    canvas.style.height = qrSize + 'px';
-    canvas.style.display = 'block';
-
-    // Jika library belum siap, tunggu
-    if (!isQrLibraryReady()) {
-        console.log('QR library not ready, waiting...');
-        waitForQrLibrary(function() {
-            generateQrCode(canvasId, text, size);
-        }, 5000);
-        return;
-    }
-
-    // Pastikan text tidak kosong
-    if (!text || text.trim() === '') {
-        text = 'https://siec-website.vercel.app';
-    }
-
-    try {
-        QRCode.toCanvas(canvas, text, {
-            width: qrSize,
-            height: qrSize,
-            margin: 1,
-            color: {
-                dark: '#000000',
-                light: '#ffffff'
-            },
-            errorCorrectionLevel: 'H'
-        }, function(error) {
-            if (error) {
-                console.error('QR Generate Error:', error);
-                drawFallbackQr(canvas, qrSize, text);
-                return;
-            }
-            console.log('QR OK:', canvasId);
-            addLogoToQr(canvas, qrSize);
-        });
-    } catch(e) {
-        console.error('QR Exception:', e);
-        drawFallbackQr(canvas, qrSize, text);
-    }
-}
-
-// Fallback jika QR gagal generate
-function drawFallbackQr(canvas, size, text) {
-    var ctx = canvas.getContext('2d');
-    ctx.fillStyle = '#f8fafc';
-    ctx.fillRect(0, 0, size, size);
-    ctx.strokeStyle = '#2563eb';
-    ctx.lineWidth = 2;
-    ctx.strokeRect(2, 2, size - 4, size - 4);
-    ctx.fillStyle = '#2563eb';
-    ctx.font = 'bold ' + Math.max(size * 0.12, 8) + 'px Arial';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('QR CODE', size / 2, size / 2 - 8);
-    ctx.font = Math.max(size * 0.08, 6) + 'px Arial';
-    ctx.fillStyle = '#666';
-    ctx.fillText('SIEC', size / 2, size / 2 + 10);
-}
-
-function addLogoToQr(canvas, qrSize) {
-    var ctx = canvas.getContext('2d');
-    var logo = new Image();
-    logo.crossOrigin = 'anonymous';
-
-    logo.onload = function() {
-        try {
-            var logoSize = qrSize * 0.25;
-            var logoX = (canvas.width - logoSize) / 2;
-            var logoY = (canvas.height - logoSize) / 2;
-
-            // Background putih
-            ctx.fillStyle = '#ffffff';
-            ctx.beginPath();
-            ctx.arc(canvas.width / 2, canvas.height / 2, logoSize / 2 + 4, 0, Math.PI * 2);
-            ctx.fill();
-
-            // Logo bulat
-            ctx.save();
-            ctx.beginPath();
-            ctx.arc(canvas.width / 2, canvas.height / 2, logoSize / 2, 0, Math.PI * 2);
-            ctx.clip();
-            ctx.drawImage(logo, logoX, logoY, logoSize, logoSize);
-            ctx.restore();
-
-            // Border
-            ctx.strokeStyle = '#2563eb';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            ctx.arc(canvas.width / 2, canvas.height / 2, logoSize / 2 + 2, 0, Math.PI * 2);
-            ctx.stroke();
-
-            console.log('Logo added to QR:', canvas.id);
-        } catch(e) {
-            console.error('Logo draw error:', e);
-        }
-    };
-
-    logo.onerror = function() {
-        // Tulis teks SIEC jika logo tidak ada
-        try {
-            var logoSize = qrSize * 0.22;
-            var cx = canvas.width / 2;
-            var cy = canvas.height / 2;
-
-            ctx.fillStyle = '#ffffff';
-            ctx.beginPath();
-            ctx.arc(cx, cy, logoSize / 2 + 4, 0, Math.PI * 2);
-            ctx.fill();
-
-            ctx.fillStyle = '#2563eb';
-            ctx.font = 'bold ' + Math.max(logoSize * 0.35, 7) + 'px Arial';
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            ctx.fillText('SIEC', cx, cy);
-
-            ctx.strokeStyle = '#2563eb';
-            ctx.lineWidth = 1.5;
-            ctx.beginPath();
-            ctx.arc(cx, cy, logoSize / 2 + 2, 0, Math.PI * 2);
-            ctx.stroke();
-        } catch(e) {
-            console.error('Fallback logo error:', e);
-        }
-    };
-
-    // Coba load logo
-    logo.src = LOGO_URL + '?t=' + Date.now(); // cache busting
-}
-
-// ============================================
-// FILE UPLOAD & LIVE PREVIEW
+// FILE UPLOAD & PREVIEW
 // ============================================
 function handleFilePreview(input, type) {
     var file = input.files[0];
@@ -348,18 +266,14 @@ function handleFilePreview(input, type) {
         return;
     }
 
-    if (type === 'trans') {
-        transFileData = file;
-    } else {
-        toeflFileData = file;
-    }
+    if (type === 'trans') transFileData = file;
+    else toeflFileData = file;
 
     document.getElementById(type + 'FileInfo').style.display = 'flex';
     document.getElementById(type + 'FileName').textContent = file.name;
 
     var livePreview = document.getElementById(type + 'LivePreview');
     var smallPreview = document.getElementById(type + 'SmallPreview');
-
     if (livePreview) livePreview.style.display = 'block';
     if (smallPreview) smallPreview.style.display = 'none';
 
@@ -373,7 +287,7 @@ function handleFilePreview(input, type) {
             previewFrame.style.display = 'block';
         }
         if (wordFallback) wordFallback.style.display = 'none';
-    } else if (file.name.endsWith('.doc') || file.name.endsWith('.docx')) {
+    } else {
         if (previewFrame) previewFrame.style.display = 'none';
         if (wordFallback) {
             wordFallback.style.display = 'flex';
@@ -383,31 +297,35 @@ function handleFilePreview(input, type) {
     }
 
     var sampleId = type === 'trans' ? 'SIEC-TR-2024-0001' : 'SIEC-TF-2024-0001';
+    var verifyUrl = window.location.origin + '/verify.html?id=' + sampleId;
+
     setTimeout(function() {
-        generateQrCode(type + 'QrCanvas', sampleId, 80);
-    }, 300);
+        generateQrCode(type + 'QrCanvas', verifyUrl, 80);
+    }, 800);
 
-    if (type === 'toefl') {
-        loadSavedToeflPositionToLive();
-    }
+    if (type === 'toefl') loadSavedToeflPositionToLive();
 
-    initDrag(type);
+    setTimeout(function() {
+        initDrag(type);
+    }, 1000);
 }
 
 function removeFilePreview(type) {
     if (type === 'trans') {
         transFileData = null;
-        document.getElementById('transFile').value = '';
+        var f = document.getElementById('transFile');
+        if (f) f.value = '';
     } else {
         toeflFileData = null;
-        document.getElementById('toeflFile').value = '';
+        var f2 = document.getElementById('toeflFile');
+        if (f2) f2.value = '';
     }
 
-    document.getElementById(type + 'FileInfo').style.display = 'none';
+    var fileInfo = document.getElementById(type + 'FileInfo');
+    if (fileInfo) fileInfo.style.display = 'none';
 
     var livePreview = document.getElementById(type + 'LivePreview');
     var smallPreview = document.getElementById(type + 'SmallPreview');
-
     if (livePreview) livePreview.style.display = 'none';
     if (smallPreview) smallPreview.style.display = 'block';
 
@@ -417,7 +335,7 @@ function removeFilePreview(type) {
 
 async function uploadFileToSupabase(file, folder) {
     var ext = file.name.split('.').pop();
-    var fileName = folder + '/' + Date.now() + '-' + Math.random().toString(36).substr(2, 9) + '.' + ext;
+    var fileName = folder + '/' + Date.now() + '-' + Math.random().toString(36).substr(2,9) + '.' + ext;
 
     var result = await db.storage.from('uploads').upload(fileName, file, {
         cacheControl: '3600',
@@ -427,14 +345,11 @@ async function uploadFileToSupabase(file, folder) {
     if (result.error) throw result.error;
 
     var urlData = db.storage.from('uploads').getPublicUrl(fileName);
-    return {
-        url: urlData.data.publicUrl,
-        name: file.name
-    };
+    return { url: urlData.data.publicUrl, name: file.name };
 }
 
 // ============================================
-// DRAGGABLE QR CODE
+// DRAGGABLE QR
 // ============================================
 function initDrag(type) {
     var dragEl = document.getElementById(type + 'QrDrag');
@@ -442,52 +357,41 @@ function initDrag(type) {
     if (!dragEl || !container) return;
 
     var isDragging = false;
-    var startX = 0;
-    var startY = 0;
-    var origLeft = 0;
-    var origTop = 0;
+    var startX = 0, startY = 0, origLeft = 0, origTop = 0;
 
     dragEl.addEventListener('mousedown', function(e) {
         isDragging = true;
         dragEl.classList.add('dragging');
-        startX = e.clientX;
-        startY = e.clientY;
-        origLeft = dragEl.offsetLeft;
-        origTop = dragEl.offsetTop;
+        startX = e.clientX; startY = e.clientY;
+        origLeft = dragEl.offsetLeft; origTop = dragEl.offsetTop;
         e.preventDefault();
     });
 
     document.addEventListener('mousemove', function(e) {
         if (!isDragging) return;
-        var dx = e.clientX - startX;
-        var dy = e.clientY - startY;
-        moveQrDrag(type, dragEl, container, origLeft + dx, origTop + dy);
+        moveQr(type, dragEl, container, origLeft + (e.clientX - startX), origTop + (e.clientY - startY));
     });
 
     document.addEventListener('mouseup', function() {
         if (!isDragging) return;
         isDragging = false;
         dragEl.classList.remove('dragging');
-        saveQrPositionIfNeeded(type, dragEl, container);
+        if (type === 'toefl') saveQrPos(dragEl, container);
     });
 
     dragEl.addEventListener('touchstart', function(e) {
         isDragging = true;
         dragEl.classList.add('dragging');
-        var touch = e.touches[0];
-        startX = touch.clientX;
-        startY = touch.clientY;
-        origLeft = dragEl.offsetLeft;
-        origTop = dragEl.offsetTop;
+        var t = e.touches[0];
+        startX = t.clientX; startY = t.clientY;
+        origLeft = dragEl.offsetLeft; origTop = dragEl.offsetTop;
         e.preventDefault();
     }, { passive: false });
 
     document.addEventListener('touchmove', function(e) {
         if (!isDragging) return;
-        var touch = e.touches[0];
-        var dx = touch.clientX - startX;
-        var dy = touch.clientY - startY;
-        moveQrDrag(type, dragEl, container, origLeft + dx, origTop + dy);
+        var t = e.touches[0];
+        moveQr(type, dragEl, container, origLeft + (t.clientX - startX), origTop + (t.clientY - startY));
         e.preventDefault();
     }, { passive: false });
 
@@ -495,42 +399,36 @@ function initDrag(type) {
         if (!isDragging) return;
         isDragging = false;
         dragEl.classList.remove('dragging');
-        saveQrPositionIfNeeded(type, dragEl, container);
+        if (type === 'toefl') saveQrPos(dragEl, container);
     });
 }
 
-function moveQrDrag(type, dragEl, container, newLeft, newTop) {
-    var maxLeft = container.offsetWidth - dragEl.offsetWidth;
-    var maxTop = container.offsetHeight - dragEl.offsetHeight;
+function moveQr(type, el, container, newLeft, newTop) {
+    newLeft = Math.max(0, Math.min(newLeft, container.offsetWidth - el.offsetWidth));
+    newTop = Math.max(0, Math.min(newTop, container.offsetHeight - el.offsetHeight));
+    el.style.left = newLeft + 'px';
+    el.style.top = newTop + 'px';
 
-    newLeft = Math.max(0, Math.min(newLeft, maxLeft));
-    newTop = Math.max(0, Math.min(newTop, maxTop));
-
-    dragEl.style.left = newLeft + 'px';
-    dragEl.style.top = newTop + 'px';
-
-    var percX = Math.round((newLeft / container.offsetWidth) * 100);
-    var percY = Math.round((newTop / container.offsetHeight) * 100);
+    var px = Math.round((newLeft / container.offsetWidth) * 100);
+    var py = Math.round((newTop / container.offsetHeight) * 100);
 
     var posXEl = document.getElementById(type + 'PosX');
     var posYEl = document.getElementById(type + 'PosY');
-    if (posXEl) posXEl.textContent = percX + '%';
-    if (posYEl) posYEl.textContent = percY + '%';
+    if (posXEl) posXEl.textContent = px + '%';
+    if (posYEl) posYEl.textContent = py + '%';
 
-    var sliderX = document.getElementById(type + 'QrX');
-    var sliderY = document.getElementById(type + 'QrY');
-    if (sliderX) sliderX.value = percX;
-    if (sliderY) sliderY.value = percY;
+    var sx = document.getElementById(type + 'QrX');
+    var sy = document.getElementById(type + 'QrY');
+    if (sx) sx.value = px;
+    if (sy) sy.value = py;
 }
 
-function saveQrPositionIfNeeded(type, dragEl, container) {
-    if (type !== 'toefl') return;
-    var rememberEl = document.getElementById('toeflRememberPos');
-    if (!rememberEl || !rememberEl.checked) return;
-
+function saveQrPos(el, container) {
+    var remEl = document.getElementById('toeflRememberPos');
+    if (!remEl || !remEl.checked) return;
     var pos = {
-        x: Math.round((dragEl.offsetLeft / container.offsetWidth) * 100),
-        y: Math.round((dragEl.offsetTop / container.offsetHeight) * 100),
+        x: Math.round((el.offsetLeft / container.offsetWidth) * 100),
+        y: Math.round((el.offsetTop / container.offsetHeight) * 100),
         size: document.getElementById('toeflQrSize') ? document.getElementById('toeflQrSize').value : 80,
         showId: document.getElementById('toeflShowId') ? document.getElementById('toeflShowId').checked : true
     };
@@ -540,31 +438,23 @@ function saveQrPositionIfNeeded(type, dragEl, container) {
 function loadSavedToeflPositionToLive() {
     var saved = localStorage.getItem('siec_toefl_qr_pos');
     if (!saved) return;
-
     try {
         var pos = JSON.parse(saved);
         var dragEl = document.getElementById('toeflQrDrag');
         var container = document.getElementById('toeflPreviewPage');
-
         if (dragEl && container) {
             setTimeout(function() {
-                var newLeft = (pos.x / 100) * container.offsetWidth;
-                var newTop = (pos.y / 100) * container.offsetHeight;
-                dragEl.style.left = newLeft + 'px';
-                dragEl.style.top = newTop + 'px';
-
+                dragEl.style.left = ((pos.x / 100) * container.offsetWidth) + 'px';
+                dragEl.style.top = ((pos.y / 100) * container.offsetHeight) + 'px';
                 var posXEl = document.getElementById('toeflPosX');
                 var posYEl = document.getElementById('toeflPosY');
                 if (posXEl) posXEl.textContent = pos.x + '%';
                 if (posYEl) posYEl.textContent = pos.y + '%';
             }, 500);
         }
-
-        var sizeEl = document.getElementById('toeflQrSize');
-        if (sizeEl && pos.size) sizeEl.value = pos.size;
-    } catch (e) {
-        console.error(e);
-    }
+        var sz = document.getElementById('toeflQrSize');
+        if (sz && pos.size) sz.value = pos.size;
+    } catch(e) {}
 }
 
 function loadSavedToeflPosition() {
@@ -574,36 +464,48 @@ function loadSavedToeflPosition() {
         var pos = JSON.parse(saved);
         var xEl = document.getElementById('toeflQrX');
         var yEl = document.getElementById('toeflQrY');
-        var sizeEl = document.getElementById('toeflQrSize');
+        var sz = document.getElementById('toeflQrSize');
         if (xEl) xEl.value = pos.x;
         if (yEl) yEl.value = pos.y;
-        if (sizeEl) sizeEl.value = pos.size || 80;
+        if (sz) sz.value = pos.size || 80;
         updateSmallPreview('toefl');
-    } catch (e) {
-        console.error(e);
-    }
+    } catch(e) {}
+}
+
+function resetToeflPosition() {
+    var xEl = document.getElementById('toeflQrX');
+    var yEl = document.getElementById('toeflQrY');
+    var sz = document.getElementById('toeflQrSize');
+    var si = document.getElementById('toeflShowId');
+    if (xEl) xEl.value = 80;
+    if (yEl) yEl.value = 85;
+    if (sz) sz.value = 80;
+    if (si) si.checked = true;
+    localStorage.removeItem('siec_toefl_qr_pos');
+    updateSmallPreview('toefl');
+    var drag = document.getElementById('toeflQrDrag');
+    if (drag) { drag.style.left = '80%'; drag.style.top = '85%'; }
+    showNotification('Posisi di-reset!');
 }
 
 function resizeQr(type) {
-    var size = parseInt(document.getElementById(type + 'QrSize').value);
-    var sizeValEl = document.getElementById(type + 'QrSizeVal');
-    if (sizeValEl) sizeValEl.textContent = size + 'px';
+    var sz = document.getElementById(type + 'QrSize');
+    if (!sz) return;
+    var size = parseInt(sz.value);
+    var szVal = document.getElementById(type + 'QrSizeVal');
+    if (szVal) szVal.textContent = size + 'px';
 
     var canvas = document.getElementById(type + 'QrCanvas');
     if (canvas) {
-        canvas.width = size;
-        canvas.height = size;
         var sampleId = type === 'trans' ? 'SIEC-TR-2024-0001' : 'SIEC-TF-2024-0001';
-        generateQrCode(type + 'QrCanvas', sampleId, size);
+        generateQrCode(type + 'QrCanvas', window.location.origin + '/verify.html?id=' + sampleId, size);
     }
 }
 
 function toggleQrId(type) {
     var showEl = document.getElementById(type + 'ShowId');
     var idText = document.getElementById(type + 'QrIdText');
-    if (showEl && idText) {
-        idText.style.display = showEl.checked ? 'block' : 'none';
-    }
+    if (showEl && idText) idText.style.display = showEl.checked ? 'block' : 'none';
 }
 
 function updateSmallPreview(type) {
@@ -625,21 +527,8 @@ function updateSmallPreview(type) {
         overlay.style.top = y + '%';
     }
 
-    // Generate QR - tunggu library siap
-    var canvasId = type + 'SmallQrCanvas';
-    var canvas = document.getElementById(canvasId);
-    if (!canvas) return;
-
-    var sampleText = window.location.origin + '/verify.html?id=SIEC-SAMPLE-001';
-
-    if (isQrLibraryReady()) {
-        generateQrCode(canvasId, sampleText, 50);
-    } else {
-        // Tunggu library load
-        waitForQrLibrary(function() {
-            generateQrCode(canvasId, sampleText, 50);
-        }, 8000);
-    }
+    var sampleText = window.location.origin + '/verify.html?id=SIEC-SAMPLE';
+    generateQrCode(type + 'SmallQrCanvas', sampleText, 50);
 }
 
 function getQrPosition(type) {
@@ -647,12 +536,12 @@ function getQrPosition(type) {
     var isLive = livePreview && livePreview.style.display !== 'none';
 
     if (isLive) {
-        var dragEl = document.getElementById(type + 'QrDrag');
-        var container = document.getElementById(type + 'PreviewPage');
-        if (dragEl && container && container.offsetWidth > 0) {
+        var drag = document.getElementById(type + 'QrDrag');
+        var cont = document.getElementById(type + 'PreviewPage');
+        if (drag && cont && cont.offsetWidth > 0) {
             return {
-                x: Math.round((dragEl.offsetLeft / container.offsetWidth) * 100),
-                y: Math.round((dragEl.offsetTop / container.offsetHeight) * 100),
+                x: Math.round((drag.offsetLeft / cont.offsetWidth) * 100),
+                y: Math.round((drag.offsetTop / cont.offsetHeight) * 100),
                 size: document.getElementById(type + 'QrSize') ? document.getElementById(type + 'QrSize').value : 80,
                 showId: document.getElementById(type + 'ShowId') ? document.getElementById(type + 'ShowId').checked : true
             };
@@ -667,27 +556,120 @@ function getQrPosition(type) {
     };
 }
 
-function resetToeflPosition() {
-    var xEl = document.getElementById('toeflQrX');
-    var yEl = document.getElementById('toeflQrY');
-    var sizeEl = document.getElementById('toeflQrSize');
-    var showIdEl = document.getElementById('toeflShowId');
+// ============================================
+// PRINT FUNCTIONS
+// ============================================
+function showTranslationPrint(doc) {
+    var pos = { x: 80, y: 85, size: 100, showId: true };
+    if (doc.qr_position) { try { pos = JSON.parse(doc.qr_position); } catch(e) {} }
 
-    if (xEl) xEl.value = 80;
-    if (yEl) yEl.value = 85;
-    if (sizeEl) sizeEl.value = 80;
-    if (showIdEl) showIdEl.checked = true;
+    var modal = document.getElementById('printPreview');
+    var content = document.getElementById('printPreviewContent');
+    var verifyUrl = window.location.origin + '/verify.html?id=' + doc.document_id + '&type=translation';
+    var qrSize = parseInt(pos.size) || 100;
 
-    localStorage.removeItem('siec_toefl_qr_pos');
-    updateSmallPreview('toefl');
+    content.innerHTML =
+        '<div style="position:relative;min-height:600px;border:1px solid #ddd;background:white;">' +
+        (doc.file_url
+            ? '<iframe src="' + doc.file_url + '" style="width:100%;height:650px;border:none;display:block;"></iframe>'
+            : '<div style="padding:40px;">' +
+              '<div style="text-align:center;border-bottom:3px double #333;padding-bottom:16px;margin-bottom:20px;">' +
+              '<img src="' + LOGO_URL + '" style="width:60px;height:60px;object-fit:contain;margin-bottom:8px;display:block;margin-left:auto;margin-right:auto;" onerror="this.style.display=\'none\'">' +
+              '<div style="font-size:1.5rem;font-weight:800;color:#2563eb;">SIEC</div>' +
+              '<div style="font-weight:700;">Syaf Intensive English Course</div>' +
+              '<div style="color:#666;font-size:0.85rem;">Dokumen Terjemahan Resmi</div>' +
+              '</div>' +
+              '<div style="line-height:2.2;font-size:0.95rem;">' +
+              '<div><b>ID:</b> ' + doc.document_id + '</div>' +
+              '<div><b>Klien:</b> ' + doc.client_name + '</div>' +
+              '<div><b>Judul:</b> ' + doc.document_title + '</div>' +
+              '<div><b>Jenis:</b> ' + doc.document_type + '</div>' +
+              '<div><b>Bahasa:</b> ' + doc.source_language + ' → ' + doc.target_language + '</div>' +
+              '<div><b>Tanggal:</b> ' + formatDate(doc.issued_date) + '</div>' +
+              '</div>' +
+              '<div style="margin-top:60px;display:flex;justify-content:space-between;border-top:1px solid #ccc;padding-top:16px;">' +
+              '<div><div style="height:50px;"></div><small>Penerjemah</small></div>' +
+              '<div style="text-align:right;"><div style="height:50px;"></div><small>Administrator SIEC</small></div>' +
+              '</div>' +
+              '</div>'
+        ) +
+        '<div id="printQrContainer" style="position:absolute;left:' + pos.x + '%;top:' + pos.y + '%;' +
+        'transform:translate(-50%,-50%);background:white;padding:6px;border-radius:6px;' +
+        'box-shadow:0 2px 8px rgba(0,0,0,0.2);text-align:center;z-index:999;">' +
+        '<canvas id="printQrTrans" width="' + qrSize + '" height="' + qrSize + '"></canvas>' +
+        (pos.showId ? '<div style="font-size:8px;font-weight:700;font-family:monospace;margin-top:3px;">' + doc.document_id + '</div>' : '') +
+        '<div style="font-size:6px;color:#999;margin-top:2px;">Scan untuk verifikasi</div>' +
+        '</div>' +
+        '</div>';
 
-    var dragEl = document.getElementById('toeflQrDrag');
-    if (dragEl) {
-        dragEl.style.left = '80%';
-        dragEl.style.top = '85%';
+    modal.style.display = 'flex';
+
+    setTimeout(function() {
+        generateQrCode('printQrTrans', verifyUrl, qrSize);
+    }, 600);
+}
+
+function showCertPrint(cert) {
+    var pos = { x: 80, y: 85, size: 100, showId: true };
+    if (cert.qr_position) { try { pos = JSON.parse(cert.qr_position); } catch(e) {} }
+
+    var modal = document.getElementById('certPrintModal');
+    var content = document.getElementById('certPrintContent');
+    var verifyUrl = window.location.origin + '/verify.html?id=' + cert.certificate_id + '&type=toefl';
+    var qrSize = parseInt(pos.size) || 100;
+
+    var dlLink = document.getElementById('certDownloadLink');
+    if (dlLink) {
+        if (cert.file_url) {
+            dlLink.href = cert.file_url;
+            dlLink.style.display = 'inline-flex';
+        } else {
+            dlLink.style.display = 'none';
+        }
     }
 
-    showNotification('Posisi di-reset!');
+    content.innerHTML =
+        '<div style="position:relative;min-height:550px;border:1px solid #ddd;background:white;">' +
+        (cert.file_url
+            ? '<iframe src="' + cert.file_url + '" style="width:100%;height:600px;border:none;display:block;"></iframe>'
+            : '<div style="padding:30px;text-align:center;">' +
+              '<img src="' + LOGO_URL + '" style="width:70px;height:70px;object-fit:contain;margin-bottom:10px;display:block;margin-left:auto;margin-right:auto;" onerror="this.style.display=\'none\'">' +
+              '<div style="font-size:0.85rem;color:#666;text-transform:uppercase;letter-spacing:2px;">Certificate of Achievement</div>' +
+              '<div style="font-size:1.8rem;font-weight:800;color:#2563eb;margin:8px 0;">TOEFL Prediction Test</div>' +
+              '<div style="color:#666;font-size:0.9rem;">Syaf Intensive English Course</div>' +
+              '<div style="font-size:0.9rem;color:#666;margin:16px 0;">This certifies that</div>' +
+              '<div style="font-size:2rem;font-weight:700;border-bottom:2px solid #333;padding-bottom:8px;margin:8px 60px;">' + cert.participant_name + '</div>' +
+              '<div style="display:flex;gap:12px;justify-content:center;margin:20px 0;">' +
+              '<div style="padding:14px 20px;background:#f1f5f9;border-radius:10px;text-align:center;">' +
+              '<div style="font-size:0.7rem;color:#666;margin-bottom:4px;">LISTENING</div>' +
+              '<div style="font-size:1.8rem;font-weight:800;color:#2563eb;">' + cert.listening_score + '</div></div>' +
+              '<div style="padding:14px 20px;background:#f1f5f9;border-radius:10px;text-align:center;">' +
+              '<div style="font-size:0.7rem;color:#666;margin-bottom:4px;">STRUCTURE</div>' +
+              '<div style="font-size:1.8rem;font-weight:800;color:#2563eb;">' + cert.structure_score + '</div></div>' +
+              '<div style="padding:14px 20px;background:#f1f5f9;border-radius:10px;text-align:center;">' +
+              '<div style="font-size:0.7rem;color:#666;margin-bottom:4px;">READING</div>' +
+              '<div style="font-size:1.8rem;font-weight:800;color:#2563eb;">' + cert.reading_score + '</div></div>' +
+              '</div>' +
+              '<div style="background:linear-gradient(135deg,#2563eb,#7c3aed);color:white;padding:14px 28px;border-radius:14px;display:inline-block;margin:12px 0;">' +
+              '<div style="font-size:0.75rem;opacity:0.8;">Total Score</div>' +
+              '<div style="font-size:3rem;font-weight:900;line-height:1;">' + cert.total_score + '</div></div>' +
+              '<div style="color:#666;font-size:0.85rem;margin-top:12px;">Test Date: ' + formatDate(cert.test_date) + '</div>' +
+              '</div>'
+        ) +
+        '<div style="position:absolute;left:' + pos.x + '%;top:' + pos.y + '%;' +
+        'transform:translate(-50%,-50%);background:white;padding:6px;border-radius:6px;' +
+        'box-shadow:0 2px 8px rgba(0,0,0,0.2);text-align:center;z-index:999;">' +
+        '<canvas id="printQrToefl" width="' + qrSize + '" height="' + qrSize + '"></canvas>' +
+        (pos.showId ? '<div style="font-size:8px;font-weight:700;font-family:monospace;margin-top:3px;">' + cert.certificate_id + '</div>' : '') +
+        '<div style="font-size:6px;color:#999;margin-top:2px;">Scan untuk verifikasi</div>' +
+        '</div>' +
+        '</div>';
+
+    modal.style.display = 'flex';
+
+    setTimeout(function() {
+        generateQrCode('printQrToefl', verifyUrl, qrSize);
+    }, 600);
 }
 
 // ============================================
@@ -697,7 +679,6 @@ function showArticleForm(a) {
     var f = document.getElementById('articleForm');
     f.style.display = 'block';
     f.scrollIntoView({ behavior: 'smooth' });
-
     if (a) {
         document.getElementById('articleFormTitle').textContent = 'Edit Artikel';
         document.getElementById('articleId').value = a.id;
@@ -722,49 +703,36 @@ function showArticleForm(a) {
     }
 }
 
-function hideArticleForm() {
-    document.getElementById('articleForm').style.display = 'none';
-}
+function hideArticleForm() { document.getElementById('articleForm').style.display = 'none'; }
 
 async function saveArticle() {
     var title = document.getElementById('articleTitle').value.trim();
     if (!title) { showNotification('Judul harus diisi!', 'error'); return; }
-
     var layoutEl = document.querySelector('input[name="articleLayout"]:checked');
-    var layout = layoutEl ? layoutEl.value : 'standard';
     var id = document.getElementById('articleId').value;
     var pub = document.getElementById('articlePublished').checked;
-
     var data = {
         title: title,
         slug: generateSlug(title) + '-' + Date.now(),
         content: document.getElementById('articleContent').value,
         excerpt: document.getElementById('articleExcerpt').value,
         cover_image: document.getElementById('articleCover').value,
-        layout_type: layout,
+        layout_type: layoutEl ? layoutEl.value : 'standard',
         category: document.getElementById('articleCategory').value,
         is_published: pub,
         published_at: pub ? new Date().toISOString() : null,
         updated_at: new Date().toISOString()
     };
-
     try {
-        var result;
-        if (id) {
-            result = await db.from('articles').update(data).eq('id', id);
-            if (result.error) throw result.error;
-            showNotification('Artikel diperbarui!');
-        } else {
-            result = await db.from('articles').insert(data);
-            if (result.error) throw result.error;
-            showNotification('Artikel ditambahkan!');
-        }
+        var result = id
+            ? await db.from('articles').update(data).eq('id', id)
+            : await db.from('articles').insert(data);
+        if (result.error) throw result.error;
+        showNotification(id ? 'Diperbarui!' : 'Ditambahkan!');
         hideArticleForm();
         loadAdminArticles();
         loadDashboardStats();
-    } catch (e) {
-        showNotification('Gagal: ' + e.message, 'error');
-    }
+    } catch(e) { showNotification('Gagal: ' + e.message, 'error'); }
 }
 
 async function loadAdminArticles() {
@@ -777,9 +745,7 @@ async function loadAdminArticles() {
             return;
         }
         tbody.innerHTML = result.data.map(function(a) {
-            return '<tr>' +
-                '<td><strong>' + a.title + '</strong></td>' +
-                '<td>' + a.category + '</td>' +
+            return '<tr><td><strong>' + a.title + '</strong></td><td>' + a.category + '</td>' +
                 '<td>' + a.layout_type + '</td>' +
                 '<td><span class="status-badge ' + (a.is_published ? 'status-published' : 'status-draft') + '">' + (a.is_published ? 'Published' : 'Draft') + '</span></td>' +
                 '<td>' + formatDate(a.created_at) + '</td>' +
@@ -788,11 +754,11 @@ async function loadAdminArticles() {
                 '<button class="btn btn-sm btn-danger" onclick="deleteArticle(\'' + a.id + '\')"><i class="fas fa-trash"></i></button>' +
                 '</div></td></tr>';
         }).join('');
-    } catch (e) { console.error(e); }
+    } catch(e) { console.error(e); }
 }
 
 async function deleteArticle(id) {
-    if (!confirm('Hapus artikel ini?')) return;
+    if (!confirm('Hapus?')) return;
     await db.from('articles').delete().eq('id', id);
     showNotification('Dihapus!');
     loadAdminArticles();
@@ -806,7 +772,6 @@ function showProgramForm(p) {
     var f = document.getElementById('programForm');
     f.style.display = 'block';
     f.scrollIntoView({ behavior: 'smooth' });
-
     if (p) {
         document.getElementById('programFormTitle').textContent = 'Edit Program';
         document.getElementById('programId').value = p.id;
@@ -825,35 +790,25 @@ function showProgramForm(p) {
         if (r) r.checked = true;
     } else {
         document.getElementById('programFormTitle').textContent = 'Tambah Program';
-        document.getElementById('programId').value = '';
-        document.getElementById('programTitle').value = '';
-        document.getElementById('programDuration').value = '';
-        document.getElementById('programSchedule').value = '';
-        document.getElementById('programPrice').value = '';
-        document.getElementById('programCover').value = '';
-        document.getElementById('programDesc').value = '';
-        document.getElementById('programContent').value = '';
-        document.getElementById('programFeatures').value = '';
+        ['programId','programTitle','programDuration','programSchedule','programPrice','programCover','programDesc','programContent','programFeatures'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) el.value = '';
+        });
         document.getElementById('programActive').checked = true;
         var def = document.querySelector('input[name="programLayout"][value="card"]');
         if (def) def.checked = true;
     }
 }
 
-function hideProgramForm() {
-    document.getElementById('programForm').style.display = 'none';
-}
+function hideProgramForm() { document.getElementById('programForm').style.display = 'none'; }
 
 async function saveProgram() {
     var title = document.getElementById('programTitle').value.trim();
     if (!title) { showNotification('Nama harus diisi!', 'error'); return; }
-
     var id = document.getElementById('programId').value;
     var layoutEl = document.querySelector('input[name="programLayout"]:checked');
-    var layout = layoutEl ? layoutEl.value : 'card';
-    var featuresStr = document.getElementById('programFeatures').value;
-    var features = featuresStr.split(',').map(function(f) { return f.trim(); }).filter(function(f) { return f; });
-
+    var featStr = document.getElementById('programFeatures').value;
+    var features = featStr ? featStr.split(',').map(function(f) { return f.trim(); }).filter(function(f) { return f; }) : [];
     var data = {
         title: title,
         slug: generateSlug(title) + '-' + Date.now(),
@@ -865,29 +820,21 @@ async function saveProgram() {
         schedule: document.getElementById('programSchedule').value,
         price: document.getElementById('programPrice').value,
         cover_image: document.getElementById('programCover').value,
-        layout_type: layout,
+        layout_type: layoutEl ? layoutEl.value : 'card',
         features: features,
         is_active: document.getElementById('programActive').checked,
         updated_at: new Date().toISOString()
     };
-
     try {
-        var result;
-        if (id) {
-            result = await db.from('learning_programs').update(data).eq('id', id);
-            if (result.error) throw result.error;
-            showNotification('Program diperbarui!');
-        } else {
-            result = await db.from('learning_programs').insert(data);
-            if (result.error) throw result.error;
-            showNotification('Program ditambahkan!');
-        }
+        var result = id
+            ? await db.from('learning_programs').update(data).eq('id', id)
+            : await db.from('learning_programs').insert(data);
+        if (result.error) throw result.error;
+        showNotification(id ? 'Diperbarui!' : 'Ditambahkan!');
         hideProgramForm();
         loadAdminPrograms();
         loadDashboardStats();
-    } catch (e) {
-        showNotification('Gagal: ' + e.message, 'error');
-    }
+    } catch(e) { showNotification('Gagal: ' + e.message, 'error'); }
 }
 
 async function loadAdminPrograms() {
@@ -900,22 +847,19 @@ async function loadAdminPrograms() {
             return;
         }
         tbody.innerHTML = result.data.map(function(p) {
-            return '<tr>' +
-                '<td><strong>' + p.title + '</strong></td>' +
-                '<td>' + p.program_type + '</td>' +
-                '<td>' + p.layout_type + '</td>' +
-                '<td>' + (p.price || '-') + '</td>' +
+            return '<tr><td><strong>' + p.title + '</strong></td><td>' + p.program_type + '</td>' +
+                '<td>' + p.layout_type + '</td><td>' + (p.price || '-') + '</td>' +
                 '<td><span class="status-badge ' + (p.is_active ? 'status-published' : 'status-draft') + '">' + (p.is_active ? 'Aktif' : 'Nonaktif') + '</span></td>' +
                 '<td><div class="action-buttons">' +
                 '<button class="btn btn-sm btn-primary" onclick=\'showProgramForm(' + JSON.stringify(p) + ')\'><i class="fas fa-edit"></i></button>' +
                 '<button class="btn btn-sm btn-danger" onclick="deleteProgram(\'' + p.id + '\')"><i class="fas fa-trash"></i></button>' +
                 '</div></td></tr>';
         }).join('');
-    } catch (e) { console.error(e); }
+    } catch(e) { console.error(e); }
 }
 
 async function deleteProgram(id) {
-    if (!confirm('Hapus program?')) return;
+    if (!confirm('Hapus?')) return;
     await db.from('learning_programs').delete().eq('id', id);
     showNotification('Dihapus!');
     loadAdminPrograms();
@@ -923,13 +867,12 @@ async function deleteProgram(id) {
 }
 
 // ============================================
-// TRANSLATION CLIENTS
+// CLIENTS
 // ============================================
 function showClientForm(c) {
     var f = document.getElementById('clientForm');
     f.style.display = 'block';
     f.scrollIntoView({ behavior: 'smooth' });
-
     if (c) {
         document.getElementById('clientId').value = c.id;
         document.getElementById('clientName').value = c.client_name;
@@ -941,27 +884,22 @@ function showClientForm(c) {
         document.getElementById('clientStatus').value = c.status;
         document.getElementById('clientNotes').value = c.notes || '';
     } else {
-        document.getElementById('clientId').value = '';
-        document.getElementById('clientName').value = '';
-        document.getElementById('clientPhone').value = '';
-        document.getElementById('clientEmail').value = '';
-        document.getElementById('clientNotes').value = '';
+        ['clientId','clientName','clientPhone','clientEmail','clientNotes'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) el.value = '';
+        });
     }
 }
 
-function hideClientForm() {
-    document.getElementById('clientForm').style.display = 'none';
-}
+function hideClientForm() { document.getElementById('clientForm').style.display = 'none'; }
 
 async function saveClient() {
     var name = document.getElementById('clientName').value.trim();
     var phone = document.getElementById('clientPhone').value.trim();
-    if (!name || !phone) { showNotification('Nama dan HP harus diisi!', 'error'); return; }
-
+    if (!name || !phone) { showNotification('Nama dan HP wajib!', 'error'); return; }
     var id = document.getElementById('clientId').value;
     var data = {
-        client_name: name,
-        client_phone: phone,
+        client_name: name, client_phone: phone,
         client_email: document.getElementById('clientEmail').value,
         document_type: document.getElementById('clientDocType').value,
         source_language: document.getElementById('clientSourceLang').value,
@@ -970,24 +908,16 @@ async function saveClient() {
         notes: document.getElementById('clientNotes').value,
         updated_at: new Date().toISOString()
     };
-
     try {
-        var result;
-        if (id) {
-            result = await db.from('translation_clients').update(data).eq('id', id);
-            if (result.error) throw result.error;
-            showNotification('Diperbarui!');
-        } else {
-            result = await db.from('translation_clients').insert(data);
-            if (result.error) throw result.error;
-            showNotification('Ditambahkan!');
-        }
+        var result = id
+            ? await db.from('translation_clients').update(data).eq('id', id)
+            : await db.from('translation_clients').insert(data);
+        if (result.error) throw result.error;
+        showNotification(id ? 'Diperbarui!' : 'Ditambahkan!');
         hideClientForm();
         loadAdminClients();
         loadDashboardStats();
-    } catch (e) {
-        showNotification('Gagal: ' + e.message, 'error');
-    }
+    } catch(e) { showNotification('Gagal: ' + e.message, 'error'); }
 }
 
 async function loadAdminClients() {
@@ -1000,11 +930,8 @@ async function loadAdminClients() {
             return;
         }
         tbody.innerHTML = result.data.map(function(c) {
-            return '<tr>' +
-                '<td><strong>' + c.client_name + '</strong></td>' +
-                '<td>' + c.client_phone + '</td>' +
-                '<td>' + c.document_type + '</td>' +
-                '<td>' + c.source_language + ' → ' + c.target_language + '</td>' +
+            return '<tr><td><strong>' + c.client_name + '</strong></td><td>' + c.client_phone + '</td>' +
+                '<td>' + c.document_type + '</td><td>' + c.source_language + '→' + c.target_language + '</td>' +
                 '<td><span class="status-badge status-' + c.status + '">' + c.status + '</span></td>' +
                 '<td>' + formatDate(c.created_at) + '</td>' +
                 '<td><div class="action-buttons">' +
@@ -1012,7 +939,7 @@ async function loadAdminClients() {
                 '<button class="btn btn-sm btn-danger" onclick="deleteClient(\'' + c.id + '\')"><i class="fas fa-trash"></i></button>' +
                 '</div></td></tr>';
         }).join('');
-    } catch (e) { console.error(e); }
+    } catch(e) { console.error(e); }
 }
 
 async function deleteClient(id) {
@@ -1026,14 +953,11 @@ async function deleteClient(id) {
 async function exportClients() {
     var result = await db.from('translation_clients').select('*').order('created_at', { ascending: false });
     if (!result.data || !result.data.length) { showNotification('Tidak ada data!', 'error'); return; }
-
-    var headers = ['Nama', 'HP', 'Email', 'Dokumen', 'Bahasa Sumber', 'Bahasa Target', 'Status', 'Catatan', 'Tanggal'];
+    var h = ['Nama','HP','Email','Dokumen','Sumber','Target','Status','Catatan','Tanggal'];
     var rows = result.data.map(function(c) {
-        return [c.client_name, c.client_phone, c.client_email || '', c.document_type,
-                c.source_language, c.target_language, c.status, c.notes || '', formatDate(c.created_at)];
+        return [c.client_name,c.client_phone,c.client_email||'',c.document_type,c.source_language,c.target_language,c.status,c.notes||'',formatDate(c.created_at)];
     });
-
-    var csv = [headers].concat(rows).map(function(r) { return r.join(','); }).join('\n');
+    var csv = [h].concat(rows).map(function(r) { return r.join(','); }).join('\n');
     var blob = new Blob([csv], { type: 'text/csv' });
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
@@ -1043,7 +967,7 @@ async function exportClients() {
 }
 
 // ============================================
-// TRANSLATION DOCUMENTS
+// TRANSLATIONS
 // ============================================
 function showTranslationForm() {
     var f = document.getElementById('translationForm');
@@ -1056,51 +980,42 @@ function showTranslationForm() {
     document.getElementById('transIssuedDate').value = new Date().toISOString().split('T')[0];
     transFileData = null;
     removeFilePreview('trans');
+    setTimeout(function() { updateSmallPreview('trans'); }, 300);
 }
 
-function hideTranslationForm() {
-    document.getElementById('translationForm').style.display = 'none';
-}
+function hideTranslationForm() { document.getElementById('translationForm').style.display = 'none'; }
 
 async function saveTranslation() {
     var clientName = document.getElementById('transClientName').value.trim();
     var docTitle = document.getElementById('transDocTitle').value.trim();
-    if (!clientName || !docTitle) { showNotification('Nama dan judul harus diisi!', 'error'); return; }
+    if (!clientName || !docTitle) { showNotification('Nama dan judul wajib!', 'error'); return; }
 
     var documentId = generateDocumentId('TR');
     var verifyUrl = window.location.origin + '/verify.html?id=' + documentId + '&type=translation';
     var qrPos = getQrPosition('trans');
-
-    var fileUrl = '';
-    var fileName = '';
+    var fileUrl = '', fileName = '';
 
     if (transFileData) {
         try {
             showNotification('Mengupload file...', 'info');
-            var uploaded = await uploadFileToSupabase(transFileData, 'translations');
-            fileUrl = uploaded.url;
-            fileName = uploaded.name;
-        } catch (err) {
+            var up = await uploadFileToSupabase(transFileData, 'translations');
+            fileUrl = up.url; fileName = up.name;
+        } catch(err) {
             showNotification('Gagal upload: ' + err.message, 'error');
             return;
         }
     }
 
     var data = {
-        document_id: documentId,
-        client_name: clientName,
-        document_title: docTitle,
+        document_id: documentId, client_name: clientName, document_title: docTitle,
         source_language: document.getElementById('transSourceLang').value,
         target_language: document.getElementById('transTargetLang').value,
         document_type: document.getElementById('transDocType').value,
-        barcode_data: verifyUrl,
-        qr_position: JSON.stringify(qrPos),
-        file_url: fileUrl,
-        file_name: fileName,
+        barcode_data: verifyUrl, qr_position: JSON.stringify(qrPos),
+        file_url: fileUrl, file_name: fileName,
         issued_date: document.getElementById('transIssuedDate').value,
         notes: document.getElementById('transNotes').value,
-        verified: true,
-        status: 'valid'
+        verified: true, status: 'valid'
     };
 
     try {
@@ -1111,49 +1026,7 @@ async function saveTranslation() {
         loadAdminTranslations();
         loadDashboardStats();
         showTranslationPrint(data);
-    } catch (err) {
-        showNotification('Gagal: ' + err.message, 'error');
-    }
-}
-
-function showTranslationPrint(doc) {
-    var pos = doc.qr_position ? JSON.parse(doc.qr_position) : { x: 80, y: 85, size: 80, showId: true };
-    var modal = document.getElementById('printPreview');
-    var content = document.getElementById('printPreviewContent');
-    var verifyUrl = window.location.origin + '/verify.html?id=' + doc.document_id + '&type=translation';
-
-    content.innerHTML =
-        '<div class="print-doc" id="printableDoc">' +
-        '<div class="print-doc-header">' +
-        '<img src="' + LOGO_URL + '" style="width:50px;height:50px;object-fit:contain;margin:0 auto 8px;display:block;">' +
-        '<div class="print-doc-logo">SIEC</div>' +
-        '<div style="font-size:1rem;font-weight:700;">Syaf Intensive English Course</div>' +
-        '<div class="print-doc-subtitle">Dokumen Terjemahan Resmi</div>' +
-        '</div>' +
-        '<div class="print-doc-body">' +
-        '<div class="print-doc-row"><span class="print-doc-label">ID Dokumen</span><span>: <strong>' + doc.document_id + '</strong></span></div>' +
-        '<div class="print-doc-row"><span class="print-doc-label">Nama Klien</span><span>: ' + doc.client_name + '</span></div>' +
-        '<div class="print-doc-row"><span class="print-doc-label">Judul</span><span>: ' + doc.document_title + '</span></div>' +
-        '<div class="print-doc-row"><span class="print-doc-label">Jenis</span><span>: ' + doc.document_type + '</span></div>' +
-        '<div class="print-doc-row"><span class="print-doc-label">Bahasa</span><span>: ' + doc.source_language + ' → ' + doc.target_language + '</span></div>' +
-        '<div class="print-doc-row"><span class="print-doc-label">Tanggal</span><span>: ' + formatDate(doc.issued_date) + '</span></div>' +
-        '</div>' +
-        '<div style="text-align:center;margin-top:24px;">' +
-        '<canvas id="printQrTrans"></canvas>' +
-        (pos.showId ? '<div style="font-size:10px;font-weight:700;font-family:monospace;margin-top:4px;">' + doc.document_id + '</div>' : '') +
-        '<div style="font-size:7px;color:#999;margin-top:2px;">Scan QR Code untuk verifikasi</div>' +
-        '</div>' +
-        '<div style="margin-top:40px;display:flex;justify-content:space-between;border-top:1px solid #ccc;padding-top:16px;">' +
-        '<div><div style="height:40px;"></div><div style="font-size:0.85rem;">Penerjemah</div></div>' +
-        '<div style="text-align:right;"><div style="height:40px;"></div><div style="font-size:0.85rem;">Administrator</div></div>' +
-        '</div>' +
-        '</div>';
-
-    modal.style.display = 'flex';
-
-    setTimeout(function() {
-        generateQrCode('printQrTrans', verifyUrl, parseInt(pos.size) || 100);
-    }, 200);
+    } catch(err) { showNotification('Gagal: ' + err.message, 'error'); }
 }
 
 async function loadAdminTranslations() {
@@ -1166,30 +1039,23 @@ async function loadAdminTranslations() {
             return;
         }
         tbody.innerHTML = result.data.map(function(d) {
-            var fileBadge = d.file_url
-                ? '<a href="' + d.file_url + '" target="_blank" class="file-badge"><i class="fas fa-file-pdf"></i> ' + (d.file_name || 'PDF') + '</a>'
-                : '<span class="no-file">-</span>';
-            var downloadBtn = d.file_url
-                ? '<a href="' + d.file_url + '" target="_blank" class="btn btn-sm btn-primary" title="Download"><i class="fas fa-download"></i></a>'
-                : '';
-            return '<tr>' +
-                '<td><strong style="color:var(--primary)">' + d.document_id + '</strong></td>' +
-                '<td>' + d.client_name + '</td>' +
-                '<td>' + d.document_title + '</td>' +
+            var fb = d.file_url ? '<a href="' + d.file_url + '" target="_blank" class="file-badge"><i class="fas fa-file-pdf"></i> ' + (d.file_name || 'PDF') + '</a>' : '<span class="no-file">-</span>';
+            var db2 = d.file_url ? '<a href="' + d.file_url + '" target="_blank" class="btn btn-sm btn-primary"><i class="fas fa-download"></i></a>' : '';
+            return '<tr><td><strong style="color:var(--primary)">' + d.document_id + '</strong></td>' +
+                '<td>' + d.client_name + '</td><td>' + d.document_title + '</td>' +
                 '<td>' + d.source_language + '→' + d.target_language + '</td>' +
-                '<td>' + fileBadge + '</td>' +
-                '<td>' + formatDate(d.issued_date) + '</td>' +
+                '<td>' + fb + '</td><td>' + formatDate(d.issued_date) + '</td>' +
                 '<td><div class="action-buttons">' +
-                '<button class="btn btn-sm btn-success" onclick=\'showTranslationPrint(' + JSON.stringify(d) + ')\' title="Cetak"><i class="fas fa-print"></i></button>' +
-                downloadBtn +
-                '<button class="btn btn-sm btn-danger" onclick="deleteTranslation(\'' + d.id + '\')" title="Hapus"><i class="fas fa-trash"></i></button>' +
+                '<button class="btn btn-sm btn-success" onclick=\'showTranslationPrint(' + JSON.stringify(d) + ')\'><i class="fas fa-print"></i></button>' +
+                db2 +
+                '<button class="btn btn-sm btn-danger" onclick="deleteTranslation(\'' + d.id + '\')"><i class="fas fa-trash"></i></button>' +
                 '</div></td></tr>';
         }).join('');
-    } catch (e) { console.error(e); }
+    } catch(e) { console.error(e); }
 }
 
 async function deleteTranslation(id) {
-    if (!confirm('Hapus dokumen?')) return;
+    if (!confirm('Hapus?')) return;
     await db.from('translation_documents').delete().eq('id', id);
     showNotification('Dihapus!');
     loadAdminTranslations();
@@ -1197,13 +1063,12 @@ async function deleteTranslation(id) {
 }
 
 // ============================================
-// TRANSLATION STATUS
+// STATUS
 // ============================================
 function showStatusForm(s) {
     var f = document.getElementById('statusForm');
     f.style.display = 'block';
     f.scrollIntoView({ behavior: 'smooth' });
-
     if (s) {
         document.getElementById('statusId').value = s.id;
         document.getElementById('statusClientName').value = s.client_name;
@@ -1213,53 +1078,43 @@ function showStatusForm(s) {
         document.getElementById('statusDesc').value = s.status_description || '';
         document.getElementById('statusEstimate').value = s.estimated_completion || '';
     } else {
-        document.getElementById('statusId').value = '';
-        document.getElementById('statusClientName').value = '';
-        document.getElementById('statusClientPhone').value = '';
-        document.getElementById('statusDocType').value = '';
+        ['statusId','statusClientName','statusClientPhone','statusDocType','statusDesc','statusEstimate'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) el.value = '';
+        });
         document.getElementById('statusValue').value = 'received';
-        document.getElementById('statusDesc').value = '';
-        document.getElementById('statusEstimate').value = '';
     }
 }
 
-function hideStatusForm() {
-    document.getElementById('statusForm').style.display = 'none';
-}
+function hideStatusForm() { document.getElementById('statusForm').style.display = 'none'; }
 
 async function saveStatus() {
     var name = document.getElementById('statusClientName').value.trim();
     var phone = document.getElementById('statusClientPhone').value.trim();
-    if (!name || !phone) { showNotification('Nama dan HP harus diisi!', 'error'); return; }
-
+    if (!name || !phone) { showNotification('Nama dan HP wajib!', 'error'); return; }
     var id = document.getElementById('statusId').value;
     var data = {
-        client_name: name,
-        client_phone: phone,
+        client_name: name, client_phone: phone,
         document_type: document.getElementById('statusDocType').value,
         status: document.getElementById('statusValue').value,
         status_description: document.getElementById('statusDesc').value,
         estimated_completion: document.getElementById('statusEstimate').value || null,
         updated_at: new Date().toISOString()
     };
-
     try {
         var result;
         if (id) {
             result = await db.from('translation_status').update(data).eq('id', id);
-            if (result.error) throw result.error;
-            showNotification('Diperbarui!');
         } else {
             data.tracking_code = generateTrackingCode();
             result = await db.from('translation_status').insert(data);
-            if (result.error) throw result.error;
-            showNotification('Kode: ' + data.tracking_code);
+            showNotification('Kode Tracking: ' + data.tracking_code);
         }
+        if (result.error) throw result.error;
+        if (id) showNotification('Diperbarui!');
         hideStatusForm();
         loadAdminStatus();
-    } catch (e) {
-        showNotification('Gagal: ' + e.message, 'error');
-    }
+    } catch(e) { showNotification('Gagal: ' + e.message, 'error'); }
 }
 
 async function loadAdminStatus() {
@@ -1272,10 +1127,8 @@ async function loadAdminStatus() {
             return;
         }
         tbody.innerHTML = result.data.map(function(s) {
-            return '<tr>' +
-                '<td><strong style="color:var(--primary)">' + s.tracking_code + '</strong></td>' +
-                '<td>' + s.client_name + '</td>' +
-                '<td>' + s.document_type + '</td>' +
+            return '<tr><td><strong style="color:var(--primary)">' + s.tracking_code + '</strong></td>' +
+                '<td>' + s.client_name + '</td><td>' + s.document_type + '</td>' +
                 '<td><span class="status-badge status-' + s.status + '">' + s.status + '</span></td>' +
                 '<td>' + (s.estimated_completion ? formatDate(s.estimated_completion) : '-') + '</td>' +
                 '<td><div class="action-buttons">' +
@@ -1283,7 +1136,7 @@ async function loadAdminStatus() {
                 '<button class="btn btn-sm btn-danger" onclick="deleteStatus(\'' + s.id + '\')"><i class="fas fa-trash"></i></button>' +
                 '</div></td></tr>';
         }).join('');
-    } catch (e) { console.error(e); }
+    } catch(e) { console.error(e); }
 }
 
 async function deleteStatus(id) {
@@ -1294,7 +1147,7 @@ async function deleteStatus(id) {
 }
 
 // ============================================
-// TOEFL CERTIFICATES
+// TOEFL
 // ============================================
 function showToeflForm(c) {
     var f = document.getElementById('toeflForm');
@@ -1302,7 +1155,6 @@ function showToeflForm(c) {
     f.scrollIntoView({ behavior: 'smooth' });
     toeflFileData = null;
     removeFilePreview('toefl');
-
     if (c) {
         document.getElementById('toeflId').value = c.id;
         document.getElementById('toeflName').value = c.participant_name;
@@ -1315,86 +1167,70 @@ function showToeflForm(c) {
         document.getElementById('toeflTotal').value = c.total_score;
         document.getElementById('toeflNotes').value = c.notes || '';
         if (c.qr_position) {
-            var p = JSON.parse(c.qr_position);
-            var xEl = document.getElementById('toeflQrX');
-            var yEl = document.getElementById('toeflQrY');
-            var sizeEl = document.getElementById('toeflQrSize');
-            if (xEl) xEl.value = p.x;
-            if (yEl) yEl.value = p.y;
-            if (sizeEl) sizeEl.value = p.size || 80;
+            try {
+                var p = JSON.parse(c.qr_position);
+                var xEl = document.getElementById('toeflQrX');
+                var yEl = document.getElementById('toeflQrY');
+                var sz = document.getElementById('toeflQrSize');
+                if (xEl) xEl.value = p.x;
+                if (yEl) yEl.value = p.y;
+                if (sz) sz.value = p.size || 80;
+            } catch(e) {}
         }
     } else {
-        document.getElementById('toeflId').value = '';
-        document.getElementById('toeflName').value = '';
-        document.getElementById('toeflTestDate').value = '';
-        document.getElementById('toeflEmail').value = '';
-        document.getElementById('toeflPhone').value = '';
-        document.getElementById('toeflListening').value = '';
-        document.getElementById('toeflStructure').value = '';
-        document.getElementById('toeflReading').value = '';
-        document.getElementById('toeflTotal').value = '';
-        document.getElementById('toeflNotes').value = '';
+        ['toeflId','toeflName','toeflTestDate','toeflEmail','toeflPhone',
+         'toeflListening','toeflStructure','toeflReading','toeflTotal','toeflNotes'].forEach(function(id) {
+            var el = document.getElementById(id);
+            if (el) el.value = '';
+        });
         loadSavedToeflPosition();
     }
-
-    updateSmallPreview('toefl');
+    setTimeout(function() { updateSmallPreview('toefl'); }, 300);
 }
 
-function hideToeflForm() {
-    document.getElementById('toeflForm').style.display = 'none';
-}
+function hideToeflForm() { document.getElementById('toeflForm').style.display = 'none'; }
 
 async function saveToefl() {
     var name = document.getElementById('toeflName').value.trim();
     var testDate = document.getElementById('toeflTestDate').value;
-    if (!name || !testDate) { showNotification('Nama dan tanggal harus diisi!', 'error'); return; }
+    if (!name || !testDate) { showNotification('Nama dan tanggal wajib!', 'error'); return; }
 
     var id = document.getElementById('toeflId').value;
     var l = parseInt(document.getElementById('toeflListening').value) || 0;
     var s = parseInt(document.getElementById('toeflStructure').value) || 0;
     var r = parseInt(document.getElementById('toeflReading').value) || 0;
     var total = Math.round((l + s + r) * 10 / 3);
-
     var qrPos = getQrPosition('toefl');
 
-    var rememberEl = document.getElementById('toeflRememberPos');
-    if (rememberEl && rememberEl.checked) {
+    var remEl = document.getElementById('toeflRememberPos');
+    if (remEl && remEl.checked) {
         localStorage.setItem('siec_toefl_qr_pos', JSON.stringify(qrPos));
     }
 
-    var fileUrl = '';
-    var fileName = '';
-
+    var fileUrl = '', fileName = '';
     if (toeflFileData) {
         try {
             showNotification('Mengupload file...', 'info');
-            var uploaded = await uploadFileToSupabase(toeflFileData, 'certificates');
-            fileUrl = uploaded.url;
-            fileName = uploaded.name;
-        } catch (err) {
+            var up = await uploadFileToSupabase(toeflFileData, 'certificates');
+            fileUrl = up.url; fileName = up.name;
+        } catch(err) {
             showNotification('Gagal upload: ' + err.message, 'error');
             return;
         }
     }
 
     var certId = id ? null : generateDocumentId('TF');
-    var verifyUrl = window.location.origin + '/verify.html?id=' + (certId || '') + '&type=toefl';
+    var verifyUrl = window.location.origin + '/verify.html?id=' + (certId || id) + '&type=toefl';
 
     var data = {
-        participant_name: name,
-        test_date: testDate,
+        participant_name: name, test_date: testDate,
         participant_email: document.getElementById('toeflEmail').value,
         participant_phone: document.getElementById('toeflPhone').value,
-        listening_score: l,
-        structure_score: s,
-        reading_score: r,
-        total_score: total,
+        listening_score: l, structure_score: s, reading_score: r, total_score: total,
         qr_position: JSON.stringify(qrPos),
-        file_url: fileUrl,
-        file_name: fileName,
+        file_url: fileUrl, file_name: fileName,
         notes: document.getElementById('toeflNotes').value,
-        verified: true,
-        status: 'valid'
+        verified: true, status: 'valid'
     };
 
     try {
@@ -1414,46 +1250,7 @@ async function saveToefl() {
         hideToeflForm();
         loadAdminToefl();
         loadDashboardStats();
-    } catch (err) {
-        showNotification('Gagal: ' + err.message, 'error');
-    }
-}
-
-function showCertPrint(cert) {
-    var pos = cert.qr_position ? JSON.parse(cert.qr_position) : { x: 80, y: 85, size: 80, showId: true };
-    var modal = document.getElementById('certPrintModal');
-    var content = document.getElementById('certPrintContent');
-    var verifyUrl = window.location.origin + '/verify.html?id=' + cert.certificate_id + '&type=toefl';
-
-    var downloadLink = document.getElementById('certDownloadLink');
-    if (cert.file_url && downloadLink) {
-        downloadLink.href = cert.file_url;
-        downloadLink.target = '_blank';
-        downloadLink.style.display = 'inline-flex';
-    }
-
-    var iframeHtml = cert.file_url
-        ? '<div style="margin:20px 0;"><iframe src="' + cert.file_url + '" style="width:100%;height:500px;border:2px solid var(--gray-300);border-radius:8px;"></iframe></div>'
-        : '';
-
-    content.innerHTML =
-        '<div style="text-align:center;padding:20px;">' +
-        '<p style="color:var(--gray-600);margin-bottom:16px;">Sertifikat <strong>' + cert.certificate_id + '</strong> untuk <strong>' + cert.participant_name + '</strong></p>' +
-        '<p><strong>Score:</strong> L:' + cert.listening_score + ' / S:' + cert.structure_score + ' / R:' + cert.reading_score + ' = <strong style="font-size:1.3rem;color:var(--primary)">' + cert.total_score + '</strong></p>' +
-        iframeHtml +
-        '<div style="margin:20px 0;">' +
-        '<p style="font-size:0.85rem;color:var(--gray-600);margin-bottom:8px;">QR Code Verifikasi:</p>' +
-        '<canvas id="printQrToefl"></canvas>' +
-        (pos.showId ? '<div style="font-size:10px;font-weight:700;font-family:monospace;margin-top:4px;">' + cert.certificate_id + '</div>' : '') +
-        '<div style="font-size:8px;color:#999;margin-top:2px;">Scan untuk verifikasi keaslian</div>' +
-        '</div>' +
-        '</div>';
-
-    modal.style.display = 'flex';
-
-    setTimeout(function() {
-        generateQrCode('printQrToefl', verifyUrl, parseInt(pos.size) || 120);
-    }, 200);
+    } catch(err) { showNotification('Gagal: ' + err.message, 'error'); }
 }
 
 async function loadAdminToefl() {
@@ -1466,31 +1263,25 @@ async function loadAdminToefl() {
             return;
         }
         tbody.innerHTML = result.data.map(function(c) {
-            var fileBadge = c.file_url
-                ? '<a href="' + c.file_url + '" target="_blank" class="file-badge"><i class="fas fa-file-pdf"></i> PDF</a>'
-                : '<span class="no-file">-</span>';
-            var downloadBtn = c.file_url
-                ? '<a href="' + c.file_url + '" target="_blank" class="btn btn-sm btn-primary" title="Download"><i class="fas fa-download"></i></a>'
-                : '';
-            return '<tr>' +
-                '<td><strong style="color:var(--primary)">' + c.certificate_id + '</strong></td>' +
-                '<td>' + c.participant_name + '</td>' +
-                '<td>' + formatDate(c.test_date) + '</td>' +
+            var fb = c.file_url ? '<a href="' + c.file_url + '" target="_blank" class="file-badge"><i class="fas fa-file-pdf"></i> PDF</a>' : '<span class="no-file">-</span>';
+            var db2 = c.file_url ? '<a href="' + c.file_url + '" target="_blank" class="btn btn-sm btn-primary"><i class="fas fa-download"></i></a>' : '';
+            return '<tr><td><strong style="color:var(--primary)">' + c.certificate_id + '</strong></td>' +
+                '<td>' + c.participant_name + '</td><td>' + formatDate(c.test_date) + '</td>' +
                 '<td>' + c.listening_score + '/' + c.structure_score + '/' + c.reading_score + '</td>' +
                 '<td><strong style="font-size:1.1rem;color:var(--primary)">' + c.total_score + '</strong></td>' +
-                '<td>' + fileBadge + '</td>' +
+                '<td>' + fb + '</td>' +
                 '<td><div class="action-buttons">' +
-                '<button class="btn btn-sm btn-success" onclick=\'showCertPrint(' + JSON.stringify(c) + ')\' title="Preview"><i class="fas fa-eye"></i></button>' +
-                downloadBtn +
-                '<button class="btn btn-sm btn-warning" onclick=\'showToeflForm(' + JSON.stringify(c) + ')\' title="Edit"><i class="fas fa-edit"></i></button>' +
-                '<button class="btn btn-sm btn-danger" onclick="deleteToefl(\'' + c.id + '\')" title="Hapus"><i class="fas fa-trash"></i></button>' +
+                '<button class="btn btn-sm btn-success" onclick=\'showCertPrint(' + JSON.stringify(c) + ')\'><i class="fas fa-eye"></i></button>' +
+                db2 +
+                '<button class="btn btn-sm btn-warning" onclick=\'showToeflForm(' + JSON.stringify(c) + ')\'><i class="fas fa-edit"></i></button>' +
+                '<button class="btn btn-sm btn-danger" onclick="deleteToefl(\'' + c.id + '\')"><i class="fas fa-trash"></i></button>' +
                 '</div></td></tr>';
         }).join('');
-    } catch (e) { console.error(e); }
+    } catch(e) { console.error(e); }
 }
 
 async function deleteToefl(id) {
-    if (!confirm('Hapus sertifikat?')) return;
+    if (!confirm('Hapus?')) return;
     await db.from('toefl_certificates').delete().eq('id', id);
     showNotification('Dihapus!');
     loadAdminToefl();
