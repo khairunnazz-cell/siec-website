@@ -3,727 +3,185 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin Dashboard - SIEC</title>
+    <title>Admin - SIEC</title>
     <meta name="robots" content="noindex, nofollow">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/admin.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+    .btn-size{width:28px;height:28px;border:2px solid #cbd5e1;border-radius:6px;background:#fff;font-size:1.1rem;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;color:#475569;flex-shrink:0;transition:all .2s}
+    .btn-size:hover{background:#2563eb;color:#fff;border-color:#2563eb}
+    </style>
 </head>
 <body class="admin-body">
 <div class="admin-layout">
-
-    <!-- ===== SIDEBAR ===== -->
     <aside class="admin-sidebar" id="adminSidebar">
         <div class="sidebar-header">
-            <img src="assets/logo.png" alt="SIEC" class="sidebar-logo-img" 
-                 onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
-            <div class="logo-icon" style="display:none;"><i class="fas fa-graduation-cap"></i></div>
+            <img src="assets/logo.png" alt="SIEC" class="sidebar-logo-img" onerror="this.style.display='none'">
             <span>SIEC Admin</span>
             <button class="sidebar-close" id="sidebarClose"><i class="fas fa-times"></i></button>
         </div>
         <nav class="sidebar-nav">
-            <a href="#" class="sidebar-link active" data-section="dashboard">
-                <i class="fas fa-tachometer-alt"></i> Dashboard</a>
-            <a href="#" class="sidebar-link" data-section="articles">
-                <i class="fas fa-newspaper"></i> Artikel</a>
-            <a href="#" class="sidebar-link" data-section="programs">
-                <i class="fas fa-book"></i> Program Belajar</a>
-            <a href="#" class="sidebar-link" data-section="translation-clients">
-                <i class="fas fa-users"></i> Laporan Pengguna Jasa</a>
-            <a href="#" class="sidebar-link" data-section="translations">
-                <i class="fas fa-language"></i> Dokumen Terjemahan</a>
-            <a href="#" class="sidebar-link" data-section="translation-status">
-                <i class="fas fa-truck"></i> Status Terjemahan</a>
-            <a href="#" class="sidebar-link" data-section="toefl">
-                <i class="fas fa-certificate"></i> Sertifikat TOEFL</a>
+            <a href="#" class="sidebar-link active" data-section="dashboard"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+            <a href="#" class="sidebar-link" data-section="articles"><i class="fas fa-newspaper"></i> Artikel</a>
+            <a href="#" class="sidebar-link" data-section="programs"><i class="fas fa-book"></i> Program</a>
+            <a href="#" class="sidebar-link" data-section="translation-clients"><i class="fas fa-users"></i> Klien</a>
+            <a href="#" class="sidebar-link" data-section="translations"><i class="fas fa-language"></i> Terjemahan</a>
+            <a href="#" class="sidebar-link" data-section="translation-status"><i class="fas fa-truck"></i> Status</a>
+            <a href="#" class="sidebar-link" data-section="toefl"><i class="fas fa-certificate"></i> TOEFL</a>
             <div class="sidebar-divider"></div>
-            <a href="index.html" class="sidebar-link"><i class="fas fa-globe"></i> Lihat Website</a>
-            <a href="#" class="sidebar-link" onclick="handleLogout()">
-                <i class="fas fa-sign-out-alt"></i> Logout</a>
+            <a href="index.html" class="sidebar-link"><i class="fas fa-globe"></i> Website</a>
+            <a href="#" class="sidebar-link" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </nav>
     </aside>
-
-    <!-- ===== MAIN ===== -->
     <main class="admin-main">
         <header class="admin-header">
             <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
             <h2 id="pageTitle">Dashboard</h2>
-            <div class="admin-user">
-                <span id="adminName">Admin</span>
-                <div class="admin-avatar"><i class="fas fa-user"></i></div>
-            </div>
+            <div class="admin-user"><span id="adminName">Admin</span><div class="admin-avatar"><i class="fas fa-user"></i></div></div>
         </header>
-
         <div class="admin-content">
 
-            <!-- ===== DASHBOARD ===== -->
             <section class="admin-section active" id="section-dashboard">
                 <div class="stats-grid">
-                    <div class="stat-card">
-                        <div class="stat-card-icon gradient-1"><i class="fas fa-newspaper"></i></div>
-                        <div class="stat-card-info"><h3 id="totalArticles">0</h3><p>Artikel</p></div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-card-icon gradient-2"><i class="fas fa-users"></i></div>
-                        <div class="stat-card-info"><h3 id="totalClients">0</h3><p>Pengguna Jasa</p></div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-card-icon gradient-3"><i class="fas fa-file-alt"></i></div>
-                        <div class="stat-card-info"><h3 id="totalTranslations">0</h3><p>Dokumen Terjemahan</p></div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-card-icon gradient-4"><i class="fas fa-certificate"></i></div>
-                        <div class="stat-card-info"><h3 id="totalCertificates">0</h3><p>Sertifikat TOEFL</p></div>
-                    </div>
-                    <div class="stat-card">
-                        <div class="stat-card-icon gradient-1"><i class="fas fa-book"></i></div>
-                        <div class="stat-card-info"><h3 id="totalPrograms">0</h3><p>Program Aktif</p></div>
-                    </div>
+                    <div class="stat-card"><div class="stat-card-icon gradient-1"><i class="fas fa-newspaper"></i></div><div class="stat-card-info"><h3 id="totalArticles">0</h3><p>Artikel</p></div></div>
+                    <div class="stat-card"><div class="stat-card-icon gradient-2"><i class="fas fa-users"></i></div><div class="stat-card-info"><h3 id="totalClients">0</h3><p>Klien</p></div></div>
+                    <div class="stat-card"><div class="stat-card-icon gradient-3"><i class="fas fa-file-alt"></i></div><div class="stat-card-info"><h3 id="totalTranslations">0</h3><p>Terjemahan</p></div></div>
+                    <div class="stat-card"><div class="stat-card-icon gradient-4"><i class="fas fa-certificate"></i></div><div class="stat-card-info"><h3 id="totalCertificates">0</h3><p>TOEFL</p></div></div>
+                    <div class="stat-card"><div class="stat-card-icon gradient-1"><i class="fas fa-book"></i></div><div class="stat-card-info"><h3 id="totalPrograms">0</h3><p>Program</p></div></div>
                 </div>
             </section>
 
-            <!-- ===== ARTIKEL ===== -->
             <section class="admin-section" id="section-articles">
-                <div class="section-toolbar">
-                    <h3>Kelola Artikel</h3>
-                    <button class="btn btn-primary" onclick="showArticleForm()">
-                        <i class="fas fa-plus"></i> Tambah Artikel
-                    </button>
-                </div>
-                <div id="articleForm" class="admin-form" style="display:none;">
-                    <div class="form-card">
-                        <h4 id="articleFormTitle">Tambah Artikel Baru</h4>
-                        <input type="hidden" id="articleId">
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Judul Artikel</label>
-                                <input type="text" id="articleTitle" required>
-                            </div>
-                            <div class="form-group">
-                                <label>Kategori</label>
-                                <select id="articleCategory">
-                                    <option value="tips">Tips Belajar</option>
-                                    <option value="grammar">Grammar</option>
-                                    <option value="vocabulary">Vocabulary</option>
-                                    <option value="toefl">TOEFL</option>
-                                    <option value="general">Umum</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Layout Tampilan</label>
-                            <div class="layout-options">
-                                <label class="layout-option">
-                                    <input type="radio" name="articleLayout" value="standard" checked>
-                                    <div class="layout-preview"><div class="lp-img"></div><div class="lp-content"><div class="lp-title"></div><div class="lp-text"></div></div></div>
-                                    <span>Standard</span>
-                                </label>
-                                <label class="layout-option">
-                                    <input type="radio" name="articleLayout" value="featured">
-                                    <div class="layout-preview"><div class="lp-img tall"></div><div class="lp-content"><div class="lp-title big"></div><div class="lp-text"></div></div></div>
-                                    <span>Featured</span>
-                                </label>
-                                <label class="layout-option">
-                                    <input type="radio" name="articleLayout" value="compact">
-                                    <div class="layout-preview" style="flex-direction:row"><div class="lp-img" style="width:40px;height:40px"></div><div class="lp-content"><div class="lp-title"></div><div class="lp-text short"></div></div></div>
-                                    <span>Compact</span>
-                                </label>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label>Cover Image URL</label>
-                                <input type="text" id="articleCover" placeholder="https://...">
-                            </div>
-                            <div class="form-group">
-                                <label>Ringkasan</label>
-                                <input type="text" id="articleExcerpt">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Konten Artikel</label>
-                            <div class="editor-toolbar">
-                                <button type="button" onclick="insertTag('b')"><b>B</b></button>
-                                <button type="button" onclick="insertTag('i')"><i>I</i></button>
-                                <button type="button" onclick="insertTag('h2')">H2</button>
-                                <button type="button" onclick="insertTag('h3')">H3</button>
-                                <button type="button" onclick="insertTag('p')">P</button>
-                                <button type="button" onclick="insertTag('ul')">UL</button>
-                                <button type="button" onclick="insertTag('li')">LI</button>
-                                <button type="button" onclick="togglePreview()"><i class="fas fa-eye"></i></button>
-                            </div>
-                            <textarea id="articleContent" rows="10"></textarea>
-                            <div id="articlePreview" class="article-preview-box" style="display:none"></div>
-                        </div>
-                        <div class="form-group">
-                            <label class="checkbox-label">
-                                <input type="checkbox" id="articlePublished"><span>Publikasikan</span>
-                            </label>
-                        </div>
-                        <div class="form-actions">
-                            <button class="btn btn-primary" onclick="saveArticle()"><i class="fas fa-save"></i> Simpan</button>
-                            <button class="btn btn-outline" onclick="hideArticleForm()">Batal</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="data-table-container">
-                    <table class="data-table">
-                        <thead><tr><th>Judul</th><th>Kategori</th><th>Layout</th><th>Status</th><th>Tanggal</th><th>Aksi</th></tr></thead>
-                        <tbody id="articlesTableBody"><tr><td colspan="6" class="loading-cell"><div class="spinner"></div></td></tr></tbody>
-                    </table>
-                </div>
+                <div class="section-toolbar"><h3>Artikel</h3><button class="btn btn-primary" onclick="showArticleForm()"><i class="fas fa-plus"></i> Tambah</button></div>
+                <div id="articleForm" class="admin-form" style="display:none"><div class="form-card">
+                    <h4 id="articleFormTitle">Tambah Artikel</h4><input type="hidden" id="articleId">
+                    <div class="form-row"><div class="form-group"><label>Judul</label><input type="text" id="articleTitle" required></div><div class="form-group"><label>Kategori</label><select id="articleCategory"><option value="tips">Tips</option><option value="grammar">Grammar</option><option value="vocabulary">Vocabulary</option><option value="toefl">TOEFL</option><option value="general">Umum</option></select></div></div>
+                    <div class="form-group"><label>Layout</label><div class="layout-options"><label class="layout-option"><input type="radio" name="articleLayout" value="standard" checked><div class="layout-preview"><div class="lp-img"></div><div class="lp-content"><div class="lp-title"></div><div class="lp-text"></div></div></div><span>Standard</span></label><label class="layout-option"><input type="radio" name="articleLayout" value="featured"><div class="layout-preview"><div class="lp-img tall"></div><div class="lp-content"><div class="lp-title big"></div><div class="lp-text"></div></div></div><span>Featured</span></label><label class="layout-option"><input type="radio" name="articleLayout" value="compact"><div class="layout-preview" style="flex-direction:row"><div class="lp-img" style="width:40px;height:40px"></div><div class="lp-content"><div class="lp-title"></div><div class="lp-text short"></div></div></div><span>Compact</span></label></div></div>
+                    <div class="form-row"><div class="form-group"><label>Cover URL</label><input type="text" id="articleCover"></div><div class="form-group"><label>Ringkasan</label><input type="text" id="articleExcerpt"></div></div>
+                    <div class="form-group"><label>Konten</label><div class="editor-toolbar"><button type="button" onclick="insertTag('b')"><b>B</b></button><button type="button" onclick="insertTag('i')"><i>I</i></button><button type="button" onclick="insertTag('h2')">H2</button><button type="button" onclick="insertTag('p')">P</button><button type="button" onclick="insertTag('ul')">UL</button><button type="button" onclick="insertTag('li')">LI</button><button type="button" onclick="togglePreview()"><i class="fas fa-eye"></i></button></div><textarea id="articleContent" rows="10"></textarea><div id="articlePreview" class="article-preview-box" style="display:none"></div></div>
+                    <div class="form-group"><label class="checkbox-label"><input type="checkbox" id="articlePublished"><span>Publish</span></label></div>
+                    <div class="form-actions"><button class="btn btn-primary" onclick="saveArticle()"><i class="fas fa-save"></i> Simpan</button><button class="btn btn-outline" onclick="hideArticleForm()">Batal</button></div>
+                </div></div>
+                <div class="data-table-container"><table class="data-table"><thead><tr><th>Judul</th><th>Kategori</th><th>Layout</th><th>Status</th><th>Tanggal</th><th>Aksi</th></tr></thead><tbody id="articlesTableBody"><tr><td colspan="6" class="loading-cell"><div class="spinner"></div></td></tr></tbody></table></div>
             </section>
 
-            <!-- ===== PROGRAM BELAJAR ===== -->
             <section class="admin-section" id="section-programs">
-                <div class="section-toolbar">
-                    <h3>Kelola Program Belajar</h3>
-                    <button class="btn btn-primary" onclick="showProgramForm()"><i class="fas fa-plus"></i> Tambah</button>
-                </div>
-                <div id="programForm" class="admin-form" style="display:none;">
-                    <div class="form-card">
-                        <h4 id="programFormTitle">Tambah Program</h4>
-                        <input type="hidden" id="programId">
-                        <div class="form-row">
-                            <div class="form-group"><label>Nama Program</label><input type="text" id="programTitle" required></div>
-                            <div class="form-group"><label>Tipe</label>
-                                <select id="programType"><option value="private">Private</option><option value="group">Grup</option><option value="toefl">TOEFL</option><option value="translation">Terjemahan</option></select>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label>Layout</label>
-                            <div class="layout-options">
-                                <label class="layout-option"><input type="radio" name="programLayout" value="card" checked><div class="layout-preview"><div class="lp-img small-full"></div><div class="lp-content padded"><div class="lp-title"></div><div class="lp-btn"></div></div></div><span>Card</span></label>
-                                <label class="layout-option"><input type="radio" name="programLayout" value="list"><div class="layout-preview" style="flex-direction:row"><div class="lp-img" style="width:50px;height:50px"></div><div class="lp-content"><div class="lp-title"></div><div class="lp-text short"></div></div></div><span>List</span></label>
-                                <label class="layout-option"><input type="radio" name="programLayout" value="featured"><div class="layout-preview"><div class="lp-img tall"></div><div class="lp-content"><div class="lp-title big"></div><div class="lp-text"></div></div></div><span>Featured</span></label>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group"><label>Level</label><select id="programLevel"><option value="all">Semua</option><option value="beginner">Beginner</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced</option></select></div>
-                            <div class="form-group"><label>Durasi</label><input type="text" id="programDuration"></div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group"><label>Jadwal</label><input type="text" id="programSchedule"></div>
-                            <div class="form-group"><label>Harga</label><input type="text" id="programPrice"></div>
-                        </div>
-                        <div class="form-group"><label>Cover Image URL</label><input type="text" id="programCover"></div>
-                        <div class="form-group"><label>Deskripsi</label><textarea id="programDesc" rows="3"></textarea></div>
-                        <div class="form-group"><label>Konten Detail</label><textarea id="programContent" rows="5"></textarea></div>
-                        <div class="form-group"><label>Fitur (koma)</label><input type="text" id="programFeatures"></div>
-                        <div class="form-group"><label class="checkbox-label"><input type="checkbox" id="programActive" checked><span>Aktif</span></label></div>
-                        <div class="form-actions">
-                            <button class="btn btn-primary" onclick="saveProgram()"><i class="fas fa-save"></i> Simpan</button>
-                            <button class="btn btn-outline" onclick="hideProgramForm()">Batal</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="data-table-container">
-                    <table class="data-table">
-                        <thead><tr><th>Program</th><th>Tipe</th><th>Layout</th><th>Harga</th><th>Status</th><th>Aksi</th></tr></thead>
-                        <tbody id="programsTableBody"><tr><td colspan="6" class="loading-cell"><div class="spinner"></div></td></tr></tbody>
-                    </table>
-                </div>
+                <div class="section-toolbar"><h3>Program</h3><button class="btn btn-primary" onclick="showProgramForm()"><i class="fas fa-plus"></i> Tambah</button></div>
+                <div id="programForm" class="admin-form" style="display:none"><div class="form-card">
+                    <h4 id="programFormTitle">Tambah Program</h4><input type="hidden" id="programId">
+                    <div class="form-row"><div class="form-group"><label>Nama</label><input type="text" id="programTitle" required></div><div class="form-group"><label>Tipe</label><select id="programType"><option value="private">Private</option><option value="group">Grup</option><option value="toefl">TOEFL</option><option value="translation">Terjemahan</option></select></div></div>
+                    <div class="form-group"><label>Layout</label><div class="layout-options"><label class="layout-option"><input type="radio" name="programLayout" value="card" checked><div class="layout-preview"><div class="lp-img small-full"></div><div class="lp-content padded"><div class="lp-title"></div><div class="lp-btn"></div></div></div><span>Card</span></label><label class="layout-option"><input type="radio" name="programLayout" value="list"><div class="layout-preview" style="flex-direction:row"><div class="lp-img" style="width:50px;height:50px"></div><div class="lp-content"><div class="lp-title"></div><div class="lp-text short"></div></div></div><span>List</span></label><label class="layout-option"><input type="radio" name="programLayout" value="featured"><div class="layout-preview"><div class="lp-img tall"></div><div class="lp-content"><div class="lp-title big"></div><div class="lp-text"></div></div></div><span>Featured</span></label></div></div>
+                    <div class="form-row"><div class="form-group"><label>Level</label><select id="programLevel"><option value="all">Semua</option><option value="beginner">Beginner</option><option value="intermediate">Intermediate</option><option value="advanced">Advanced</option></select></div><div class="form-group"><label>Durasi</label><input type="text" id="programDuration"></div></div>
+                    <div class="form-row"><div class="form-group"><label>Jadwal</label><input type="text" id="programSchedule"></div><div class="form-group"><label>Harga</label><input type="text" id="programPrice"></div></div>
+                    <div class="form-group"><label>Cover URL</label><input type="text" id="programCover"></div>
+                    <div class="form-group"><label>Deskripsi</label><textarea id="programDesc" rows="3"></textarea></div>
+                    <div class="form-group"><label>Konten</label><textarea id="programContent" rows="5"></textarea></div>
+                    <div class="form-group"><label>Fitur (koma)</label><input type="text" id="programFeatures"></div>
+                    <div class="form-group"><label class="checkbox-label"><input type="checkbox" id="programActive" checked><span>Aktif</span></label></div>
+                    <div class="form-actions"><button class="btn btn-primary" onclick="saveProgram()"><i class="fas fa-save"></i> Simpan</button><button class="btn btn-outline" onclick="hideProgramForm()">Batal</button></div>
+                </div></div>
+                <div class="data-table-container"><table class="data-table"><thead><tr><th>Program</th><th>Tipe</th><th>Layout</th><th>Harga</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="programsTableBody"><tr><td colspan="6" class="loading-cell"><div class="spinner"></div></td></tr></tbody></table></div>
             </section>
 
-            <!-- ===== LAPORAN PENGGUNA JASA ===== -->
             <section class="admin-section" id="section-translation-clients">
-                <div class="section-toolbar">
-                    <h3>Laporan Pengguna Jasa Terjemah</h3>
-                    <div style="display:flex;gap:8px;">
-                        <button class="btn btn-success" onclick="exportClients()"><i class="fas fa-download"></i> Export CSV</button>
-                        <button class="btn btn-primary" onclick="showClientForm()"><i class="fas fa-plus"></i> Tambah</button>
-                    </div>
-                </div>
-                <div id="clientForm" class="admin-form" style="display:none;">
-                    <div class="form-card">
-                        <h4>Tambah Laporan Pengguna Jasa</h4>
-                        <input type="hidden" id="clientId">
-                        <div class="form-row">
-                            <div class="form-group"><label>Nama</label><input type="text" id="clientName" required></div>
-                            <div class="form-group"><label>No. HP</label><input type="text" id="clientPhone" required></div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group"><label>Email</label><input type="email" id="clientEmail"></div>
-                            <div class="form-group"><label>Jenis Dokumen</label>
-                                <select id="clientDocType"><option value="Ijazah">Ijazah</option><option value="Transkrip Nilai">Transkrip</option><option value="Akta Kelahiran">Akta</option><option value="KTP">KTP</option><option value="Surat Keterangan">Surat Keterangan</option><option value="Kontrak">Kontrak</option><option value="Lainnya">Lainnya</option></select>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group"><label>Bahasa Sumber</label><select id="clientSourceLang"><option value="Indonesia">Indonesia</option><option value="English">English</option><option value="Arabic">Arabic</option></select></div>
-                            <div class="form-group"><label>Bahasa Target</label><select id="clientTargetLang"><option value="English">English</option><option value="Indonesia">Indonesia</option><option value="Arabic">Arabic</option></select></div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group"><label>Status</label><select id="clientStatus"><option value="pending">Pending</option><option value="processing">Proses</option><option value="completed">Selesai</option></select></div>
-                            <div class="form-group"><label>Catatan</label><input type="text" id="clientNotes"></div>
-                        </div>
-                        <div class="form-actions">
-                            <button class="btn btn-primary" onclick="saveClient()"><i class="fas fa-save"></i> Simpan</button>
-                            <button class="btn btn-outline" onclick="hideClientForm()">Batal</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="data-table-container">
-                    <table class="data-table">
-                        <thead><tr><th>Nama</th><th>HP</th><th>Dokumen</th><th>Bahasa</th><th>Status</th><th>Tanggal</th><th>Aksi</th></tr></thead>
-                        <tbody id="clientsTableBody"><tr><td colspan="7" class="loading-cell"><div class="spinner"></div></td></tr></tbody>
-                    </table>
-                </div>
+                <div class="section-toolbar"><h3>Klien</h3><div style="display:flex;gap:8px"><button class="btn btn-success" onclick="exportClients()"><i class="fas fa-download"></i> CSV</button><button class="btn btn-primary" onclick="showClientForm()"><i class="fas fa-plus"></i> Tambah</button></div></div>
+                <div id="clientForm" class="admin-form" style="display:none"><div class="form-card">
+                    <h4>Tambah Klien</h4><input type="hidden" id="clientId">
+                    <div class="form-row"><div class="form-group"><label>Nama</label><input type="text" id="clientName" required></div><div class="form-group"><label>HP</label><input type="text" id="clientPhone" required></div></div>
+                    <div class="form-row"><div class="form-group"><label>Email</label><input type="email" id="clientEmail"></div><div class="form-group"><label>Dokumen</label><select id="clientDocType"><option value="Ijazah">Ijazah</option><option value="Transkrip Nilai">Transkrip</option><option value="Akta Kelahiran">Akta</option><option value="KTP">KTP</option><option value="Surat Keterangan">Surat</option><option value="Kontrak">Kontrak</option><option value="Lainnya">Lainnya</option></select></div></div>
+                    <div class="form-row"><div class="form-group"><label>Bahasa Sumber</label><select id="clientSourceLang"><option value="Indonesia">Indonesia</option><option value="English">English</option><option value="Arabic">Arabic</option></select></div><div class="form-group"><label>Bahasa Target</label><select id="clientTargetLang"><option value="English">English</option><option value="Indonesia">Indonesia</option><option value="Arabic">Arabic</option></select></div></div>
+                    <div class="form-row"><div class="form-group"><label>Status</label><select id="clientStatus"><option value="pending">Pending</option><option value="processing">Proses</option><option value="completed">Selesai</option></select></div><div class="form-group"><label>Catatan</label><input type="text" id="clientNotes"></div></div>
+                    <div class="form-actions"><button class="btn btn-primary" onclick="saveClient()"><i class="fas fa-save"></i> Simpan</button><button class="btn btn-outline" onclick="hideClientForm()">Batal</button></div>
+                </div></div>
+                <div class="data-table-container"><table class="data-table"><thead><tr><th>Nama</th><th>HP</th><th>Dokumen</th><th>Bahasa</th><th>Status</th><th>Tanggal</th><th>Aksi</th></tr></thead><tbody id="clientsTableBody"><tr><td colspan="7" class="loading-cell"><div class="spinner"></div></td></tr></tbody></table></div>
             </section>
 
-            <!-- ===== DOKUMEN TERJEMAHAN (UPLOAD PDF + QR CODE) ===== -->
-<section class="admin-section" id="section-translations">
-    <div class="section-toolbar">
-        <h3>Dokumen Terjemahan</h3>
-        <button class="btn btn-primary" onclick="showTranslationForm()">
-            <i class="fas fa-upload"></i> Upload Dokumen
-        </button>
-    </div>
-
-    <div id="translationForm" class="admin-form" style="display:none;">
-        <div class="form-card">
-            <h4><i class="fas fa-file-pdf"></i> Upload Dokumen Hasil Terjemahan</h4>
-            <input type="hidden" id="transDocId">
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Nama Klien</label>
-                    <input type="text" id="transClientName" required>
-                </div>
-                <div class="form-group">
-                    <label>Judul Dokumen</label>
-                    <input type="text" id="transDocTitle" required>
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Bahasa Sumber</label>
-                    <select id="transSourceLang">
-                        <option value="Indonesia">Indonesia</option>
-                        <option value="English">English</option>
-                        <option value="Arabic">Arabic</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Bahasa Target</label>
-                    <select id="transTargetLang">
-                        <option value="English">English</option>
-                        <option value="Indonesia">Indonesia</option>
-                        <option value="Arabic">Arabic</option>
-                    </select>
-                </div>
-            </div>
-
-            <div class="form-row">
-                <div class="form-group">
-                    <label>Jenis Dokumen</label>
-                    <select id="transDocType">
-                        <option value="Ijazah">Ijazah</option>
-                        <option value="Transkrip Nilai">Transkrip</option>
-                        <option value="Akta Kelahiran">Akta Kelahiran</option>
-                        <option value="KTP">KTP</option>
-                        <option value="Surat Keterangan">Surat Keterangan</option>
-                        <option value="Kontrak">Kontrak</option>
-                        <option value="Lainnya">Lainnya</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Tanggal Terbit</label>
-                    <input type="date" id="transIssuedDate">
-                </div>
-            </div>
-
-            <!-- UPLOAD FILE -->
-            <div class="upload-box">
-                <h5><i class="fas fa-cloud-upload-alt"></i> Upload File Dokumen</h5>
-                <p class="hint">Upload file PDF atau Word hasil terjemahan, lalu atur posisi QR Code</p>
-                <div class="file-upload-area">
-                    <input type="file" id="transFile" accept=".pdf,.doc,.docx"
-                           onchange="handleFilePreview(this, 'trans')">
-                    <label for="transFile" class="file-upload-label">
-                        <i class="fas fa-file-pdf"></i>
-                        <span>Klik untuk pilih file</span>
-                        <span class="file-hint">PDF, DOC, DOCX (max 10MB)</span>
-                    </label>
-                </div>
-                <div id="transFileInfo" class="file-info" style="display:none;">
-                    <i class="fas fa-file"></i>
-                    <span id="transFileName">-</span>
-                    <button type="button" onclick="removeFilePreview('trans')" class="btn-remove-file">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- LIVE PREVIEW DOCUMENT + QR OVERLAY -->
-            <div id="transLivePreview" class="live-preview-container" style="display:none;">
-                <div class="live-preview-header">
-                    <h6><i class="fas fa-eye"></i> Preview Dokumen</h6>
-                </div>
-                <div class="drag-instruction">
-                    <i class="fas fa-hand-pointer"></i>
-                    Drag QR Code untuk mengatur posisi pada dokumen
-                </div>
-                <div class="live-preview-doc" id="transPreviewDoc">
-                    <div class="live-preview-page" id="transPreviewPage">
-                        <!-- PDF/Image akan ditampilkan di sini -->
-                        <iframe id="transPreviewFrame" style="display:none;"></iframe>
-                        <canvas id="transPreviewCanvas" style="display:none;"></div>
-                        <div id="transWordFallback" class="word-preview-fallback" style="display:none;">
-                            <i class="fas fa-file-word"></i>
-                            <h4>Dokumen Word</h4>
-                            <p id="transWordName">document.docx</p>
-                        </div>
-
-                        <!-- DRAGGABLE QR CODE -->
-                        <div id="transQrDrag" class="qr-doc-overlay"
-                             style="left:80%;top:85%;position:absolute;">
-                            <div id="transQrCanvas" width="80" height="80"></div>
-                            <div id="transQrIdText" class="qr-doc-id">SIEC-TR-2024-XXXX</div>
+            <section class="admin-section" id="section-translations">
+                <div class="section-toolbar"><h3>Dokumen Terjemahan</h3><button class="btn btn-primary" onclick="showTranslationForm()"><i class="fas fa-upload"></i> Upload</button></div>
+                <div id="translationForm" class="admin-form" style="display:none"><div class="form-card">
+                    <h4><i class="fas fa-file-pdf"></i> Upload Dokumen + QR Code</h4><input type="hidden" id="transDocId">
+                    <div class="form-row"><div class="form-group"><label>Nama Klien</label><input type="text" id="transClientName" required></div><div class="form-group"><label>Judul</label><input type="text" id="transDocTitle" required></div></div>
+                    <div class="form-row"><div class="form-group"><label>Bahasa Sumber</label><select id="transSourceLang"><option value="Indonesia">Indonesia</option><option value="English">English</option><option value="Arabic">Arabic</option></select></div><div class="form-group"><label>Bahasa Target</label><select id="transTargetLang"><option value="English">English</option><option value="Indonesia">Indonesia</option><option value="Arabic">Arabic</option></select></div></div>
+                    <div class="form-row"><div class="form-group"><label>Jenis</label><select id="transDocType"><option value="Ijazah">Ijazah</option><option value="Transkrip Nilai">Transkrip</option><option value="Akta Kelahiran">Akta</option><option value="KTP">KTP</option><option value="Surat Keterangan">Surat</option><option value="Kontrak">Kontrak</option><option value="Lainnya">Lainnya</option></select></div><div class="form-group"><label>Tanggal</label><input type="date" id="transIssuedDate"></div></div>
+                    <div class="upload-box"><h5><i class="fas fa-cloud-upload-alt"></i> Upload PDF</h5><p class="hint">QR Code ditempel langsung di dalam PDF</p><div class="file-upload-area"><input type="file" id="transFile" accept=".pdf,.doc,.docx" onchange="handleFilePreview(this,'trans')"><label for="transFile" class="file-upload-label"><i class="fas fa-file-pdf"></i><span>Pilih file</span><span class="file-hint">PDF/DOC max 10MB</span></label></div><div id="transFileInfo" class="file-info" style="display:none"><i class="fas fa-file"></i><span id="transFileName">-</span><button type="button" onclick="removeFilePreview('trans')" class="btn-remove-file"><i class="fas fa-times"></i></button></div></div>
+                    <div id="transLivePreview" class="live-preview-container" style="display:none">
+                        <div class="live-preview-header"><h6><i class="fas fa-hand-pointer"></i> Drag QR ke posisi yang diinginkan</h6></div>
+                        <div class="live-preview-doc"><div class="live-preview-page" id="transPreviewPage">
+                            <iframe id="transPreviewFrame" style="display:none;width:100%;height:700px;border:none"></iframe>
+                            <div id="transWordFallback" class="word-preview-fallback" style="display:none"><i class="fas fa-file-word"></i><h4>Word</h4><p id="transWordName">-</p></div>
+                            <div id="transQrDrag" class="qr-doc-overlay" style="left:80%;top:85%;position:absolute"><div id="transQrCanvas" style="display:inline-block"></div><div id="transQrIdText" class="qr-doc-id">SIEC-TR-XXXX</div></div>
+                        </div></div>
+                        <div class="position-indicator">
+                            <span>X:<strong id="transPosX">80%</strong> Y:<strong id="transPosY">85%</strong></span>
+                            <span>|</span>
+                            <button type="button" onclick="qrSizeDown('trans')" class="btn-size">−</button>
+                            <input type="range" id="transQrSize" min="40" max="150" value="80" style="width:80px" oninput="resizeQr('trans')">
+                            <button type="button" onclick="qrSizeUp('trans')" class="btn-size">+</button>
+                            <strong id="transQrSizeVal">80px</strong>
+                            <span>|</span>
+                            <label style="display:flex;align-items:center;gap:4px"><input type="checkbox" id="transShowId" checked onchange="toggleQrId('trans')">ID</label>
                         </div>
                     </div>
-                </div>
-                <div class="position-indicator" id="transPositionInfo">
-                    <span>Posisi: <strong id="transPosX">80%</strong> x <strong id="transPosY">85%</strong></span>
-                    <span>|</span>
-                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;">
-                        <span>Ukuran:</span>
-                        <input type="range" id="transQrSize" min="40" max="150" value="80"
-                               style="width:100px;" oninput="resizeQr('trans')">
-                        <strong id="transQrSizeVal">80px</strong>
-                    </label>
-                    <span>|</span>
-                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;">
-                        <input type="checkbox" id="transShowId" checked onchange="toggleQrId('trans')">
-                        <span>ID</span>
-                    </label>
-                </div>
-            </div>
+                    <div id="transSmallPreview" class="qr-position-box"><h5><i class="fas fa-qrcode"></i> Posisi QR</h5><p class="hint">Upload PDF untuk preview langsung</p><div class="position-controls"><div class="form-row"><div class="form-group"><label>X</label><input type="range" id="transQrX" min="5" max="95" value="80" oninput="updateSmallPreview('trans')"><span id="transQrXVal">80%</span></div><div class="form-group"><label>Y</label><input type="range" id="transQrY" min="5" max="95" value="85" oninput="updateSmallPreview('trans')"><span id="transQrYVal">85%</span></div></div></div><div class="doc-preview-area"><div class="small-doc-preview"><div class="doc-preview-content"><div class="doc-line"></div><div class="doc-line short"></div><div class="doc-line"></div><div class="doc-line short"></div><div class="doc-line"></div></div><div id="transSmallQr" class="qr-overlay" style="left:80%;top:85%;transform:translate(-50%,-50%)"><div id="transSmallQrCanvas" style="display:inline-block"></div><div class="qr-id-text">SIEC-TR-XXXX</div></div></div></div></div>
+                    <div class="form-group"><label>Catatan</label><textarea id="transNotes" rows="2"></textarea></div>
+                    <div class="form-actions"><button class="btn btn-primary" onclick="saveTranslation()"><i class="fas fa-save"></i> Upload & Tempel QR</button><button class="btn btn-outline" onclick="hideTranslationForm()">Batal</button></div>
+                </div></div>
+                <div id="printPreview" class="print-preview-modal" style="display:none"><div class="print-modal-content"><div class="print-modal-header"><h4>✅ Berhasil</h4><button onclick="closePrintPreview('printPreview')" class="btn-close">&times;</button></div><div id="printPreviewContent"></div><div class="print-actions"><button class="btn btn-outline" onclick="closePrintPreview('printPreview')">Tutup</button></div></div></div>
+                <div class="data-table-container"><table class="data-table"><thead><tr><th>ID</th><th>Klien</th><th>Dokumen</th><th>Bahasa</th><th>File</th><th>Tanggal</th><th>Aksi</th></tr></thead><tbody id="translationsTableBody"><tr><td colspan="7" class="loading-cell"><div class="spinner"></div></td></tr></tbody></table></div>
+            </section>
 
-            <!-- Fallback: jika belum upload file, tampilkan preview kecil -->
-            <div id="transSmallPreview" class="qr-position-box">
-                <h5><i class="fas fa-qrcode"></i> Setting Posisi QR Code</h5>
-                <p class="hint">Upload file di atas untuk preview langsung, atau atur posisi di sini</p>
-                <div class="position-controls">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Posisi Horizontal</label>
-                            <input type="range" id="transQrX" min="5" max="95" value="80"
-                                   oninput="updateSmallPreview('trans')">
-                            <span id="transQrXVal">80%</span>
-                        </div>
-                        <div class="form-group">
-                            <label>Posisi Vertikal</label>
-                            <input type="range" id="transQrY" min="5" max="95" value="85"
-                                   oninput="updateSmallPreview('trans')">
-                            <span id="transQrYVal">85%</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="doc-preview-area">
-                    <div class="small-doc-preview" id="transSmallDocPreview">
-                        <div class="doc-preview-content">
-                            <div class="doc-line"></div>
-                            <div class="doc-line short"></div>
-                            <div class="doc-line"></div>
-                            <div class="doc-line short"></div>
-                            <div class="doc-line"></div>
-                            <div class="doc-line"></div>
-                            <div class="doc-line short"></div>
-                        </div>
-                        <div id="transSmallQr" class="qr-overlay" style="left:80%;top:85%;transform:translate(-50%,-50%);">
-                            <div id="transSmallQrCanvas" width="50" height="50"></div>
-                            <div class="qr-id-text">SIEC-TR-XXXX</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-group">
-                <label>Catatan</label>
-                <textarea id="transNotes" rows="2"></textarea>
-            </div>
-
-            <div class="form-actions">
-                <button class="btn btn-primary" onclick="saveTranslation()">
-                    <i class="fas fa-save"></i> Upload & Generate QR Code
-                </button>
-                <button class="btn btn-outline" onclick="hideTranslationForm()">Batal</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Print Preview -->
-    <div id="printPreview" class="print-preview-modal" style="display:none;">
-        <div class="print-modal-content">
-            <div class="print-modal-header">
-                <h4><i class="fas fa-print"></i> Preview Cetak</h4>
-                <button onclick="closePrintPreview('printPreview')" class="btn-close">×</button>
-            </div>
-            <div id="printPreviewContent"></div>
-            <div class="print-actions">
-                <button class="btn btn-primary" onclick="printDocument()"><i class="fas fa-print"></i> Cetak</button>
-                <button class="btn btn-outline" onclick="closePrintPreview('printPreview')">Tutup</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="data-table-container">
-        <table class="data-table">
-            <thead><tr><th>ID</th><th>Klien</th><th>Dokumen</th><th>Bahasa</th><th>File</th><th>Tanggal</th><th>Aksi</th></tr></thead>
-            <tbody id="translationsTableBody"><tr><td colspan="7" class="loading-cell"><div class="spinner"></div></td></tr></tbody>
-        </table>
-    </div>
-</section>
-            <!-- ===== STATUS TERJEMAHAN ===== -->
             <section class="admin-section" id="section-translation-status">
-                <div class="section-toolbar">
-                    <h3>Status Penerjemahan</h3>
-                    <button class="btn btn-primary" onclick="showStatusForm()"><i class="fas fa-plus"></i> Tambah</button>
-                </div>
-                <div id="statusForm" class="admin-form" style="display:none;">
-                    <div class="form-card">
-                        <h4>Update Status</h4>
-                        <input type="hidden" id="statusId">
-                        <div class="form-row">
-                            <div class="form-group"><label>Nama</label><input type="text" id="statusClientName" required></div>
-                            <div class="form-group"><label>No. HP</label><input type="text" id="statusClientPhone" required></div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group"><label>Jenis Dokumen</label><input type="text" id="statusDocType" required></div>
-                            <div class="form-group"><label>Status</label>
-                                <select id="statusValue"><option value="received">Diterima</option><option value="processing">Proses</option><option value="review">Review</option><option value="completed">Selesai</option><option value="delivered">Diserahkan</option></select>
-                            </div>
-                        </div>
-                        <div class="form-row">
-                            <div class="form-group"><label>Keterangan</label><input type="text" id="statusDesc"></div>
-                            <div class="form-group"><label>Estimasi</label><input type="date" id="statusEstimate"></div>
-                        </div>
-                        <div class="form-actions">
-                            <button class="btn btn-primary" onclick="saveStatus()"><i class="fas fa-save"></i> Simpan</button>
-                            <button class="btn btn-outline" onclick="hideStatusForm()">Batal</button>
-                        </div>
-                    </div>
-                </div>
-                <div class="data-table-container">
-                    <table class="data-table">
-                        <thead><tr><th>Kode</th><th>Klien</th><th>Dokumen</th><th>Status</th><th>Estimasi</th><th>Aksi</th></tr></thead>
-                        <tbody id="statusTableBody"><tr><td colspan="6" class="loading-cell"><div class="spinner"></div></td></tr></tbody>
-                    </table>
-                </div>
+                <div class="section-toolbar"><h3>Status</h3><button class="btn btn-primary" onclick="showStatusForm()"><i class="fas fa-plus"></i> Tambah</button></div>
+                <div id="statusForm" class="admin-form" style="display:none"><div class="form-card">
+                    <h4>Update Status</h4><input type="hidden" id="statusId">
+                    <div class="form-row"><div class="form-group"><label>Nama</label><input type="text" id="statusClientName" required></div><div class="form-group"><label>HP</label><input type="text" id="statusClientPhone" required></div></div>
+                    <div class="form-row"><div class="form-group"><label>Dokumen</label><input type="text" id="statusDocType" required></div><div class="form-group"><label>Status</label><select id="statusValue"><option value="received">Diterima</option><option value="processing">Proses</option><option value="review">Review</option><option value="completed">Selesai</option><option value="delivered">Diserahkan</option></select></div></div>
+                    <div class="form-row"><div class="form-group"><label>Keterangan</label><input type="text" id="statusDesc"></div><div class="form-group"><label>Estimasi</label><input type="date" id="statusEstimate"></div></div>
+                    <div class="form-actions"><button class="btn btn-primary" onclick="saveStatus()"><i class="fas fa-save"></i> Simpan</button><button class="btn btn-outline" onclick="hideStatusForm()">Batal</button></div>
+                </div></div>
+                <div class="data-table-container"><table class="data-table"><thead><tr><th>Kode</th><th>Klien</th><th>Dokumen</th><th>Status</th><th>Estimasi</th><th>Aksi</th></tr></thead><tbody id="statusTableBody"><tr><td colspan="6" class="loading-cell"><div class="spinner"></div></td></tr></tbody></table></div>
             </section>
 
-            <!-- ===== SERTIFIKAT TOEFL ===== -->
-<section class="admin-section" id="section-toefl">
-    <div class="section-toolbar">
-        <h3>Sertifikat TOEFL Prediction</h3>
-        <button class="btn btn-primary" onclick="showToeflForm()">
-            <i class="fas fa-upload"></i> Upload Sertifikat
-        </button>
-    </div>
-
-    <div id="toeflForm" class="admin-form" style="display:none;">
-        <div class="form-card">
-            <h4><i class="fas fa-certificate"></i> Upload Sertifikat TOEFL</h4>
-            <input type="hidden" id="toeflId">
-
-            <div class="form-row">
-                <div class="form-group"><label>Nama Peserta</label><input type="text" id="toeflName" required></div>
-                <div class="form-group"><label>Tanggal Tes</label><input type="date" id="toeflTestDate" required></div>
-            </div>
-            <div class="form-row">
-                <div class="form-group"><label>Email</label><input type="email" id="toeflEmail"></div>
-                <div class="form-group"><label>No. HP</label><input type="text" id="toeflPhone"></div>
-            </div>
-            <div class="form-row three-cols">
-                <div class="form-group"><label>Listening</label><input type="number" id="toeflListening" min="0" max="68" oninput="calculateToeflTotal()"></div>
-                <div class="form-group"><label>Structure</label><input type="number" id="toeflStructure" min="0" max="68" oninput="calculateToeflTotal()"></div>
-                <div class="form-group"><label>Reading</label><input type="number" id="toeflReading" min="0" max="67" oninput="calculateToeflTotal()"></div>
-            </div>
-            <div class="form-group">
-                <label>Total Score (otomatis)</label>
-                <input type="number" id="toeflTotal" readonly class="readonly-input">
-            </div>
-
-            <!-- UPLOAD FILE PDF -->
-            <div class="upload-box">
-                <h5><i class="fas fa-cloud-upload-alt"></i> Upload File Sertifikat PDF</h5>
-                <p class="hint">Upload sertifikat TOEFL (PDF), lalu atur posisi QR Code langsung di dokumen</p>
-                <div class="file-upload-area">
-                    <input type="file" id="toeflFile" accept=".pdf"
-                           onchange="handleFilePreview(this, 'toefl')">
-                    <label for="toeflFile" class="file-upload-label">
-                        <i class="fas fa-file-pdf"></i>
-                        <span>Klik untuk pilih file PDF</span>
-                        <span class="file-hint">PDF (max 10MB)</span>
-                    </label>
-                </div>
-                <div id="toeflFileInfo" class="file-info" style="display:none;">
-                    <i class="fas fa-file-pdf"></i>
-                    <span id="toeflFileName">-</span>
-                    <button type="button" onclick="removeFilePreview('toefl')" class="btn-remove-file">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-            </div>
-
-            <!-- LIVE PREVIEW TOEFL -->
-            <div id="toeflLivePreview" class="live-preview-container" style="display:none;">
-                <div class="live-preview-header">
-                    <h6><i class="fas fa-eye"></i> Preview Sertifikat</h6>
-                    <div class="remember-position" style="background:transparent;padding:0;margin:0;">
-                        <label class="checkbox-label" style="color:white;font-size:0.8rem;">
-                            <input type="checkbox" id="toeflRememberPos" checked>
-                            <span><i class="fas fa-memory"></i> Ingat posisi</span>
-                        </label>
-                    </div>
-                </div>
-                <div class="drag-instruction">
-                    <i class="fas fa-hand-pointer"></i>
-                    Drag QR Code untuk mengatur posisi pada sertifikat
-                </div>
-                <div class="live-preview-doc" id="toeflPreviewDoc">
-                    <div class="live-preview-page" id="toeflPreviewPage">
-                        <iframe id="toeflPreviewFrame" style="display:none;"></iframe>
-                        <canvas id="toeflPreviewCanvas" style="display:none;"></div>
-
-                        <!-- DRAGGABLE QR CODE -->
-                        <div id="toeflQrDrag" class="qr-doc-overlay"
-                             style="left:80%;top:85%;position:absolute;">
-                            <div id="toeflQrCanvas" width="80" height="80"></div>
-                            <div id="toeflQrIdText" class="qr-doc-id">SIEC-TF-2024-XXXX</div>
+            <section class="admin-section" id="section-toefl">
+                <div class="section-toolbar"><h3>TOEFL</h3><button class="btn btn-primary" onclick="showToeflForm()"><i class="fas fa-upload"></i> Upload</button></div>
+                <div id="toeflForm" class="admin-form" style="display:none"><div class="form-card">
+                    <h4><i class="fas fa-certificate"></i> Upload Sertifikat + QR Code</h4><input type="hidden" id="toeflId">
+                    <div class="form-row"><div class="form-group"><label>Nama</label><input type="text" id="toeflName" required></div><div class="form-group"><label>Tanggal Tes</label><input type="date" id="toeflTestDate" required></div></div>
+                    <div class="form-row"><div class="form-group"><label>Email</label><input type="email" id="toeflEmail"></div><div class="form-group"><label>HP</label><input type="text" id="toeflPhone"></div></div>
+                    <div class="form-row three-cols"><div class="form-group"><label>Listening</label><input type="number" id="toeflListening" min="0" max="68" oninput="calculateToeflTotal()"></div><div class="form-group"><label>Structure</label><input type="number" id="toeflStructure" min="0" max="68" oninput="calculateToeflTotal()"></div><div class="form-group"><label>Reading</label><input type="number" id="toeflReading" min="0" max="67" oninput="calculateToeflTotal()"></div></div>
+                    <div class="form-group"><label>Total</label><input type="number" id="toeflTotal" readonly class="readonly-input"></div>
+                    <div class="upload-box"><h5><i class="fas fa-cloud-upload-alt"></i> Upload PDF Sertifikat</h5><p class="hint">QR Code ditempel langsung di dalam PDF</p><div class="file-upload-area"><input type="file" id="toeflFile" accept=".pdf" onchange="handleFilePreview(this,'toefl')"><label for="toeflFile" class="file-upload-label"><i class="fas fa-file-pdf"></i><span>Pilih PDF</span><span class="file-hint">Max 10MB</span></label></div><div id="toeflFileInfo" class="file-info" style="display:none"><i class="fas fa-file-pdf"></i><span id="toeflFileName">-</span><button type="button" onclick="removeFilePreview('toefl')" class="btn-remove-file"><i class="fas fa-times"></i></button></div></div>
+                    <div id="toeflLivePreview" class="live-preview-container" style="display:none">
+                        <div class="live-preview-header"><h6><i class="fas fa-hand-pointer"></i> Drag QR ke posisi yang diinginkan</h6><label style="color:#fff;font-size:.8rem;display:flex;align-items:center;gap:4px"><input type="checkbox" id="toeflRememberPos" checked>Ingat</label></div>
+                        <div class="live-preview-doc"><div class="live-preview-page" id="toeflPreviewPage">
+                            <iframe id="toeflPreviewFrame" style="display:none;width:100%;height:700px;border:none"></iframe>
+                            <div id="toeflQrDrag" class="qr-doc-overlay" style="left:80%;top:85%;position:absolute"><div id="toeflQrCanvas" style="display:inline-block"></div><div id="toeflQrIdText" class="qr-doc-id">SIEC-TF-XXXX</div></div>
+                        </div></div>
+                        <div class="position-indicator">
+                            <span>X:<strong id="toeflPosX">80%</strong> Y:<strong id="toeflPosY">85%</strong></span>
+                            <span>|</span>
+                            <button type="button" onclick="qrSizeDown('toefl')" class="btn-size">−</button>
+                            <input type="range" id="toeflQrSize" min="40" max="150" value="80" style="width:80px" oninput="resizeQr('toefl')">
+                            <button type="button" onclick="qrSizeUp('toefl')" class="btn-size">+</button>
+                            <strong id="toeflQrSizeVal">80px</strong>
+                            <span>|</span>
+                            <label style="display:flex;align-items:center;gap:4px"><input type="checkbox" id="toeflShowId" checked onchange="toggleQrId('toefl')">ID</label>
+                            <span>|</span>
+                            <button class="btn btn-sm btn-outline" onclick="resetToeflPosition()" style="font-size:.7rem">Reset</button>
                         </div>
                     </div>
-                </div>
-                <div class="position-indicator" id="toeflPositionInfo">
-                    <span>Posisi: <strong id="toeflPosX">80%</strong> x <strong id="toeflPosY">85%</strong></span>
-                    <span>|</span>
-                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;">
-                        <span>Ukuran:</span>
-                        <input type="range" id="toeflQrSize" min="40" max="150" value="80"
-                               style="width:100px;" oninput="resizeQr('toefl')">
-                        <strong id="toeflQrSizeVal">80px</strong>
-                    </label>
-                    <span>|</span>
-                    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;">
-                        <input type="checkbox" id="toeflShowId" checked onchange="toggleQrId('toefl')">
-                        <span>ID</span>
-                    </label>
-                </div>
-            </div>
-
-            <!-- Fallback small preview -->
-            <div id="toeflSmallPreview" class="qr-position-box">
-                <h5><i class="fas fa-qrcode"></i> Setting Posisi QR Code</h5>
-                <p class="hint">Upload file di atas untuk preview langsung</p>
-                <div class="position-controls">
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label>Posisi Horizontal</label>
-                            <input type="range" id="toeflQrX" min="5" max="95" value="80" oninput="updateSmallPreview('toefl')">
-                            <span id="toeflQrXVal">80%</span>
-                        </div>
-                        <div class="form-group">
-                            <label>Posisi Vertikal</label>
-                            <input type="range" id="toeflQrY" min="5" max="95" value="85" oninput="updateSmallPreview('toefl')">
-                            <span id="toeflQrYVal">85%</span>
-                        </div>
-                    </div>
-                </div>
-                <div class="doc-preview-area">
-                    <div class="small-doc-preview">
-                        <div class="cert-preview-content">
-                            <div class="cert-logo-mini"><img src="assets/logo.png" alt="SIEC"></div>
-                            <div class="cert-title"></div>
-                            <div class="cert-name"></div>
-                            <div class="cert-scores"><div class="cert-score-box"></div><div class="cert-score-box"></div><div class="cert-score-box"></div></div>
-                        </div>
-                        <div id="toeflSmallQr" class="qr-overlay" style="left:80%;top:85%;transform:translate(-50%,-50%);">
-                            <div id="toeflSmallQrCanvas" width="50" height="50"></div>
-                            <div class="qr-id-text">SIEC-TF-XXXX</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-group"><label>Catatan</label><textarea id="toeflNotes" rows="2"></textarea></div>
-
-            <div class="form-actions">
-                <button class="btn btn-primary" onclick="saveToefl()"><i class="fas fa-save"></i> Upload & Generate QR Code</button>
-                <button class="btn btn-outline" onclick="hideToeflForm()">Batal</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Print Preview TOEFL -->
-    <div id="certPrintModal" class="print-preview-modal" style="display:none;">
-        <div class="print-modal-content">
-            <div class="print-modal-header">
-                <h4><i class="fas fa-certificate"></i> Preview Sertifikat</h4>
-                <button onclick="closePrintPreview('certPrintModal')" class="btn-close">×</button>
-            </div>
-            <div id="certPrintContent"></div>
-            <div class="print-actions">
-                <button class="btn btn-primary" onclick="printDocument()"><i class="fas fa-print"></i> Cetak</button>
-                <a id="certDownloadLink" class="btn btn-success" style="display:none" target="_blank"><i class="fas fa-download"></i> Download PDF</a>
-                <button class="btn btn-outline" onclick="closePrintPreview('certPrintModal')">Tutup</button>
-            </div>
-        </div>
-    </div>
-
-    <div class="data-table-container">
-        <table class="data-table">
-            <thead><tr><th>ID</th><th>Nama</th><th>Tanggal</th><th>L/S/R</th><th>Total</th><th>File</th><th>Aksi</th></tr></thead>
-            <tbody id="toeflTableBody"><tr><td colspan="7" class="loading-cell"><div class="spinner"></div></td></tr></tbody>
-        </table>
-    </div>
-</section>
-
+                    <div id="toeflSmallPreview" class="qr-position-box"><h5><i class="fas fa-qrcode"></i> Posisi QR</h5><p class="hint">Upload PDF untuk preview</p><div class="position-controls"><div class="form-row"><div class="form-group"><label>X</label><input type="range" id="toeflQrX" min="5" max="95" value="80" oninput="updateSmallPreview('toefl')"><span id="toeflQrXVal">80%</span></div><div class="form-group"><label>Y</label><input type="range" id="toeflQrY" min="5" max="95" value="85" oninput="updateSmallPreview('toefl')"><span id="toeflQrYVal">85%</span></div></div></div><div class="doc-preview-area"><div class="small-doc-preview"><div class="cert-preview-content"><div class="cert-logo-mini"><img src="assets/logo.png" alt="" onerror="this.style.display='none'"></div><div class="cert-title"></div><div class="cert-name"></div><div class="cert-scores"><div class="cert-score-box"></div><div class="cert-score-box"></div><div class="cert-score-box"></div></div></div><div id="toeflSmallQr" class="qr-overlay" style="left:80%;top:85%;transform:translate(-50%,-50%)"><div id="toeflSmallQrCanvas" style="display:inline-block"></div><div class="qr-id-text">SIEC-TF-XXXX</div></div></div></div></div>
+                    <div class="form-group"><label>Catatan</label><textarea id="toeflNotes" rows="2"></textarea></div>
+                    <div class="form-actions"><button class="btn btn-primary" onclick="saveToefl()"><i class="fas fa-save"></i> Upload & Tempel QR</button><button class="btn btn-outline" onclick="hideToeflForm()">Batal</button></div>
+                </div></div>
+                <div id="certPrintModal" class="print-preview-modal" style="display:none"><div class="print-modal-content"><div class="print-modal-header"><h4>✅ Preview</h4><button onclick="closePrintPreview('certPrintModal')" class="btn-close">&times;</button></div><div id="certPrintContent"></div><div class="print-actions"><a id="certDownloadLink" class="btn btn-success" style="display:none" target="_blank"><i class="fas fa-download"></i> Download</a><button class="btn btn-outline" onclick="closePrintPreview('certPrintModal')">Tutup</button></div></div></div>
+                <div class="data-table-container"><table class="data-table"><thead><tr><th>ID</th><th>Nama</th><th>Tanggal</th><th>L/S/R</th><th>Total</th><th>File</th><th>Aksi</th></tr></thead><tbody id="toeflTableBody"><tr><td colspan="7" class="loading-cell"><div class="spinner"></div></td></tr></tbody></table></div>
+            </section>
         </div>
     </main>
 </div>
-
-<!-- Scripts -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<!-- Scripts -->
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-
-<!-- QR Code Library - Multiple CDN Fallback -->
-<script>
-// Load QR Code library dengan fallback
-(function() {
-    var cdns = [
-        'https://unpkg.com/qrcode@1.5.3/build/qrcode.min.js',
-        'https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js',
-        'https://cdn.jsdelivr.net/npm/qrcode/build/qrcode.js'
-    ];
-    
-    var loaded = false;
-    
-    function tryLoad(index) {
-        if (index >= cdns.length || loaded) return;
-        
-        var script = document.createElement('script');
-        script.src = cdns[index];
-        script.onload = function() {
-            if (typeof QRCode !== 'undefined') {
-                loaded = true;
-                console.log('QR Code library loaded from:', cdns[index]);
-            }
-        };
-        script.onerror = function() {
-            console.log('Failed CDN:', cdns[index], 'trying next...');
-            tryLoad(index + 1);
-        };
-        document.head.appendChild(script);
-    }
-    
-    tryLoad(0);
-})();
-</script>
-
-<!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
 <script src="js/app.js"></script>
