@@ -11,6 +11,9 @@ async function embedQrInPdf(file, qrText, idText, posXPct, posYPct, qrSizePx) {
     var pw = pg.getWidth();
     var ph = pg.getHeight();
 
+    console.log('PDF size:', pw, 'x', ph);
+    console.log('QR position from preview:', posXPct + '%', posYPct + '%');
+
     var resp = await fetch(getQrUrl(qrText, 300));
     if (!resp.ok) throw new Error('QR fetch fail');
     var qrBuf = await resp.arrayBuffer();
@@ -18,10 +21,27 @@ async function embedQrInPdf(file, qrText, idText, posXPct, posYPct, qrSizePx) {
 
     var sz = parseInt(qrSizePx) || 80;
 
-    // Preview coordinate: percentage from top-left (center of QR)
-    // PDF coordinate: points from bottom-left (bottom-left corner of image)
-    var pdfX = (posXPct / 100) * pw - (sz / 2);
-    var pdfY = ph - ((posYPct / 100) * ph) - (sz / 2);
+    // PENTING: Preview container selalu 600x700 (fixed CSS)
+    // Tapi PDF bisa portrait (595x842) atau landscape (842x595)
+    // Kita perlu scale percentage berdasarkan aspect ratio
+
+    var previewW = 600;
+    var previewH = 700;
+
+    // Hitung posisi pixel di preview
+    var previewX = (posXPct / 100) * previewW;
+    var previewY = (posYPct / 100) * previewH;
+
+    // Scale ke PDF coordinates
+    var scaleX = pw / previewW;
+    var scaleY = ph / previewH;
+
+    // Posisi di PDF (dari bottom-left, bukan top-left)
+    var pdfX = (previewX * scaleX) - (sz / 2);
+    var pdfY = ph - (previewY * scaleY) - (sz / 2);
+
+    console.log('Scale:', scaleX.toFixed(2), scaleY.toFixed(2));
+    console.log('PDF coords:', pdfX.toFixed(0), pdfY.toFixed(0));
 
     // Clamp
     if (pdfX < 5) pdfX = 5;
@@ -30,19 +50,42 @@ async function embedQrInPdf(file, qrText, idText, posXPct, posYPct, qrSizePx) {
     if (pdfY > ph - sz - 5) pdfY = ph - sz - 5;
 
     // White background
-    pg.drawRectangle({ x: pdfX - 4, y: pdfY - 22, width: sz + 8, height: sz + 26, color: PDFLib.rgb(1, 1, 1) });
+    pg.drawRectangle({
+        x: pdfX - 4,
+        y: pdfY - 22,
+        width: sz + 8,
+        height: sz + 26,
+        color: PDFLib.rgb(1, 1, 1)
+    });
 
     // QR image
-    pg.drawImage(qrImg, { x: pdfX, y: pdfY, width: sz, height: sz });
+    pg.drawImage(qrImg, {
+        x: pdfX,
+        y: pdfY,
+        width: sz,
+        height: sz
+    });
 
     // ID text
     if (idText) {
         var font = await doc.embedFont(PDFLib.StandardFonts.Helvetica);
         var tw = font.widthOfTextAtSize(idText, 7);
-        pg.drawText(idText, { x: pdfX + (sz - tw) / 2, y: pdfY - 10, size: 7, font: font, color: PDFLib.rgb(0, 0, 0) });
+        pg.drawText(idText, {
+            x: pdfX + (sz - tw) / 2,
+            y: pdfY - 10,
+            size: 7,
+            font: font,
+            color: PDFLib.rgb(0, 0, 0)
+        });
         var vt = 'Scan QR untuk verifikasi';
         var vw = font.widthOfTextAtSize(vt, 5);
-        pg.drawText(vt, { x: pdfX + (sz - vw) / 2, y: pdfY - 18, size: 5, font: font, color: PDFLib.rgb(0.5, 0.5, 0.5) });
+        pg.drawText(vt, {
+            x: pdfX + (sz - vw) / 2,
+            y: pdfY - 18,
+            size: 5,
+            font: font,
+            color: PDFLib.rgb(0.5, 0.5, 0.5)
+        });
     }
 
     // Logo
@@ -52,8 +95,18 @@ async function embedQrInPdf(file, qrText, idText, posXPct, posYPct, qrSizePx) {
             var lb = await lr.arrayBuffer();
             var li = await doc.embedPng(lb);
             var ls = sz * 0.22;
-            pg.drawCircle({ x: pdfX + sz / 2, y: pdfY + sz / 2, size: ls / 2 + 2, color: PDFLib.rgb(1, 1, 1) });
-            pg.drawImage(li, { x: pdfX + (sz - ls) / 2, y: pdfY + (sz - ls) / 2, width: ls, height: ls });
+            pg.drawCircle({
+                x: pdfX + sz / 2,
+                y: pdfY + sz / 2,
+                size: ls / 2 + 2,
+                color: PDFLib.rgb(1, 1, 1)
+            });
+            pg.drawImage(li, {
+                x: pdfX + (sz - ls) / 2,
+                y: pdfY + (sz - ls) / 2,
+                width: ls,
+                height: ls
+            });
         }
     } catch (e) {}
 
