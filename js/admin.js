@@ -15,13 +15,32 @@ async function embedQrInPdf(file, qrText, idText, posXPct, posYPct, qrSizePx) {
     var qrBuf = await resp.arrayBuffer();
     var qrImg = await doc.embedPng(qrBuf);
     var sz = parseInt(qrSizePx) || 80;
+
+    // Preview iframe memiliki toolbar PDF viewer di atas (~40-50px)
+    // yang membuat area dokumen sebenarnya lebih kecil dari container
+    // Jadi posYPct dari preview perlu di-adjust
+    
+    // Estimasi: toolbar ~7% dari tinggi container
+    // Dokumen actual mulai dari ~7% dan berakhir di ~95%
+    // Jadi range Y efektif preview = 7% - 95% (range 88%)
+    
+    // Remap posYPct: 
+    // Preview 5% → PDF 0% (atas)
+    // Preview 95% → PDF 100% (bawah)
+    var adjustedY = (posYPct - 5) / 90 * 100;
+    if (adjustedY < 0) adjustedY = 0;
+    if (adjustedY > 100) adjustedY = 100;
+
     var pdfX = (posXPct / 100) * pw - (sz / 2);
-    var pdfY = ph - ((posYPct / 100) * ph) - (sz / 2);
-    console.log('embedQr: PDF=' + pw + 'x' + ph + ' input=' + posXPct + '%,' + posYPct + '% result=x:' + Math.round(pdfX) + ' y:' + Math.round(pdfY));
+    var pdfY = ph - ((adjustedY / 100) * ph) - (sz / 2);
+
+    console.log('embedQr: PDF=' + pw + 'x' + ph + ' input=' + posXPct + '%,' + posYPct + '% adjusted=' + adjustedY.toFixed(0) + '% result=x:' + Math.round(pdfX) + ' y:' + Math.round(pdfY));
+
     if (pdfX < 5) pdfX = 5;
     if (pdfX > pw - sz - 5) pdfX = pw - sz - 5;
     if (pdfY < 25) pdfY = 25;
     if (pdfY > ph - sz - 5) pdfY = ph - sz - 5;
+
     pg.drawRectangle({ x: pdfX - 4, y: pdfY - 22, width: sz + 8, height: sz + 26, color: PDFLib.rgb(1, 1, 1) });
     pg.drawImage(qrImg, { x: pdfX, y: pdfY, width: sz, height: sz });
     if (idText) {
