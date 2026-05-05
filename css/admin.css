@@ -1024,3 +1024,50 @@
     color: white;
     border-color: var(--primary);
 }
+/* FIX: Preview page harus punya ukuran fixed */
+.live-preview-page {
+    position: relative !important;
+    width: 100% !important;
+    min-height: 700px !important;
+    height: 700px !important;
+    overflow: hidden;
+}
+
+.live-preview-page iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
+    border: none;
+}
+
+.live-preview-doc {
+    position: relative;
+    width: 100%;
+    background: #525659;
+    padding: 0;
+}
+
+/* QR overlay harus absolute terhadap preview-page */
+.qr-doc-overlay {
+    position: absolute !important;
+    z-index: 100;
+    cursor: grab;
+    padding: 4px;
+    border: 2px dashed transparent;
+    border-radius: 8px;
+    transition: border-color 0.2s;
+}
+
+.qr-doc-overlay:hover {
+    border-color: #2563eb;
+    background: rgba(37, 99, 235, 0.05);
+}
+
+.qr-doc-overlay.dragging {
+    cursor: grabbing;
+    border-color: #ef4444;
+    background: rgba(239, 68, 68, 0.05);
+    z-index: 200;
+}
