@@ -553,17 +553,72 @@ function sendWhatsApp(clientId) {
     if (!phone.startsWith('62')) phone = '62' + phone;
     var verifyUrl = location.origin + '/verify.html?id=' + c.document_id + '&type=translation';
     var statusUrl = location.origin + '/translation-status.html';
-    var msg = 'Halo *' + c.client_name + '* 👋\n\n' +
-        'Terjemahan dokumen Anda di *SIEC* sudah *SELESAI*! 🎉\n\n' +
-        '📄 *Detail:*\n' +
-        '• ID Dokumen: ' + c.document_id + '\n' +
-        '• Jenis: ' + c.document_type + '\n' +
-        '• Bahasa: ' + c.source_language + ' → ' + c.target_language + '\n\n' +
-        '✅ *Download dokumen:*\n' + c.file_url + '\n\n' +
-        '🔍 *Verifikasi keaslian:*\n' + verifyUrl + '\n\n' +
-        '📊 *Cek status anytime:*\n' + statusUrl + '\n\n' +
-        'Terima kasih telah mempercayakan SIEC sebagai mitra penerjemahan Anda! 🙏\n\n' +
-        '_Syaf Intensive English Course_';
+    var fotoRumahUrl = location.origin + '/assets/rumah.jpeg';
+
+    var msg = 'Assalamu\'alaikum *' + c.client_name + '* 🙏\n\n';
+
+    // Custom message khusus Abstrak Skripsi UIN Suska Riau
+    var isAbstrakUIN = c.document_type === 'Abstrak Skripsi' &&
+                       c.universitas === 'Universitas Islam Negeri Sultan Syarif Kasim Riau';
+
+    if (isAbstrakUIN) {
+        msg += 'Alhamdulillah, terjemahan *Abstrak Skripsi* Ananda sudah *SELESAI* dan siap diambil! 🎓✨\n\n';
+        msg += '📄 *Detail Dokumen:*\n';
+        msg += '• ID: ' + c.document_id + '\n';
+        msg += '• NIM: ' + (c.nim || '-') + '\n';
+        msg += '• Jurusan: ' + (c.jurusan || '-') + '\n';
+        if (c.fakultas) msg += '• Fakultas: ' + c.fakultas + '\n';
+        msg += '• Universitas: UIN Sultan Syarif Kasim Riau\n';
+        if (c.judul_skripsi) msg += '• Judul: _"' + c.judul_skripsi + '"_\n';
+        msg += '\n';
+
+        msg += '📥 *Download Soft Copy:*\n' + c.file_url + '\n\n';
+        msg += '🔍 *Verifikasi Keaslian:*\n' + verifyUrl + '\n\n';
+
+        msg += '━━━━━━━━━━━━━━━━━━\n';
+        msg += '📍 *PENGAMBILAN HARD COPY*\n';
+        msg += '━━━━━━━━━━━━━━━━━━\n\n';
+
+        msg += 'Silakan ambil *abstrak yang sudah dicap* beserta *kwitansinya* di kantor kami:\n\n';
+        msg += '🏢 *Syaf Intensive English Course (SIEC)*\n';
+        msg += 'Lembaga Kursus Bahasa Inggris\n\n';
+
+        msg += '📌 *Lokasi Maps:*\n';
+        msg += 'https://maps.app.goo.gl/ew5MKzkz6bvbgb1j6\n\n';
+
+        msg += '🗺️ *Petunjuk Arah:*\n';
+        msg += 'Masuk Jl. Yuda Karya, lalu di simpang 4 teruskan masuk ke jalan tanah. Sekitar 30 meter dari simpang, ada gang di sebelah kanan yang sudah disemenisasi. Masuk gang tersebut hingga menemukan rumah seperti pada foto.\n\n';
+
+        msg += '🏠 *Foto Rumah Tempat Pengambilan:*\n';
+        msg += fotoRumahUrl + '\n\n';
+
+        msg += '🕗 *Jadwal Pengambilan:*\n';
+        msg += '📅 Senin – Jum\'at\n';
+        msg += '⏰ 08.00 – 11.00 WIB\n\n';
+
+        msg += '⚠️ *PENTING:*\n';
+        msg += 'Batas maksimal pengambilan abstrak adalah *1 minggu* sejak pesan ini dikirim.\n\n';
+
+        msg += 'Terima kasih telah mempercayakan SIEC sebagai mitra penerjemahan Ananda. Semoga sukses untuk sidang skripsinya! 🎓💪\n\n';
+        msg += '_Barakallahu fiikum_\n';
+        msg += '_Tim SIEC_';
+
+    } else {
+        // Pesan default untuk dokumen lainnya
+        msg += 'Alhamdulillah, terjemahan dokumen Anda di *SIEC* sudah *SELESAI*! 🎉\n\n';
+        msg += '📄 *Detail Dokumen:*\n';
+        msg += '• ID: ' + c.document_id + '\n';
+        msg += '• Jenis: ' + c.document_type + '\n';
+        msg += '• Bahasa: ' + c.source_language + ' → ' + c.target_language + '\n\n';
+
+        msg += '✅ *Download Dokumen:*\n' + c.file_url + '\n\n';
+        msg += '🔍 *Verifikasi Keaslian:*\n' + verifyUrl + '\n\n';
+        msg += '📊 *Cek Status Anytime:*\n' + statusUrl + '\n\n';
+
+        msg += 'Terima kasih telah mempercayakan SIEC sebagai mitra penerjemahan Anda! 🙏\n\n';
+        msg += '_Syaf Intensive English Course_';
+    }
+
     var waUrl = 'https://wa.me/' + phone + '?text=' + encodeURIComponent(msg);
     window.open(waUrl, '_blank');
     showNotification('✅ WhatsApp dibuka!');
