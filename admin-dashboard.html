@@ -25,6 +25,7 @@
             <a href="#" class="sidebar-link" data-section="terjemahan"><i class="fas fa-language"></i> Terjemahan</a>
             <a href="#" class="sidebar-link" data-section="toefl"><i class="fas fa-certificate"></i> TOEFL</a>
             <div class="sidebar-divider"></div>
+            <a href="#" class="sidebar-link" id="darkModeToggle"><i class="fas fa-moon"></i> Dark Mode</a>
             <a href="index.html" class="sidebar-link"><i class="fas fa-globe"></i> Website</a>
             <a href="#" class="sidebar-link" onclick="handleLogout()"><i class="fas fa-sign-out-alt"></i> Logout</a>
         </nav>
@@ -45,6 +46,7 @@
                     <div class="stat-card"><div class="stat-card-icon gradient-4"><i class="fas fa-certificate"></i></div><div class="stat-card-info"><h3 id="totalCertificates">0</h3><p>TOEFL</p></div></div>
                     <div class="stat-card"><div class="stat-card-icon gradient-1"><i class="fas fa-book"></i></div><div class="stat-card-info"><h3 id="totalPrograms">0</h3><p>Program</p></div></div>
                 </div>
+                <div id="chartContainer" style="margin-top:20px"></div>
             </section>
 
             <section class="admin-section" id="section-articles">
@@ -79,14 +81,36 @@
                 <div class="data-table-container"><table class="data-table"><thead><tr><th>Program</th><th>Tipe</th><th>Layout</th><th>Harga</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="programsTableBody"><tr><td colspan="6" class="loading-cell"><div class="spinner"></div></td></tr></tbody></table></div>
             </section>
 
-            <!-- TERJEMAHAN - All-in-One -->
             <section class="admin-section" id="section-terjemahan">
                 <div class="section-toolbar">
                     <h3>Terjemahan</h3>
-                    <div style="display:flex;gap:8px">
+                    <div style="display:flex;gap:8px;flex-wrap:wrap">
+                        <button class="btn btn-danger" onclick="bulkDelete()"><i class="fas fa-trash"></i> Hapus (<span id="selectedCount">0</span>)</button>
                         <button class="btn btn-success" onclick="exportTerjemahan()"><i class="fas fa-download"></i> CSV</button>
-                        <button class="btn btn-primary" onclick="showRegisterForm()"><i class="fas fa-user-plus"></i> Daftar Klien Baru</button>
+                        <button class="btn btn-primary" onclick="showRegisterForm()"><i class="fas fa-user-plus"></i> Daftar Klien</button>
                     </div>
+                </div>
+
+                <!-- FILTER & SEARCH -->
+                <div class="filter-bar">
+                    <input type="text" id="filterSearch" placeholder="🔍 Cari nama, HP, ID, jenis dokumen..." oninput="applyFilter()">
+                    <select id="filterStatus" onchange="applyFilter()">
+                        <option value="">Semua Status</option>
+                        <option value="processing">Processing</option>
+                        <option value="completed">Completed</option>
+                        <option value="pending">Pending</option>
+                    </select>
+                    <select id="filterDocType" onchange="applyFilter()">
+                        <option value="">Semua Dokumen</option>
+                        <option value="Ijazah">Ijazah</option>
+                        <option value="Transkrip Nilai">Transkrip Nilai</option>
+                        <option value="Akta Kelahiran">Akta Kelahiran</option>
+                        <option value="KTP">KTP</option>
+                        <option value="Surat Keterangan">Surat Keterangan</option>
+                        <option value="Kontrak">Kontrak</option>
+                        <option value="Abstrak Skripsi">Abstrak Skripsi</option>
+                        <option value="Lainnya">Lainnya</option>
+                    </select>
                 </div>
 
                 <!-- Form Pendaftaran -->
@@ -114,7 +138,6 @@
                         </div>
                     </div>
 
-                    <!-- Khusus Abstrak Skripsi -->
                     <div id="abstrakFields" style="display:none;background:#f0f9ff;padding:16px;border-radius:8px;border:2px solid #2563eb;margin-bottom:16px;">
                         <p style="margin:0 0 12px;font-weight:600;color:#2563eb;"><i class="fas fa-graduation-cap"></i> Detail Akademik</p>
                         <div class="form-row">
@@ -140,6 +163,14 @@
                                 <option value="">-- Pilih Jurusan --</option>
                             </select>
                         </div>
+                        <div class="form-row">
+                            <div class="form-group"><label>NIM *</label><input type="text" id="regNim" placeholder="Contoh: 11910312345"></div>
+                            <div class="form-group"><label>Semester</label><input type="text" id="regSemester" placeholder="Contoh: 8"></div>
+                        </div>
+                        <div class="form-group">
+                            <label>Judul Skripsi *</label>
+                            <textarea id="regJudul" rows="2" placeholder="Tulis judul lengkap skripsi"></textarea>
+                        </div>
                     </div>
 
                     <div class="form-row">
@@ -153,7 +184,6 @@
                     </div>
                 </div></div>
 
-                <!-- Form Upload Dokumen -->
                 <div id="uploadDocForm" class="admin-form" style="display:none"><div class="form-card">
                     <h4><i class="fas fa-upload"></i> Upload Dokumen Hasil Terjemahan</h4>
                     <input type="hidden" id="uploadClientId">
@@ -161,26 +191,19 @@
                         <p style="margin:0"><b>Klien:</b> <span id="uploadClientName">-</span></p>
                         <p style="margin:0"><b>Dokumen:</b> <span id="uploadClientDoc">-</span></p>
                     </div>
-                    <div class="form-group">
-                        <label>Judul Dokumen</label>
-                        <input type="text" id="uploadDocTitle" required>
-                    </div>
-
+                    <div class="form-group"><label>Judul Dokumen</label><input type="text" id="uploadDocTitle" required></div>
                     <div class="upload-box">
                         <h5><i class="fas fa-cloud-upload-alt"></i> Upload PDF</h5>
                         <p class="hint">QR Code akan ditempel langsung di dalam PDF</p>
                         <div class="file-upload-area">
                             <input type="file" id="uploadFile" accept=".pdf,.doc,.docx" onchange="handleUploadFilePreview(this)">
-                            <label for="uploadFile" class="file-upload-label">
-                                <i class="fas fa-file-pdf"></i><span>Pilih file</span><span class="file-hint">PDF/DOC max 10MB</span>
-                            </label>
+                            <label for="uploadFile" class="file-upload-label"><i class="fas fa-file-pdf"></i><span>Pilih file</span><span class="file-hint">PDF/DOC max 10MB</span></label>
                         </div>
                         <div id="uploadFileInfo" class="file-info" style="display:none">
                             <i class="fas fa-file"></i><span id="uploadFileName">-</span>
                             <button type="button" onclick="removeUploadFile()" class="btn-remove-file"><i class="fas fa-times"></i></button>
                         </div>
                     </div>
-
                     <div id="uploadLivePreview" class="live-preview-container" style="display:none">
                         <div class="live-preview-header"><h6><i class="fas fa-hand-pointer"></i> Drag QR ke posisi</h6></div>
                         <div class="live-preview-doc"><div class="live-preview-page" id="uploadPreviewPage">
@@ -199,21 +222,28 @@
                             <label style="display:flex;align-items:center;gap:4px"><input type="checkbox" id="uploadShowId" checked onchange="toggleQrIdU()">ID</label>
                         </div>
                     </div>
-
                     <div class="form-actions">
                         <button class="btn btn-primary" onclick="saveUploadDoc()"><i class="fas fa-save"></i> Upload & Selesaikan</button>
                         <button class="btn btn-outline" onclick="hideUploadDocForm()">Batal</button>
                     </div>
                 </div></div>
 
-                <!-- Modal preview hasil -->
                 <div id="resultPreview" class="print-preview-modal" style="display:none"><div class="print-modal-content"><div class="print-modal-header"><h4>✅ Berhasil</h4><button onclick="closePrintPreview('resultPreview')" class="btn-close">&times;</button></div><div id="resultPreviewContent"></div><div class="print-actions"><button class="btn btn-outline" onclick="closePrintPreview('resultPreview')">Tutup</button></div></div></div>
 
-                <!-- Tabel -->
                 <div class="data-table-container">
                     <table class="data-table">
-                        <thead><tr><th>ID</th><th>Klien</th><th>HP</th><th>Dokumen</th><th>Bahasa</th><th>Status</th><th>Durasi</th><th>Aksi</th></tr></thead>
-                        <tbody id="terjemahanTableBody"><tr><td colspan="8" class="loading-cell"><div class="spinner"></div></td></tr></tbody>
+                        <thead><tr>
+                            <th><input type="checkbox" id="selectAll" onchange="toggleSelectAll()"></th>
+                            <th onclick="sortTable('document_id')" style="cursor:pointer">ID ⇅</th>
+                            <th onclick="sortTable('client_name')" style="cursor:pointer">Klien ⇅</th>
+                            <th>HP</th>
+                            <th onclick="sortTable('document_type')" style="cursor:pointer">Dokumen ⇅</th>
+                            <th>Bahasa</th>
+                            <th onclick="sortTable('status')" style="cursor:pointer">Status ⇅</th>
+                            <th onclick="sortTable('created_at')" style="cursor:pointer">Durasi ⇅</th>
+                            <th>Aksi</th>
+                        </tr></thead>
+                        <tbody id="terjemahanTableBody"><tr><td colspan="9" class="loading-cell"><div class="spinner"></div></td></tr></tbody>
                     </table>
                 </div>
             </section>

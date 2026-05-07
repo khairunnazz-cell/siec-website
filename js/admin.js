@@ -1,124 +1,60 @@
 var LOGO_URL='assets/logo.png',toeflFileData=null,uploadFileData=null;
+var WA_NUMBER='6281234567890'; // GANTI nomor WA admin
 
 // ============================================
-// DATA KAMPUS UNTUK ABSTRAK SKRIPSI
+// DATA KAMPUS
 // ============================================
 var DATA_KAMPUS = {
     'Universitas Islam Negeri Sultan Syarif Kasim Riau': {
         fakultas: {
-            'Tarbiyah dan Keguruan': [
-                'Pendidikan Agama Islam (PAI)',
-                'Pendidikan Bahasa Arab (PBA)',
-                'Pendidikan Bahasa Inggris (PBI)',
-                'Manajemen Pendidikan Islam (MPI)',
-                'Pendidikan Matematika',
-                'Pendidikan Kimia',
-                'Pendidikan Guru Madrasah Ibtidaiyah (PGMI)',
-                'Pendidikan Islam Anak Usia Dini (PIAUD)',
-                'Tadris IPA',
-                'Tadris IPS',
-                'Pendidikan Ekonomi',
-                'Pendidikan Geografi',
-                'Pendidikan Bahasa Indonesia',
-                'Bimbingan dan Konseling Pendidikan Islam (BKPI)'
-            ],
-            'Ushuluddin': [
-                'Ilmu Akidah',
-                'Ilmu Al-Quran dan Tafsir',
-                'Perbandingan Agama'
-            ]
+            'Tarbiyah dan Keguruan': ['Pendidikan Agama Islam (PAI)','Pendidikan Bahasa Arab (PBA)','Pendidikan Bahasa Inggris (PBI)','Manajemen Pendidikan Islam (MPI)','Pendidikan Matematika','Pendidikan Kimia','Pendidikan Guru Madrasah Ibtidaiyah (PGMI)','Pendidikan Islam Anak Usia Dini (PIAUD)','Tadris IPA','Tadris IPS','Pendidikan Ekonomi','Pendidikan Geografi','Pendidikan Bahasa Indonesia','Bimbingan dan Konseling Pendidikan Islam (BKPI)'],
+            'Ushuluddin': ['Ilmu Akidah','Ilmu Al-Quran dan Tafsir','Perbandingan Agama']
         }
     },
     'STAI Sulthan Syarif Hasyim Siak Sri Indrapura Riau': {
         fakultas: null,
-        jurusan: [
-            'S1 - Pendidikan Guru Madrasah Ibtidaiyah',
-            'S1 - Ekonomi Syariah',
-            'S1 - Pendidikan Agama Islam',
-            'S1 - Hukum Keluarga Islam (Ahwal Syakhshiyyah)'
-        ]
+        jurusan: ['S1 - Pendidikan Guru Madrasah Ibtidaiyah','S1 - Ekonomi Syariah','S1 - Pendidikan Agama Islam','S1 - Hukum Keluarga Islam (Ahwal Syakhshiyyah)']
     },
     'STAI Al-Kifayah Riau': {
         fakultas: null,
-        jurusan: [
-            'Pendidikan Guru Madrasah Ibtidaiyah (PGMI)',
-            'Pendidikan Islam Anak Usia Dini (PIAUD)',
-            'Pendidikan Agama Islam (PAI)',
-            'Bimbingan dan Konseling Pendidikan Islam (BKPI)',
-            'Manajemen Bisnis Syariah',
-            'Hukum Keluarga Islam',
-            'Hukum Tata Negara',
-            'Akuntansi Syariah',
-            'Magister Pendidikan Agama Islam'
-        ]
+        jurusan: ['Pendidikan Guru Madrasah Ibtidaiyah (PGMI)','Pendidikan Islam Anak Usia Dini (PIAUD)','Pendidikan Agama Islam (PAI)','Bimbingan dan Konseling Pendidikan Islam (BKPI)','Manajemen Bisnis Syariah','Hukum Keluarga Islam','Hukum Tata Negara','Akuntansi Syariah','Magister Pendidikan Agama Islam']
     }
 };
 
 function onDocTypeChange() {
     var docType = document.getElementById('regDocType').value;
     var abstrakFields = document.getElementById('abstrakFields');
-    if (docType === 'Abstrak Skripsi') {
-        abstrakFields.style.display = 'block';
-    } else {
-        abstrakFields.style.display = 'none';
-        document.getElementById('regUniversitas').value = '';
-        document.getElementById('fakultasGroup').style.display = 'none';
-        document.getElementById('jurusanGroup').style.display = 'none';
-    }
+    if (docType === 'Abstrak Skripsi') abstrakFields.style.display = 'block';
+    else { abstrakFields.style.display = 'none'; document.getElementById('regUniversitas').value = ''; document.getElementById('fakultasGroup').style.display = 'none'; document.getElementById('jurusanGroup').style.display = 'none'; }
 }
 
 function onUniversitasChange() {
     var univ = document.getElementById('regUniversitas').value;
-    var fakultasGroup = document.getElementById('fakultasGroup');
-    var jurusanGroup = document.getElementById('jurusanGroup');
-    var fakultasSelect = document.getElementById('regFakultas');
-    var jurusanSelect = document.getElementById('regJurusan');
-
+    var fakultasGroup = document.getElementById('fakultasGroup'), jurusanGroup = document.getElementById('jurusanGroup');
+    var fakultasSelect = document.getElementById('regFakultas'), jurusanSelect = document.getElementById('regJurusan');
     fakultasSelect.innerHTML = '<option value="">-- Pilih Fakultas --</option>';
     jurusanSelect.innerHTML = '<option value="">-- Pilih Jurusan --</option>';
-    fakultasGroup.style.display = 'none';
-    jurusanGroup.style.display = 'none';
-
+    fakultasGroup.style.display = 'none'; jurusanGroup.style.display = 'none';
     if (!univ || !DATA_KAMPUS[univ]) return;
     var data = DATA_KAMPUS[univ];
-
     if (data.fakultas) {
-        Object.keys(data.fakultas).forEach(function(f) {
-            var opt = document.createElement('option');
-            opt.value = f;
-            opt.textContent = f;
-            fakultasSelect.appendChild(opt);
-        });
+        Object.keys(data.fakultas).forEach(function(f) { var opt = document.createElement('option'); opt.value = f; opt.textContent = f; fakultasSelect.appendChild(opt); });
         fakultasGroup.style.display = 'block';
     } else if (data.jurusan) {
-        data.jurusan.forEach(function(j) {
-            var opt = document.createElement('option');
-            opt.value = j;
-            opt.textContent = j;
-            jurusanSelect.appendChild(opt);
-        });
+        data.jurusan.forEach(function(j) { var opt = document.createElement('option'); opt.value = j; opt.textContent = j; jurusanSelect.appendChild(opt); });
         jurusanGroup.style.display = 'block';
     }
 }
 
 function onFakultasChange() {
-    var univ = document.getElementById('regUniversitas').value;
-    var fakultas = document.getElementById('regFakultas').value;
-    var jurusanGroup = document.getElementById('jurusanGroup');
-    var jurusanSelect = document.getElementById('regJurusan');
-
+    var univ = document.getElementById('regUniversitas').value, fakultas = document.getElementById('regFakultas').value;
+    var jurusanGroup = document.getElementById('jurusanGroup'), jurusanSelect = document.getElementById('regJurusan');
     jurusanSelect.innerHTML = '<option value="">-- Pilih Jurusan --</option>';
     jurusanGroup.style.display = 'none';
-
     if (!univ || !fakultas || !DATA_KAMPUS[univ] || !DATA_KAMPUS[univ].fakultas) return;
     var jurusanList = DATA_KAMPUS[univ].fakultas[fakultas];
     if (jurusanList) {
-        jurusanList.forEach(function(j) {
-            var opt = document.createElement('option');
-            opt.value = j;
-            opt.textContent = j;
-            jurusanSelect.appendChild(opt);
-        });
+        jurusanList.forEach(function(j) { var opt = document.createElement('option'); opt.value = j; opt.textContent = j; jurusanSelect.appendChild(opt); });
         jurusanGroup.style.display = 'block';
     }
 }
@@ -127,7 +63,6 @@ function onFakultasChange() {
 // QR CODE
 // ============================================
 function getQrUrl(t,s){return'https://api.qrserver.com/v1/create-qr-code/?size='+(s||150)+'x'+(s||150)+'&data='+encodeURIComponent(t||location.origin)+'&ecc=H&margin=4&format=png'}
-
 function generateQr(id,t,s){var e=document.getElementById(id);if(!e)return;var z=parseInt(s)||100,l=Math.round(z*.22);e.innerHTML='<div style="position:relative;display:inline-block;width:'+z+'px;height:'+z+'px"><img src="'+getQrUrl(t,z)+'" width="'+z+'" height="'+z+'" style="display:block;border-radius:4px"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:'+l+'px;height:'+l+'px;border-radius:50%;overflow:hidden;background:#fff;border:2px solid #fff;box-shadow:0 0 0 1px #2563eb"><img src="'+LOGO_URL+'" style="width:100%;height:100%;object-fit:contain" onerror="this.parentElement.innerHTML=\'<div style=width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#fff><span style=font-weight:800;color:#2563eb;font-size:'+Math.round(l*.35)+'px>SIEC</span></div>\'"></div></div>'}
 
 async function embedQrInPdf(file, qrText, idText, posXPct, posYPct, qrSizePx) {
@@ -184,9 +119,23 @@ document.addEventListener('DOMContentLoaded', function() {
     var t = document.getElementById('sidebarToggle'), c = document.getElementById('sidebarClose'), s = document.getElementById('adminSidebar');
     if (t) t.addEventListener('click', function() { s.classList.toggle('active'); });
     if (c) c.addEventListener('click', function() { s.classList.remove('active'); });
+
+    // Dark mode
+    var savedTheme = localStorage.getItem('siec_theme');
+    if (savedTheme === 'dark') document.body.classList.add('dark-mode');
+    var darkBtn = document.getElementById('darkModeToggle');
+    if (darkBtn) darkBtn.addEventListener('click', toggleDarkMode);
+
     loadDashboardStats(); loadAdminArticles(); loadAdminPrograms();
     loadTerjemahan(); loadAdminToefl();
+
+    setTimeout(loadAnalytics, 1000);
 });
+
+function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+    localStorage.setItem('siec_theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+}
 
 function switchSection(s) {
     document.querySelectorAll('.admin-section').forEach(function(x) { x.classList.remove('active'); });
@@ -196,8 +145,12 @@ function switchSection(s) {
     var m = { 'dashboard': 'Dashboard', 'articles': 'Artikel', 'programs': 'Program', 'terjemahan': 'Terjemahan', 'toefl': 'TOEFL' };
     var t = document.getElementById('pageTitle'); if (t) t.textContent = m[s] || 'Dashboard';
     document.getElementById('adminSidebar').classList.remove('active');
+    if (s === 'dashboard') loadAnalytics();
 }
 
+// ============================================
+// DASHBOARD STATS + ANALYTICS
+// ============================================
 async function loadDashboardStats() {
     try {
         var a = await db.from('articles').select('*', { count: 'exact', head: true });
@@ -210,6 +163,102 @@ async function loadDashboardStats() {
         document.getElementById('totalCompleted').textContent = com.count || 0;
         document.getElementById('totalCertificates').textContent = ce.count || 0;
         document.getElementById('totalPrograms').textContent = p.count || 0;
+    } catch (e) { console.error(e); }
+}
+
+async function loadAnalytics() {
+    var chartContainer = document.getElementById('chartContainer');
+    if (!chartContainer) return;
+
+    try {
+        var r = await db.from('translation_clients').select('*');
+        if (!r.data) return;
+
+        // Group by month (last 6 months)
+        var months = {};
+        var now = new Date();
+        for (var i = 5; i >= 0; i--) {
+            var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            var key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+            var label = d.toLocaleDateString('id-ID', { month: 'short', year: '2-digit' });
+            months[key] = { label: label, count: 0, completed: 0 };
+        }
+
+        r.data.forEach(function(c) {
+            var d = new Date(c.created_at);
+            var key = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+            if (months[key]) {
+                months[key].count++;
+                if (c.status === 'completed') months[key].completed++;
+            }
+        });
+
+        // Group by document type
+        var docTypes = {};
+        r.data.forEach(function(c) {
+            var t = c.document_type || 'Lainnya';
+            if (!docTypes[t]) docTypes[t] = 0;
+            docTypes[t]++;
+        });
+
+        // Avg duration
+        var totalDur = 0, durCount = 0;
+        r.data.forEach(function(c) {
+            if (c.completed_at && c.created_at) {
+                totalDur += new Date(c.completed_at) - new Date(c.created_at);
+                durCount++;
+            }
+        });
+        var avgDays = durCount > 0 ? (totalDur / durCount / 86400000).toFixed(1) : 0;
+
+        // Render
+        var maxCount = Math.max.apply(null, Object.values(months).map(function(m) { return m.count; }));
+        if (maxCount === 0) maxCount = 1;
+
+        var monthBars = Object.values(months).map(function(m) {
+            var hPct = (m.count / maxCount) * 100;
+            var hPctC = (m.completed / maxCount) * 100;
+            return '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">' +
+                '<div style="width:100%;height:120px;display:flex;align-items:flex-end;justify-content:center;gap:2px">' +
+                '<div title="Total: ' + m.count + '" style="width:40%;height:' + hPct + '%;background:linear-gradient(180deg,#2563eb,#7c3aed);border-radius:4px 4px 0 0;min-height:2px"></div>' +
+                '<div title="Selesai: ' + m.completed + '" style="width:40%;height:' + hPctC + '%;background:linear-gradient(180deg,#10b981,#059669);border-radius:4px 4px 0 0;min-height:2px"></div>' +
+                '</div>' +
+                '<div style="font-size:0.7rem;color:#666">' + m.label + '</div>' +
+                '<div style="font-size:0.65rem;color:#2563eb;font-weight:700">' + m.count + '/' + m.completed + '</div>' +
+                '</div>';
+        }).join('');
+
+        var docTypesList = Object.entries(docTypes).sort(function(a, b) { return b[1] - a[1]; }).slice(0, 5).map(function(d) {
+            var pct = Math.round((d[1] / r.data.length) * 100);
+            return '<div style="margin-bottom:8px"><div style="display:flex;justify-content:space-between;font-size:0.85rem;margin-bottom:4px"><span>' + d[0] + '</span><strong>' + d[1] + ' (' + pct + '%)</strong></div><div style="background:#e2e8f0;border-radius:4px;overflow:hidden;height:8px"><div style="background:linear-gradient(90deg,#2563eb,#7c3aed);height:100%;width:' + pct + '%"></div></div></div>';
+        }).join('');
+
+        chartContainer.innerHTML =
+            '<div class="analytics-grid">' +
+            '<div class="chart-card">' +
+            '<h4><i class="fas fa-chart-bar"></i> Klien per Bulan (6 bulan terakhir)</h4>' +
+            '<div style="display:flex;gap:8px;align-items:flex-end;height:160px;margin-top:16px">' + monthBars + '</div>' +
+            '<div style="display:flex;gap:16px;justify-content:center;margin-top:12px;font-size:0.75rem">' +
+            '<span><span style="display:inline-block;width:12px;height:12px;background:linear-gradient(180deg,#2563eb,#7c3aed);border-radius:2px;vertical-align:middle"></span> Total</span>' +
+            '<span><span style="display:inline-block;width:12px;height:12px;background:linear-gradient(180deg,#10b981,#059669);border-radius:2px;vertical-align:middle"></span> Selesai</span>' +
+            '</div>' +
+            '</div>' +
+
+            '<div class="chart-card">' +
+            '<h4><i class="fas fa-trophy"></i> Top 5 Jenis Dokumen</h4>' +
+            '<div style="margin-top:16px">' + (docTypesList || '<p style="color:#666;font-size:0.85rem">Belum ada data</p>') + '</div>' +
+            '</div>' +
+
+            '<div class="chart-card">' +
+            '<h4><i class="fas fa-stopwatch"></i> Statistik</h4>' +
+            '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">' +
+            '<div style="padding:12px;background:#dbeafe;border-radius:8px;text-align:center"><div style="font-size:1.8rem;font-weight:800;color:#2563eb">' + avgDays + '</div><div style="font-size:0.75rem;color:#666">Rata-rata Hari</div></div>' +
+            '<div style="padding:12px;background:#dcfce7;border-radius:8px;text-align:center"><div style="font-size:1.8rem;font-weight:800;color:#10b981">' + (r.data.length > 0 ? Math.round((r.data.filter(function(c) { return c.status === 'completed'; }).length / r.data.length) * 100) : 0) + '%</div><div style="font-size:0.75rem;color:#666">Tingkat Selesai</div></div>' +
+            '<div style="padding:12px;background:#fef3c7;border-radius:8px;text-align:center"><div style="font-size:1.8rem;font-weight:800;color:#d97706">' + r.data.length + '</div><div style="font-size:0.75rem;color:#666">Total Klien</div></div>' +
+            '<div style="padding:12px;background:#fce7f3;border-radius:8px;text-align:center"><div style="font-size:1.8rem;font-weight:800;color:#db2777">' + (r.data.filter(function(c) { return c.document_type === 'Abstrak Skripsi'; }).length) + '</div><div style="font-size:0.75rem;color:#666">Abstrak Skripsi</div></div>' +
+            '</div>' +
+            '</div>' +
+            '</div>';
     } catch (e) { console.error(e); }
 }
 
@@ -230,7 +279,117 @@ function calculateDuration(start, end) {
 }
 
 // ============================================
-// TERJEMAHAN - REGISTER FORM
+// FILTER & SEARCH & SORT TABEL
+// ============================================
+var allTerjemahan = [];
+var sortConfig = { column: 'created_at', asc: false };
+
+function applyFilter() {
+    var search = document.getElementById('filterSearch').value.toLowerCase();
+    var status = document.getElementById('filterStatus').value;
+    var docType = document.getElementById('filterDocType').value;
+
+    var filtered = allTerjemahan.filter(function(c) {
+        var matchSearch = !search || (
+            (c.client_name || '').toLowerCase().includes(search) ||
+            (c.client_phone || '').toLowerCase().includes(search) ||
+            (c.document_id || '').toLowerCase().includes(search) ||
+            (c.document_type || '').toLowerCase().includes(search) ||
+            (c.universitas || '').toLowerCase().includes(search) ||
+            (c.jurusan || '').toLowerCase().includes(search)
+        );
+        var matchStatus = !status || c.status === status;
+        var matchDocType = !docType || c.document_type === docType;
+        return matchSearch && matchStatus && matchDocType;
+    });
+
+    renderTerjemahanTable(filtered);
+}
+
+function sortTable(col) {
+    if (sortConfig.column === col) sortConfig.asc = !sortConfig.asc;
+    else { sortConfig.column = col; sortConfig.asc = true; }
+    applyFilter();
+}
+
+function renderTerjemahanTable(data) {
+    var tb = document.getElementById('terjemahanTableBody');
+    if (!tb) return;
+
+    // Sort
+    data.sort(function(a, b) {
+        var av = a[sortConfig.column] || '';
+        var bv = b[sortConfig.column] || '';
+        if (av < bv) return sortConfig.asc ? -1 : 1;
+        if (av > bv) return sortConfig.asc ? 1 : -1;
+        return 0;
+    });
+
+    if (!data.length) {
+        tb.innerHTML = '<tr><td colspan="9" class="loading-cell">Tidak ada data</td></tr>';
+        document.getElementById('selectedCount').textContent = '0';
+        return;
+    }
+
+    tb.innerHTML = data.map(function(c) {
+        var statusBadge = '<span class="status-badge status-' + c.status + '">' + c.status + '</span>';
+        var duration = c.completed_at ? calculateDuration(c.created_at, c.completed_at) : (c.status === 'processing' ? calculateDuration(c.created_at, new Date().toISOString()) : '-');
+        var docId = c.document_id || '-';
+        var docDisplay = c.document_type;
+        if (c.document_type === 'Abstrak Skripsi') {
+            if (c.jurusan) docDisplay += '<br><small style="color:#666;font-size:0.7rem">📚 ' + c.jurusan + '</small>';
+            if (c.judul_skripsi) docDisplay += '<br><small style="color:#666;font-size:0.7rem;font-style:italic">"' + (c.judul_skripsi.length > 40 ? c.judul_skripsi.substring(0, 40) + '...' : c.judul_skripsi) + '"</small>';
+        }
+        var actions = '';
+        if (c.status === 'completed' && c.file_url) {
+            actions = '<a href="' + c.file_url + '" target="_blank" class="btn btn-sm btn-success" title="Download"><i class="fas fa-download"></i></a> ' +
+                '<button class="btn btn-sm btn-info" onclick="sendWhatsApp(\'' + c.id + '\')" title="Kirim WA"><i class="fab fa-whatsapp"></i></button> ' +
+                '<button class="btn btn-sm btn-primary" onclick=\'showResultPreview(' + JSON.stringify(c) + ')\' title="Preview">View</button>';
+        } else {
+            actions = '<button class="btn btn-sm btn-success" onclick=\'showUploadDocForm(' + JSON.stringify(c) + ')\' title="Upload"><i class="fas fa-upload"></i></button>';
+        }
+        actions += ' <button class="btn btn-sm btn-warning" onclick=\'showRegisterForm(' + JSON.stringify(c) + ')\' title="Edit"><i class="fas fa-edit"></i></button>';
+        actions += ' <button class="btn btn-sm btn-danger" onclick="deleteClient(\'' + c.id + '\')" title="Hapus"><i class="fas fa-trash"></i></button>';
+
+        return '<tr><td><input type="checkbox" class="row-check" value="' + c.id + '" onchange="updateSelectedCount()"></td>' +
+            '<td><strong style="color:var(--primary)">' + docId + '</strong></td>' +
+            '<td>' + c.client_name + '</td>' +
+            '<td>' + c.client_phone + '</td>' +
+            '<td>' + docDisplay + '</td>' +
+            '<td>' + c.source_language + '→' + c.target_language + '</td>' +
+            '<td>' + statusBadge + '</td>' +
+            '<td>' + duration + '</td>' +
+            '<td><div class="action-buttons">' + actions + '</div></td></tr>';
+    }).join('');
+    updateSelectedCount();
+}
+
+function toggleSelectAll() {
+    var all = document.getElementById('selectAll').checked;
+    document.querySelectorAll('.row-check').forEach(function(cb) { cb.checked = all; });
+    updateSelectedCount();
+}
+
+function updateSelectedCount() {
+    var n = document.querySelectorAll('.row-check:checked').length;
+    document.getElementById('selectedCount').textContent = n;
+}
+
+async function bulkDelete() {
+    var checks = document.querySelectorAll('.row-check:checked');
+    if (!checks.length) { showNotification('Pilih dulu data yang mau dihapus!', 'error'); return; }
+    if (!confirm('Hapus ' + checks.length + ' data?')) return;
+    var ids = Array.from(checks).map(function(cb) { return cb.value; });
+    try {
+        await db.from('translation_clients').delete().in('id', ids);
+        showNotification('✅ ' + ids.length + ' data dihapus!');
+        loadTerjemahan();
+        loadDashboardStats();
+    } catch (e) { showNotification('Error: ' + e.message, 'error'); }
+}
+
+// ============================================
+// TERJEMAHAN
 // ============================================
 function showRegisterForm(client) {
     var f = document.getElementById('registerForm');
@@ -245,28 +404,22 @@ function showRegisterForm(client) {
         document.getElementById('regSourceLang').value = client.source_language;
         document.getElementById('regTargetLang').value = client.target_language;
         document.getElementById('regNotes').value = client.notes || '';
-
         onDocTypeChange();
-
         if (client.document_type === 'Abstrak Skripsi') {
+            document.getElementById('regNim').value = client.nim || '';
+            document.getElementById('regSemester').value = client.semester || '';
+            document.getElementById('regJudul').value = client.judul_skripsi || '';
             if (client.universitas) {
                 document.getElementById('regUniversitas').value = client.universitas;
                 onUniversitasChange();
                 setTimeout(function() {
-                    if (client.fakultas) {
-                        document.getElementById('regFakultas').value = client.fakultas;
-                        onFakultasChange();
-                    }
-                    setTimeout(function() {
-                        if (client.jurusan) {
-                            document.getElementById('regJurusan').value = client.jurusan;
-                        }
-                    }, 100);
+                    if (client.fakultas) { document.getElementById('regFakultas').value = client.fakultas; onFakultasChange(); }
+                    setTimeout(function() { if (client.jurusan) document.getElementById('regJurusan').value = client.jurusan; }, 100);
                 }, 100);
             }
         }
     } else {
-        ['regId', 'regName', 'regPhone', 'regEmail', 'regNotes'].forEach(function(id) {
+        ['regId', 'regName', 'regPhone', 'regEmail', 'regNotes', 'regNim', 'regSemester', 'regJudul'].forEach(function(id) {
             var e = document.getElementById(id); if (e) e.value = '';
         });
         document.getElementById('regDocType').value = 'Ijazah';
@@ -285,28 +438,31 @@ async function saveRegister() {
     if (!nm || !ph) { showNotification('Nama & HP wajib!', 'error'); return; }
 
     var docType = document.getElementById('regDocType').value;
-    var univ = '', fak = '', jur = '';
+    var univ = '', fak = '', jur = '', nim = '', sem = '', judul = '';
 
     if (docType === 'Abstrak Skripsi') {
         univ = document.getElementById('regUniversitas').value;
         fak = document.getElementById('regFakultas').value;
         jur = document.getElementById('regJurusan').value;
+        nim = document.getElementById('regNim').value.trim();
+        sem = document.getElementById('regSemester').value.trim();
+        judul = document.getElementById('regJudul').value.trim();
         if (!univ) { showNotification('Pilih Universitas!', 'error'); return; }
         if (!jur) { showNotification('Pilih Jurusan!', 'error'); return; }
+        if (!nim) { showNotification('NIM wajib!', 'error'); return; }
+        if (!judul) { showNotification('Judul Skripsi wajib!', 'error'); return; }
     }
 
     var id = document.getElementById('regId').value;
     var data = {
-        client_name: nm,
-        client_phone: ph,
+        client_name: nm, client_phone: ph,
         client_email: document.getElementById('regEmail').value,
         document_type: docType,
         source_language: document.getElementById('regSourceLang').value,
         target_language: document.getElementById('regTargetLang').value,
         notes: document.getElementById('regNotes').value,
-        universitas: univ || null,
-        fakultas: fak || null,
-        jurusan: jur || null,
+        universitas: univ || null, fakultas: fak || null, jurusan: jur || null,
+        nim: nim || null, semester: sem || null, judul_skripsi: judul || null,
         updated_at: new Date().toISOString()
     };
     if (!id) data.status = 'processing';
@@ -322,46 +478,11 @@ async function saveRegister() {
 }
 
 async function loadTerjemahan() {
-    var tb = document.getElementById('terjemahanTableBody');
-    if (!tb) return;
     try {
         var r = await db.from('translation_clients').select('*').order('created_at', { ascending: false });
-        if (!r.data || !r.data.length) {
-            tb.innerHTML = '<tr><td colspan="8" class="loading-cell">Belum ada klien</td></tr>';
-            return;
-        }
-        tb.innerHTML = r.data.map(function(c) {
-            var statusBadge = '<span class="status-badge status-' + c.status + '">' + c.status + '</span>';
-            var duration = c.completed_at ? calculateDuration(c.created_at, c.completed_at) : (c.status === 'processing' ? calculateDuration(c.created_at, new Date().toISOString()) : '-');
-            var docId = c.document_id || '-';
-
-            var docDisplay = c.document_type;
-            if (c.document_type === 'Abstrak Skripsi' && c.jurusan) {
-                docDisplay += '<br><small style="color:#666;font-size:0.7rem;">📚 ' + c.jurusan + '</small>';
-                if (c.universitas) {
-                    var univShort = c.universitas.length > 30 ? c.universitas.substring(0, 30) + '...' : c.universitas;
-                    docDisplay += '<br><small style="color:#666;font-size:0.7rem;">🏛️ ' + univShort + '</small>';
-                }
-            }
-
-            var actions = '';
-            if (c.status === 'completed' && c.file_url) {
-                actions = '<a href="' + c.file_url + '" target="_blank" class="btn btn-sm btn-success" title="Download"><i class="fas fa-download"></i></a> <button class="btn btn-sm btn-primary" onclick=\'showResultPreview(' + JSON.stringify(c) + ')\' title="Preview">View</button>';
-            } else {
-                actions = '<button class="btn btn-sm btn-success" onclick=\'showUploadDocForm(' + JSON.stringify(c) + ')\' title="Upload Hasil"><i class="fas fa-upload"></i> Upload</button>';
-            }
-            actions += ' <button class="btn btn-sm btn-warning" onclick=\'showRegisterForm(' + JSON.stringify(c) + ')\' title="Edit"><i class="fas fa-edit"></i></button>';
-            actions += ' <button class="btn btn-sm btn-danger" onclick="deleteClient(\'' + c.id + '\')" title="Hapus"><i class="fas fa-trash"></i></button>';
-
-            return '<tr><td><strong style="color:var(--primary)">' + docId + '</strong></td>' +
-                '<td>' + c.client_name + '</td>' +
-                '<td>' + c.client_phone + '</td>' +
-                '<td>' + docDisplay + '</td>' +
-                '<td>' + c.source_language + '→' + c.target_language + '</td>' +
-                '<td>' + statusBadge + '</td>' +
-                '<td>' + duration + '</td>' +
-                '<td><div class="action-buttons">' + actions + '</div></td></tr>';
-        }).join('');
+        if (!r.data) { allTerjemahan = []; renderTerjemahanTable([]); return; }
+        allTerjemahan = r.data;
+        applyFilter();
     } catch (e) { console.error(e); }
 }
 
@@ -374,12 +495,17 @@ async function deleteClient(id) {
 }
 
 async function exportTerjemahan() {
-    var r = await db.from('translation_clients').select('*').order('created_at', { ascending: false });
-    if (!r.data || !r.data.length) { showNotification('Tidak ada data!', 'error'); return; }
-    var h = ['ID', 'Nama', 'HP', 'Email', 'Dokumen', 'Universitas', 'Fakultas', 'Jurusan', 'Sumber', 'Target', 'Status', 'Durasi', 'Daftar', 'Selesai'];
-    var rows = r.data.map(function(c) {
+    var checks = document.querySelectorAll('.row-check:checked');
+    var data;
+    if (checks.length > 0) {
+        var ids = Array.from(checks).map(function(cb) { return cb.value; });
+        data = allTerjemahan.filter(function(c) { return ids.indexOf(c.id) > -1; });
+    } else { data = allTerjemahan; }
+    if (!data.length) { showNotification('Tidak ada data!', 'error'); return; }
+    var h = ['ID', 'Nama', 'HP', 'Email', 'Dokumen', 'NIM', 'Semester', 'Judul Skripsi', 'Universitas', 'Fakultas', 'Jurusan', 'Sumber', 'Target', 'Status', 'Durasi', 'Daftar', 'Selesai'];
+    var rows = data.map(function(c) {
         var dur = c.completed_at ? calculateDuration(c.created_at, c.completed_at) : '-';
-        return [c.document_id || '-', c.client_name, c.client_phone, c.client_email || '', c.document_type, c.universitas || '-', c.fakultas || '-', c.jurusan || '-', c.source_language, c.target_language, c.status, dur, formatDate(c.created_at), c.completed_at ? formatDate(c.completed_at) : '-'];
+        return [c.document_id || '-', c.client_name, c.client_phone, c.client_email || '', c.document_type, c.nim || '-', c.semester || '-', c.judul_skripsi || '-', c.universitas || '-', c.fakultas || '-', c.jurusan || '-', c.source_language, c.target_language, c.status, dur, formatDate(c.created_at), c.completed_at ? formatDate(c.completed_at) : '-'];
     });
     var csv = [h].concat(rows).map(function(r) { return r.map(function(v) { return '"' + (v || '').toString().replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
     var b = new Blob([csv], { type: 'text/csv' });
@@ -387,7 +513,34 @@ async function exportTerjemahan() {
     a.href = URL.createObjectURL(b);
     a.download = 'terjemahan-' + Date.now() + '.csv';
     a.click();
-    showNotification('Downloaded!');
+    showNotification('✅ Downloaded ' + data.length + ' data!');
+}
+
+// ============================================
+// SEND WHATSAPP NOTIFICATION
+// ============================================
+function sendWhatsApp(clientId) {
+    var c = allTerjemahan.find(function(x) { return x.id === clientId; });
+    if (!c) return;
+    var phone = (c.client_phone || '').replace(/[^0-9]/g, '');
+    if (phone.startsWith('0')) phone = '62' + phone.substring(1);
+    if (!phone.startsWith('62')) phone = '62' + phone;
+    var verifyUrl = location.origin + '/verify.html?id=' + c.document_id + '&type=translation';
+    var statusUrl = location.origin + '/translation-status.html';
+    var msg = 'Halo *' + c.client_name + '* 👋\n\n' +
+        'Terjemahan dokumen Anda di *SIEC* sudah *SELESAI*! 🎉\n\n' +
+        '📄 *Detail:*\n' +
+        '• ID Dokumen: ' + c.document_id + '\n' +
+        '• Jenis: ' + c.document_type + '\n' +
+        '• Bahasa: ' + c.source_language + ' → ' + c.target_language + '\n\n' +
+        '✅ *Download dokumen:*\n' + c.file_url + '\n\n' +
+        '🔍 *Verifikasi keaslian:*\n' + verifyUrl + '\n\n' +
+        '📊 *Cek status anytime:*\n' + statusUrl + '\n\n' +
+        'Terima kasih telah mempercayakan SIEC sebagai mitra penerjemahan Anda! 🙏\n\n' +
+        '_Syaf Intensive English Course_';
+    var waUrl = 'https://wa.me/' + phone + '?text=' + encodeURIComponent(msg);
+    window.open(waUrl, '_blank');
+    showNotification('✅ WhatsApp dibuka!');
 }
 
 // ============================================
@@ -400,11 +553,16 @@ function showUploadDocForm(client) {
     document.getElementById('uploadClientId').value = client.id;
     document.getElementById('uploadClientName').textContent = client.client_name;
     var docInfo = client.document_type + ' (' + client.source_language + ' → ' + client.target_language + ')';
-    if (client.document_type === 'Abstrak Skripsi' && client.jurusan) {
-        docInfo += ' - ' + client.jurusan;
+    if (client.document_type === 'Abstrak Skripsi') {
+        if (client.jurusan) docInfo += ' - ' + client.jurusan;
+        if (client.judul_skripsi) docInfo += ' - "' + client.judul_skripsi + '"';
     }
     document.getElementById('uploadClientDoc').textContent = docInfo;
-    document.getElementById('uploadDocTitle').value = client.document_type + ' - ' + client.client_name;
+    var defaultTitle = client.document_type + ' - ' + client.client_name;
+    if (client.document_type === 'Abstrak Skripsi' && client.judul_skripsi) {
+        defaultTitle = 'Abstract: ' + client.judul_skripsi.substring(0, 50);
+    }
+    document.getElementById('uploadDocTitle').value = defaultTitle;
     uploadFileData = null;
     removeUploadFile();
 }
@@ -491,21 +649,12 @@ function getUploadQrPosition() {
     var el = document.getElementById('uploadQrDrag'), co = document.getElementById('uploadPreviewPage');
     if (el && co && co.offsetWidth > 0) {
         var cx = el.offsetLeft + el.offsetWidth / 2, cy = el.offsetTop + el.offsetHeight / 2;
-        return {
-            x: Math.max(5, Math.min(95, Math.round(cx / co.offsetWidth * 100))),
-            y: Math.max(5, Math.min(95, Math.round(cy / co.offsetHeight * 100))),
-            size: parseInt(document.getElementById('uploadQrSize').value) || 80,
-            showId: document.getElementById('uploadShowId').checked
-        };
+        return { x: Math.max(5, Math.min(95, Math.round(cx / co.offsetWidth * 100))), y: Math.max(5, Math.min(95, Math.round(cy / co.offsetHeight * 100))), size: parseInt(document.getElementById('uploadQrSize').value) || 80, showId: document.getElementById('uploadShowId').checked };
     }
     return { x: 80, y: 85, size: 80, showId: true };
 }
 
-function resizeQrU() {
-    var s = document.getElementById('uploadQrSize'); var v = parseInt(s.value);
-    document.getElementById('uploadQrSizeVal').textContent = v + 'px';
-    generateQr('uploadQrCanvas', location.origin + '/verify.html?id=SIEC-TR-PREVIEW', v);
-}
+function resizeQrU() { var s = document.getElementById('uploadQrSize'); var v = parseInt(s.value); document.getElementById('uploadQrSizeVal').textContent = v + 'px'; generateQr('uploadQrCanvas', location.origin + '/verify.html?id=SIEC-TR-PREVIEW', v); }
 function qrSizeUpU() { var s = document.getElementById('uploadQrSize'); s.value = Math.min(parseInt(s.value) + 10, 150); resizeQrU(); }
 function qrSizeDownU() { var s = document.getElementById('uploadQrSize'); s.value = Math.max(parseInt(s.value) - 10, 40); resizeQrU(); }
 function toggleQrIdU() { var s = document.getElementById('uploadShowId'), t = document.getElementById('uploadQrIdText'); if (s && t) t.style.display = s.checked ? 'block' : 'none'; }
@@ -523,12 +672,10 @@ async function saveUploadDoc() {
     var docTitle = document.getElementById('uploadDocTitle').value.trim();
     if (!clientId || !docTitle) { showNotification('Judul dokumen wajib!', 'error'); return; }
     if (!uploadFileData) { showNotification('Upload file dulu!', 'error'); return; }
-
     var docId = generateDocumentId('TR');
     var url = location.origin + '/verify.html?id=' + docId + '&type=translation';
     var pos = getUploadQrPosition();
     var fu = '', fn = '';
-
     try {
         showNotification('Memproses file...', 'info');
         if (uploadFileData.type === 'application/pdf') {
@@ -543,24 +690,8 @@ async function saveUploadDoc() {
             var up = await uploadFile(uploadFileData, 'translations');
             fu = up.url; fn = up.name;
         }
-    } catch (e) {
-        showNotification('Error: ' + e.message, 'error');
-        return;
-    }
-
-    var data = {
-        document_id: docId,
-        document_title: docTitle,
-        file_url: fu,
-        file_name: fn,
-        qr_position: JSON.stringify(pos),
-        verify_url: url,
-        status: 'completed',
-        completed_at: new Date().toISOString(),
-        issued_date: new Date().toISOString().split('T')[0],
-        updated_at: new Date().toISOString()
-    };
-
+    } catch (e) { showNotification('Error: ' + e.message, 'error'); return; }
+    var data = { document_id: docId, document_title: docTitle, file_url: fu, file_name: fn, qr_position: JSON.stringify(pos), verify_url: url, status: 'completed', completed_at: new Date().toISOString(), issued_date: new Date().toISOString().split('T')[0], updated_at: new Date().toISOString() };
     try {
         var r = await db.from('translation_clients').update(data).eq('id', clientId);
         if (r.error) throw r.error;
@@ -569,7 +700,13 @@ async function saveUploadDoc() {
         loadTerjemahan();
         loadDashboardStats();
         var clientResult = await db.from('translation_clients').select('*').eq('id', clientId).single();
-        if (clientResult.data) showResultPreview(clientResult.data);
+        if (clientResult.data) {
+            showResultPreview(clientResult.data);
+            // Auto prompt to send WA
+            setTimeout(function() {
+                if (confirm('Kirim notifikasi WhatsApp ke klien sekarang?')) sendWhatsApp(clientId);
+            }, 1500);
+        }
     } catch (e) { showNotification('Error: ' + e.message, 'error'); }
 }
 
@@ -579,9 +716,12 @@ function showResultPreview(c) {
     var dur = c.completed_at ? calculateDuration(c.created_at, c.completed_at) : '-';
     var akademikInfo = '';
     if (c.document_type === 'Abstrak Skripsi') {
-        akademikInfo = '<p><b>Universitas:</b> ' + (c.universitas || '-') + '</p>' +
-                       (c.fakultas ? '<p><b>Fakultas:</b> ' + c.fakultas + '</p>' : '') +
-                       '<p><b>Jurusan:</b> ' + (c.jurusan || '-') + '</p>';
+        akademikInfo = (c.universitas ? '<p><b>Universitas:</b> ' + c.universitas + '</p>' : '') +
+            (c.fakultas ? '<p><b>Fakultas:</b> ' + c.fakultas + '</p>' : '') +
+            (c.jurusan ? '<p><b>Jurusan:</b> ' + c.jurusan + '</p>' : '') +
+            (c.nim ? '<p><b>NIM:</b> ' + c.nim + '</p>' : '') +
+            (c.semester ? '<p><b>Semester:</b> ' + c.semester + '</p>' : '') +
+            (c.judul_skripsi ? '<p><b>Judul:</b> <em>"' + c.judul_skripsi + '"</em></p>' : '');
     }
     content.innerHTML = '<div style="padding:20px"><div style="text-align:center;margin-bottom:16px">' +
         '<p style="font-size:1.2rem;font-weight:700;color:#10b981">✅ Terjemahan Selesai!</p>' +
@@ -596,8 +736,11 @@ function showResultPreview(c) {
         '<p><b>Tanggal Selesai:</b> ' + (c.completed_at ? formatDate(c.completed_at) : '-') + '</p>' +
         '<p><b>Durasi Proses:</b> <strong style="color:#2563eb">' + dur + '</strong></p>' +
         '</div>' +
-        (c.file_url ? '<div style="text-align:center;margin-bottom:12px"><a href="' + c.file_url + '" target="_blank" class="btn btn-success" style="display:inline-flex;gap:8px;padding:12px 24px"><i class="fas fa-download"></i> Download PDF (dengan QR)</a></div>' +
-            '<iframe src="' + c.file_url + '" style="width:100%;height:500px;border:2px solid #ddd;border-radius:8px"></iframe>' : '') +
+        '<div style="text-align:center;margin-bottom:12px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">' +
+        (c.file_url ? '<a href="' + c.file_url + '" target="_blank" class="btn btn-success" style="display:inline-flex;gap:8px;padding:12px 24px"><i class="fas fa-download"></i> Download PDF</a>' : '') +
+        '<button class="btn btn-info" onclick="sendWhatsApp(\'' + c.id + '\')" style="display:inline-flex;gap:8px;padding:12px 24px"><i class="fab fa-whatsapp"></i> Kirim ke Klien</button>' +
+        '</div>' +
+        (c.file_url ? '<iframe src="' + c.file_url + '" style="width:100%;height:500px;border:2px solid #ddd;border-radius:8px"></iframe>' : '') +
         '</div>';
     m.style.display = 'flex';
 }
