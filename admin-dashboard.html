@@ -23,6 +23,7 @@
             <a href="#" class="sidebar-link" data-section="articles"><i class="fas fa-newspaper"></i> Artikel</a>
             <a href="#" class="sidebar-link" data-section="programs"><i class="fas fa-book"></i> Program</a>
             <a href="#" class="sidebar-link" data-section="terjemahan"><i class="fas fa-language"></i> Terjemahan</a>
+            <a href="#" class="sidebar-link" data-section="testimonials"><i class="fas fa-star"></i> Testimoni</a>
             <a href="#" class="sidebar-link" data-section="toefl"><i class="fas fa-certificate"></i> TOEFL</a>
             <div class="sidebar-divider"></div>
             <a href="#" class="sidebar-link" id="darkModeToggle"><i class="fas fa-moon"></i> Dark Mode</a>
@@ -247,6 +248,19 @@
                     </table>
                 </div>
             </section>
+
+            <!-- TESTIMONIALS SECTION -->
+<section class="admin-section" id="section-testimonials">
+    <div class="section-toolbar">
+        <h3>Kelola Testimoni</h3>
+        <div style="display:flex;gap:8px">
+            <span class="status-badge status-published" id="totalReviews">0 Testimoni</span>
+        </div>
+    </div>
+    <div id="testimonialsAdminList" class="testimonials-admin-grid">
+        <div class="loading-cell"><div class="spinner"></div></div>
+    </div>
+</section>
 
             <section class="admin-section" id="section-toefl">
                 <div class="section-toolbar"><h3>TOEFL</h3><button class="btn btn-primary" onclick="showToeflForm()"><i class="fas fa-upload"></i> Upload</button></div>

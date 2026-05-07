@@ -613,3 +613,108 @@ body.dark-mode .form-card h4, body.dark-mode .chart-card h4, body.dark-mode h3 {
 body.dark-mode .upload-box, body.dark-mode .qr-position-box { background: #334155; border-color: #475569; }
 body.dark-mode .file-upload-label { background: #1e293b; border-color: #475569; }
 body.dark-mode .hint { color: #94a3b8; }
+
+/* ============================================
+   ADMIN TESTIMONIALS
+   ============================================ */
+.testimonials-admin-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 16px;
+}
+
+.testi-admin-card {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    border-left: 4px solid #f59e0b;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+    transition: all 0.2s;
+}
+
+.testi-admin-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.1); }
+.testi-admin-card.rating-good { border-left-color: #10b981; }
+.testi-admin-card.rating-medium { border-left-color: #f59e0b; }
+.testi-admin-card.rating-bad { border-left-color: #ef4444; }
+
+.testi-admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.testi-stars { font-size: 1rem; letter-spacing: 2px; }
+
+.rating-num {
+    font-size: 0.8rem;
+    color: #666;
+    font-weight: 600;
+    margin-left: 4px;
+}
+
+.testi-date { font-size: 0.75rem; color: #94a3b8; }
+
+.testi-text {
+    color: #334155;
+    font-style: italic;
+    line-height: 1.6;
+    margin-bottom: 16px;
+    padding: 12px;
+    background: #f8fafc;
+    border-radius: 8px;
+    border-left: 3px solid #cbd5e1;
+}
+
+.testi-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding-top: 12px;
+    border-top: 1px solid #f1f5f9;
+}
+
+.testi-author { flex: 1; min-width: 180px; }
+
+.testi-author strong {
+    display: block;
+    color: #0f172a;
+    font-size: 0.95rem;
+}
+
+.testi-author small {
+    display: block;
+    color: #64748b;
+    font-size: 0.75rem;
+    margin-top: 2px;
+}
+
+.testi-univ {
+    font-size: 0.75rem;
+    color: #2563eb;
+    margin-top: 4px;
+    font-weight: 600;
+}
+
+.testi-univ i { margin-right: 4px; }
+
+.testi-actions {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+}
+
+@media (max-width: 768px) {
+    .testimonials-admin-grid { grid-template-columns: 1fr; }
+    .testi-actions { width: 100%; }
+    .testi-actions .btn { flex: 1; }
+}
+
+body.dark-mode .testi-admin-card { background: #1e293b; color: #e2e8f0; }
+body.dark-mode .testi-text { background: #0f172a; color: #cbd5e1; }
+body.dark-mode .testi-author strong { color: #f1f5f9; }
+body.dark-mode .testi-author small { color: #94a3b8; }

@@ -141,10 +141,11 @@ function switchSection(s) {
     document.querySelectorAll('.sidebar-link').forEach(function(x) { x.classList.remove('active'); });
     var e = document.getElementById('section-' + s); if (e) e.classList.add('active');
     var l = document.querySelector('[data-section="' + s + '"]'); if (l) l.classList.add('active');
-    var m = { 'dashboard': 'Dashboard', 'articles': 'Artikel', 'programs': 'Program', 'terjemahan': 'Terjemahan', 'toefl': 'TOEFL' };
+    var m = { 'dashboard': 'Dashboard', 'articles': 'Artikel', 'programs': 'Program', 'terjemahan': 'Terjemahan', 'toefl': 'TOEFL', 'testimonials': 'Testimoni' };
     var t = document.getElementById('pageTitle'); if (t) t.textContent = m[s] || 'Dashboard';
     document.getElementById('adminSidebar').classList.remove('active');
     if (s === 'dashboard') loadAnalytics();
+    if (s === 'testimonials') loadTestimonialsAdmin();
 }
 
 // ============================================
@@ -964,3 +965,88 @@ function showCertPrint(cert) { var m = document.getElementById('certPrintModal')
 
 async function loadAdminToefl() { var tb = document.getElementById('toeflTableBody'); if (!tb) return; try { var r = await db.from('toefl_certificates').select('*').order('created_at', { ascending: false }); if (!r.data || !r.data.length) { tb.innerHTML = '<tr><td colspan="7" class="loading-cell">Kosong</td></tr>'; return; } tb.innerHTML = r.data.map(function(c) { var fb = c.file_url ? '<a href="' + c.file_url + '" target="_blank" class="file-badge"><i class="fas fa-file-pdf"></i> PDF</a>' : '-', dl = c.file_url ? '<a href="' + c.file_url + '" target="_blank" class="btn btn-sm btn-primary"><i class="fas fa-download"></i></a>' : ''; return '<tr><td><strong style="color:var(--primary)">' + c.certificate_id + '</strong></td><td>' + c.participant_name + '</td><td>' + formatDate(c.test_date) + '</td><td>' + c.listening_score + '/' + c.structure_score + '/' + c.reading_score + '</td><td><strong style="color:var(--primary);font-size:1.1rem">' + c.total_score + '</strong></td><td>' + fb + '</td><td><div class="action-buttons"><button class="btn btn-sm btn-success" onclick=\'showCertPrint(' + JSON.stringify(c) + ')\'>View</button> ' + dl + ' <button class="btn btn-sm btn-warning" onclick=\'showToeflForm(' + JSON.stringify(c) + ')\'>Edit</button> <button class="btn btn-sm btn-danger" onclick="deleteToefl(\'' + c.id + '\')">Hapus</button></div></td></tr>'; }).join(''); } catch (e) { console.error(e); } }
 async function deleteToefl(id) { if (!confirm('Hapus?')) return; await db.from('toefl_certificates').delete().eq('id', id); showNotification('Deleted!'); loadAdminToefl(); loadDashboardStats(); }
+
+// ============================================
+// ADMIN: KELOLA TESTIMONI
+// ============================================
+async function loadTestimonialsAdmin() {
+    var container = document.getElementById('testimonialsAdminList');
+    if (!container) return;
+
+    try {
+        var r = await db.from('testimonials').select('*').order('created_at', { ascending: false });
+
+        if (!r.data || !r.data.length) {
+            container.innerHTML = '<p style="text-align:center;color:#666;padding:40px">Belum ada testimoni</p>';
+            document.getElementById('totalReviews').textContent = '0 Testimoni';
+            return;
+        }
+
+        document.getElementById('totalReviews').textContent = r.data.length + ' Testimoni';
+
+        container.innerHTML = r.data.map(function(t) {
+            var stars = '';
+            for (var i = 0; i < 5; i++) stars += i < t.rating ? '⭐' : '☆';
+
+            var univInfo = '';
+            if (t.document_type === 'Abstrak Skripsi' && t.universitas) {
+                univInfo = '<div class="testi-univ"><i class="fas fa-graduation-cap"></i> ' + escapeHtmlA(t.universitas) + '</div>';
+            }
+
+            var ratingClass = t.rating >= 4 ? 'rating-good' : t.rating >= 3 ? 'rating-medium' : 'rating-bad';
+
+            return '<div class="testi-admin-card ' + ratingClass + '">' +
+                '<div class="testi-admin-header">' +
+                '<div class="testi-stars">' + stars + ' <span class="rating-num">(' + t.rating + '/5)</span></div>' +
+                '<div class="testi-date">' + formatDate(t.created_at) + '</div>' +
+                '</div>' +
+                '<p class="testi-text">"' + escapeHtmlA(t.review_text) + '"</p>' +
+                '<div class="testi-footer">' +
+                '<div class="testi-author">' +
+                '<strong>' + escapeHtmlA(t.client_name) + '</strong>' +
+                '<small>' + escapeHtmlA(t.document_type || '') + '</small>' +
+                univInfo +
+                (t.document_id ? '<small style="color:#2563eb">ID: ' + t.document_id + '</small>' : '') +
+                '</div>' +
+                '<div class="testi-actions">' +
+                (t.is_approved
+                    ? '<button class="btn btn-sm btn-warning" onclick="toggleApproval(\'' + t.id + '\', false)" title="Sembunyikan"><i class="fas fa-eye-slash"></i> Sembunyikan</button>'
+                    : '<button class="btn btn-sm btn-success" onclick="toggleApproval(\'' + t.id + '\', true)" title="Tampilkan"><i class="fas fa-eye"></i> Tampilkan</button>'
+                ) +
+                ' <button class="btn btn-sm btn-danger" onclick="deleteTestimonial(\'' + t.id + '\')" title="Hapus"><i class="fas fa-trash"></i> Hapus</button>' +
+                '</div>' +
+                '</div>' +
+                '</div>';
+        }).join('');
+    } catch (e) {
+        container.innerHTML = '<p style="text-align:center;color:#ef4444">Error: ' + e.message + '</p>';
+    }
+}
+
+function escapeHtmlA(text) {
+    if (!text) return '';
+    var div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+async function toggleApproval(id, approve) {
+    try {
+        await db.from('testimonials').update({ is_approved: approve }).eq('id', id);
+        showNotification(approve ? '✅ Testimoni ditampilkan!' : '⛔ Testimoni disembunyikan!');
+        loadTestimonialsAdmin();
+    } catch (e) {
+        showNotification('Error: ' + e.message, 'error');
+    }
+}
+
+async function deleteTestimonial(id) {
+    if (!confirm('Hapus testimoni ini permanen?\n\nTestimoni yang dihapus tidak bisa dikembalikan.')) return;
+    try {
+        await db.from('testimonials').delete().eq('id', id);
+        showNotification('🗑️ Testimoni dihapus!');
+        loadTestimonialsAdmin();
+    } catch (e) {
+        showNotification('Error: ' + e.message, 'error');
+    }
+}
