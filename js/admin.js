@@ -334,26 +334,31 @@ function renderTerjemahanTable(data) {
         var statusBadge = '<span class="status-badge status-' + c.status + '">' + c.status + '</span>';
         var duration = c.completed_at ? calculateDuration(c.created_at, c.completed_at) : (c.status === 'processing' ? calculateDuration(c.created_at, new Date().toISOString()) : '-');
         var docId = c.document_id || '-';
-        var docDisplay = c.document_type;
+
+        var docDisplay = escapeHtml(c.document_type);
         if (c.document_type === 'Abstrak Skripsi') {
-            if (c.jurusan) docDisplay += '<br><small style="color:#666;font-size:0.7rem">📚 ' + c.jurusan + '</small>';
-            if (c.judul_skripsi) docDisplay += '<br><small style="color:#666;font-size:0.7rem;font-style:italic">"' + (c.judul_skripsi.length > 40 ? c.judul_skripsi.substring(0, 40) + '...' : c.judul_skripsi) + '"</small>';
+            if (c.jurusan) docDisplay += '<br><small style="color:#666;font-size:0.7rem">📚 ' + escapeHtml(c.jurusan) + '</small>';
+            if (c.judul_skripsi) {
+                var judulShort = c.judul_skripsi.length > 40 ? c.judul_skripsi.substring(0, 40) + '...' : c.judul_skripsi;
+                docDisplay += '<br><small style="color:#666;font-size:0.7rem;font-style:italic">"' + escapeHtml(judulShort) + '"</small>';
+            }
         }
+
         var actions = '';
         if (c.status === 'completed' && c.file_url) {
             actions = '<a href="' + c.file_url + '" target="_blank" class="btn btn-sm btn-success" title="Download"><i class="fas fa-download"></i></a> ' +
                 '<button class="btn btn-sm btn-info" onclick="sendWhatsApp(\'' + c.id + '\')" title="Kirim WA"><i class="fab fa-whatsapp"></i></button> ' +
-                '<button class="btn btn-sm btn-primary" onclick=\'showResultPreview(' + JSON.stringify(c) + ')\' title="Preview">View</button>';
+                '<button class="btn btn-sm btn-primary" onclick="viewResult(\'' + c.id + '\')" title="Preview">View</button>';
         } else {
-            actions = '<button class="btn btn-sm btn-success" onclick=\'showUploadDocForm(' + JSON.stringify(c) + ')\' title="Upload"><i class="fas fa-upload"></i></button>';
+            actions = '<button class="btn btn-sm btn-success" onclick="uploadDoc(\'' + c.id + '\')" title="Upload"><i class="fas fa-upload"></i></button>';
         }
-        actions += ' <button class="btn btn-sm btn-warning" onclick=\'showRegisterForm(' + JSON.stringify(c) + ')\' title="Edit"><i class="fas fa-edit"></i></button>';
+        actions += ' <button class="btn btn-sm btn-warning" onclick="editClient(\'' + c.id + '\')" title="Edit"><i class="fas fa-edit"></i></button>';
         actions += ' <button class="btn btn-sm btn-danger" onclick="deleteClient(\'' + c.id + '\')" title="Hapus"><i class="fas fa-trash"></i></button>';
 
         return '<tr><td><input type="checkbox" class="row-check" value="' + c.id + '" onchange="updateSelectedCount()"></td>' +
             '<td><strong style="color:var(--primary)">' + docId + '</strong></td>' +
-            '<td>' + c.client_name + '</td>' +
-            '<td>' + c.client_phone + '</td>' +
+            '<td>' + escapeHtml(c.client_name) + '</td>' +
+            '<td>' + escapeHtml(c.client_phone) + '</td>' +
             '<td>' + docDisplay + '</td>' +
             '<td>' + c.source_language + '→' + c.target_language + '</td>' +
             '<td>' + statusBadge + '</td>' +
@@ -361,6 +366,28 @@ function renderTerjemahanTable(data) {
             '<td><div class="action-buttons">' + actions + '</div></td></tr>';
     }).join('');
     updateSelectedCount();
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    var div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function uploadDoc(id) {
+    var c = allTerjemahan.find(function(x) { return x.id === id; });
+    if (c) showUploadDocForm(c);
+}
+
+function editClient(id) {
+    var c = allTerjemahan.find(function(x) { return x.id === id; });
+    if (c) showRegisterForm(c);
+}
+
+function viewResult(id) {
+    var c = allTerjemahan.find(function(x) { return x.id === id; });
+    if (c) showResultPreview(c);
 }
 
 function toggleSelectAll() {
