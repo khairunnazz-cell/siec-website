@@ -1,5 +1,5 @@
 var LOGO_URL='assets/logo.png',toeflFileData=null,uploadFileData=null;
-var WA_NUMBER='6281234567890'; // GANTI nomor WA admin
+var WA_NUMBER='6285264686148'; // GANTI nomor WA admin
 
 // ============================================
 // DATA KAMPUS
