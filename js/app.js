@@ -13,7 +13,7 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
 const db = supabaseClient;
 
 // WhatsApp Number
-const WA_NUMBER = '6282174104447';
+const WA_NUMBER = '6285264686148';
 
 // ============================================
 // NAVBAR
