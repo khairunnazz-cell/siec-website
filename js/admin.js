@@ -558,12 +558,11 @@ function sendWhatsApp(clientId) {
 
     var msg = 'Assalamu\'alaikum *' + c.client_name + '* 🙏\n\n';
 
-    // Custom message khusus Abstrak Skripsi UIN Suska Riau
     var isAbstrakUIN = c.document_type === 'Abstrak Skripsi' &&
                        c.universitas === 'Universitas Islam Negeri Sultan Syarif Kasim Riau';
 
     if (isAbstrakUIN) {
-        msg += 'Alhamdulillah, terjemahan *Abstrak Skripsi* Ananda sudah *SELESAI* dan siap diambil! 🎓✨\n\n';
+        msg += 'Alhamdulillah, terjemahan *Abstrak Skripsi* Ananda sudah *SELESAI* dan siap diakses! 🎓✨\n\n';
         msg += '📄 *Detail Dokumen:*\n';
         msg += '• ID: ' + c.document_id + '\n';
         msg += '• NIM: ' + (c.nim || '-') + '\n';
@@ -573,8 +572,9 @@ function sendWhatsApp(clientId) {
         if (c.judul_skripsi) msg += '• Judul: _"' + c.judul_skripsi + '"_\n';
         msg += '\n';
 
-        msg += '📥 *Download Soft Copy:*\n' + c.file_url + '\n\n';
-        msg += '🔍 *Verifikasi Keaslian:*\n' + verifyUrl + '\n\n';
+        msg += '🔍 *Akses & Download Dokumen:*\n';
+        msg += verifyUrl + '\n\n';
+        msg += '_Silakan klik link di atas untuk memverifikasi keaslian dan mendownload soft copy abstrak Ananda._\n\n';
 
         msg += '━━━━━━━━━━━━━━━━━━\n';
         msg += '📍 *PENGAMBILAN HARD COPY*\n';
@@ -600,21 +600,28 @@ function sendWhatsApp(clientId) {
         msg += '⚠️ *PENTING:*\n';
         msg += 'Batas maksimal pengambilan abstrak adalah *1 minggu* sejak pesan ini dikirim.\n\n';
 
+        msg += '💡 *Bantu Kami Berkembang:*\n';
+        msg += 'Ananda akan diminta memberikan testimoni singkat saat mengakses dokumen. Pengalaman Ananda sangat berarti bagi kami untuk terus meningkatkan kualitas layanan. 🙏\n\n';
+
         msg += 'Terima kasih telah mempercayakan SIEC sebagai mitra penerjemahan Ananda. Semoga sukses untuk sidang skripsinya! 🎓💪\n\n';
         msg += '_Barakallahu fiikum_\n';
         msg += '_Tim SIEC_';
 
     } else {
-        // Pesan default untuk dokumen lainnya
-        msg += 'Alhamdulillah, terjemahan dokumen Anda di *SIEC* sudah *SELESAI*! 🎉\n\n';
+        msg += 'Alhamdulillah, terjemahan dokumen Anda di *SIEC* sudah *SELESAI* dan siap diakses! 🎉\n\n';
         msg += '📄 *Detail Dokumen:*\n';
         msg += '• ID: ' + c.document_id + '\n';
         msg += '• Jenis: ' + c.document_type + '\n';
         msg += '• Bahasa: ' + c.source_language + ' → ' + c.target_language + '\n\n';
 
-        msg += '✅ *Download Dokumen:*\n' + c.file_url + '\n\n';
-        msg += '🔍 *Verifikasi Keaslian:*\n' + verifyUrl + '\n\n';
+        msg += '🔍 *Akses & Download Dokumen:*\n';
+        msg += verifyUrl + '\n\n';
+        msg += '_Silakan klik link di atas untuk memverifikasi keaslian dan mendownload dokumen Anda._\n\n';
+
         msg += '📊 *Cek Status Anytime:*\n' + statusUrl + '\n\n';
+
+        msg += '💡 *Bantu Kami Berkembang:*\n';
+        msg += 'Anda akan diminta memberikan testimoni singkat saat mengakses dokumen. Pengalaman Anda sangat berarti bagi kami untuk terus meningkatkan kualitas layanan. 🙏\n\n';
 
         msg += 'Terima kasih telah mempercayakan SIEC sebagai mitra penerjemahan Anda! 🙏\n\n';
         msg += '_Syaf Intensive English Course_';
