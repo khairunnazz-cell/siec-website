@@ -316,7 +316,6 @@ function renderTerjemahanTable(data) {
     var tb = document.getElementById('terjemahanTableBody');
     if (!tb) return;
 
-    // Sort
     data.sort(function(a, b) {
         var av = a[sortConfig.column] || '';
         var bv = b[sortConfig.column] || '';
@@ -349,7 +348,8 @@ function renderTerjemahanTable(data) {
         if (c.status === 'completed' && c.file_url) {
             actions = '<a href="' + c.file_url + '" target="_blank" class="btn btn-sm btn-success" title="Download"><i class="fas fa-download"></i></a> ' +
                 '<button class="btn btn-sm btn-info" onclick="sendWhatsApp(\'' + c.id + '\')" title="Kirim WA"><i class="fab fa-whatsapp"></i></button> ' +
-                '<button class="btn btn-sm btn-primary" onclick="viewResult(\'' + c.id + '\')" title="Preview">View</button>';
+                '<button class="btn btn-sm btn-primary" onclick="viewResult(\'' + c.id + '\')" title="Preview"><i class="fas fa-eye"></i></button> ' +
+                '<button class="btn btn-sm" style="background:#8b5cf6;color:white" onclick="editQrPosition(\'' + c.id + '\')" title="Edit Posisi QR"><i class="fas fa-qrcode"></i></button>';
         } else {
             actions = '<button class="btn btn-sm btn-success" onclick="uploadDoc(\'' + c.id + '\')" title="Upload"><i class="fas fa-upload"></i></button>';
         }
@@ -1055,5 +1055,231 @@ async function deleteTestimonial(id) {
         loadTestimonialsAdmin();
     } catch (e) {
         showNotification('Error: ' + e.message, 'error');
+    }
+}
+
+// ============================================
+// EDIT QR POSITION (untuk dokumen yang sudah completed)
+// ============================================
+var editQrClient = null;
+
+async function editQrPosition(clientId) {
+    var c = allTerjemahan.find(function(x) { return x.id === clientId; });
+    if (!c || !c.file_url) {
+        showNotification('File tidak ditemukan!', 'error');
+        return;
+    }
+    editQrClient = c;
+
+    // Download original file dari URL untuk re-process
+    showNotification('Memuat dokumen...', 'info');
+
+    try {
+        // Buat modal
+        var modal = document.createElement('div');
+        modal.className = 'review-modal';
+        modal.id = 'editQrModal';
+        modal.innerHTML =
+            '<div class="review-modal-content" style="max-width:850px">' +
+            '<div class="review-modal-header">' +
+            '<h3><i class="fas fa-qrcode"></i> Edit Posisi QR Code</h3>' +
+            '<button onclick="closeEditQrModal()" class="btn-close">&times;</button>' +
+            '</div>' +
+            '<div class="review-modal-body">' +
+            '<div style="background:#dbeafe;padding:12px;border-radius:8px;margin-bottom:16px">' +
+            '<p style="margin:0"><b>Klien:</b> ' + c.client_name + '</p>' +
+            '<p style="margin:0"><b>ID:</b> ' + c.document_id + '</p>' +
+            '<p style="margin:0;color:#dc2626;font-size:0.85rem"><i class="fas fa-info-circle"></i> Drag QR ke posisi baru lalu klik "Simpan"</p>' +
+            '</div>' +
+            '<div class="upload-box">' +
+            '<h5><i class="fas fa-upload"></i> Upload Ulang File Original</h5>' +
+            '<p class="hint">Untuk edit posisi QR, upload kembali file PDF original (tanpa QR)</p>' +
+            '<div class="file-upload-area">' +
+            '<input type="file" id="editQrFile" accept=".pdf" onchange="handleEditQrFileSelect(this)">' +
+            '<label for="editQrFile" class="file-upload-label">' +
+            '<i class="fas fa-file-pdf"></i><span>Pilih file PDF original</span>' +
+            '<span class="file-hint">PDF max 10MB</span>' +
+            '</label>' +
+            '</div>' +
+            '</div>' +
+            '<div id="editQrLivePreview" class="live-preview-container" style="display:none">' +
+            '<div class="live-preview-header"><h6><i class="fas fa-hand-pointer"></i> Drag QR ke posisi baru</h6></div>' +
+            '<div class="live-preview-doc"><div class="live-preview-page" id="editQrPreviewPage">' +
+            '<iframe id="editQrPreviewFrame" style="display:none;width:100%;border:none"></iframe>' +
+            '<div id="editQrDrag" class="qr-doc-overlay" style="left:80%;top:85%;position:absolute"><div id="editQrCanvas" style="display:inline-block"></div><div id="editQrIdText" class="qr-doc-id">' + c.document_id + '</div></div>' +
+            '</div></div>' +
+            '<div class="position-indicator">' +
+            '<span>X:<strong id="editPosX">80%</strong> Y:<strong id="editPosY">85%</strong></span>' +
+            '<span>|</span>' +
+            '<button type="button" onclick="editQrSizeDown()" class="btn-size">−</button>' +
+            '<input type="range" id="editQrSize" min="40" max="150" value="80" style="width:80px" oninput="editResizeQr()">' +
+            '<button type="button" onclick="editQrSizeUp()" class="btn-size">+</button>' +
+            '<strong id="editQrSizeVal">80px</strong>' +
+            '</div>' +
+            '</div>' +
+            '<div class="review-actions">' +
+            '<button class="btn btn-primary" onclick="saveEditedQr()" id="saveEditQrBtn"><i class="fas fa-save"></i> Simpan Posisi Baru</button>' +
+            '<button class="btn btn-outline" onclick="closeEditQrModal()">Batal</button>' +
+            '</div>' +
+            '</div>' +
+            '</div>';
+        document.body.appendChild(modal);
+
+        // Set saved position
+        if (c.qr_position) {
+            try {
+                var pos = JSON.parse(c.qr_position);
+                setTimeout(function() {
+                    var sz = document.getElementById('editQrSize');
+                    if (sz) { sz.value = pos.size || 80; document.getElementById('editQrSizeVal').textContent = (pos.size || 80) + 'px'; }
+                }, 200);
+            } catch (e) {}
+        }
+    } catch (e) {
+        showNotification('Error: ' + e.message, 'error');
+    }
+}
+
+function closeEditQrModal() {
+    var m = document.getElementById('editQrModal');
+    if (m) m.remove();
+    editQrClient = null;
+}
+
+var editQrFileData = null;
+
+function handleEditQrFileSelect(input) {
+    var f = input.files[0];
+    if (!f) return;
+    if (f.size > 10485760) { showNotification('Max 10MB!', 'error'); return; }
+    if (f.type !== 'application/pdf') { showNotification('Harus PDF!', 'error'); return; }
+
+    editQrFileData = f;
+    document.getElementById('editQrLivePreview').style.display = 'block';
+
+    var page = document.getElementById('editQrPreviewPage');
+    var fr = document.getElementById('editQrPreviewFrame');
+
+    var reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            var pdfDoc = await PDFLib.PDFDocument.load(e.target.result);
+            var pg = pdfDoc.getPages()[0];
+            var pw = pg.getWidth(), ph = pg.getHeight();
+            var cw = page.parentElement.offsetWidth || 600;
+            var ch = Math.round(cw * (ph / pw));
+            page.style.width = cw + 'px';
+            page.style.height = ch + 'px';
+            if (fr) { fr.src = URL.createObjectURL(f); fr.style.display = 'block'; fr.style.height = ch + 'px'; }
+
+            // Set saved position
+            if (editQrClient.qr_position) {
+                try {
+                    var pos = JSON.parse(editQrClient.qr_position);
+                    setTimeout(function() {
+                        var drag = document.getElementById('editQrDrag');
+                        if (drag) {
+                            var nl = (pos.x / 100) * cw - 50;
+                            var nt = (pos.y / 100) * ch - 50;
+                            drag.style.left = nl + 'px';
+                            drag.style.top = nt + 'px';
+                            document.getElementById('editPosX').textContent = pos.x + '%';
+                            document.getElementById('editPosY').textContent = pos.y + '%';
+                        }
+                    }, 800);
+                } catch (e) {}
+            }
+
+            setTimeout(function() {
+                generateQr('editQrCanvas', editQrClient.verify_url || (location.origin + '/verify.html?id=' + editQrClient.document_id), 80);
+            }, 600);
+            setTimeout(function() { initEditDrag(); }, 1500);
+        } catch (err) { console.error(err); }
+    };
+    reader.readAsArrayBuffer(f);
+}
+
+function initEditDrag() {
+    var el = document.getElementById('editQrDrag');
+    var co = document.getElementById('editQrPreviewPage');
+    if (!el || !co) return;
+    if (co.offsetWidth === 0) { setTimeout(initEditDrag, 500); return; }
+
+    var d = false, sx = 0, sy = 0, ol = 0, ot = 0;
+    function st(x, y) { d = true; el.classList.add('dragging'); sx = x; sy = y; ol = el.offsetLeft; ot = el.offsetTop; }
+    function mv(x, y) {
+        if (!d) return;
+        var cw = co.offsetWidth, ch = co.offsetHeight;
+        var nl = Math.max(0, Math.min(ol + (x - sx), cw - el.offsetWidth));
+        var nt = Math.max(0, Math.min(ot + (y - sy), ch - el.offsetHeight));
+        el.style.left = nl + 'px'; el.style.top = nt + 'px';
+        var cx = nl + el.offsetWidth / 2, cy = nt + el.offsetHeight / 2;
+        var px = Math.max(5, Math.min(95, Math.round(cx / cw * 100)));
+        var py = Math.max(5, Math.min(95, Math.round(cy / ch * 100)));
+        document.getElementById('editPosX').textContent = px + '%';
+        document.getElementById('editPosY').textContent = py + '%';
+    }
+    function en() { if (!d) return; d = false; el.classList.remove('dragging'); }
+    el.onmousedown = function(e) { st(e.clientX, e.clientY); e.preventDefault(); };
+    document.addEventListener('mousemove', function(e) { mv(e.clientX, e.clientY); });
+    document.addEventListener('mouseup', en);
+    el.ontouchstart = function(e) { var t = e.touches[0]; st(t.clientX, t.clientY); e.preventDefault(); };
+    document.addEventListener('touchmove', function(e) { if (!d) return; var t = e.touches[0]; mv(t.clientX, t.clientY); e.preventDefault(); }, { passive: false });
+    document.addEventListener('touchend', en);
+}
+
+function editResizeQr() {
+    var s = document.getElementById('editQrSize');
+    var v = parseInt(s.value);
+    document.getElementById('editQrSizeVal').textContent = v + 'px';
+    if (editQrClient) generateQr('editQrCanvas', editQrClient.verify_url || (location.origin + '/verify.html?id=' + editQrClient.document_id), v);
+}
+
+function editQrSizeUp() { var s = document.getElementById('editQrSize'); s.value = Math.min(parseInt(s.value) + 10, 150); editResizeQr(); }
+function editQrSizeDown() { var s = document.getElementById('editQrSize'); s.value = Math.max(parseInt(s.value) - 10, 40); editResizeQr(); }
+
+async function saveEditedQr() {
+    if (!editQrFileData) { showNotification('Upload file PDF dulu!', 'error'); return; }
+    if (!editQrClient) return;
+
+    var btn = document.getElementById('saveEditQrBtn');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+    btn.disabled = true;
+
+    try {
+        var el = document.getElementById('editQrDrag');
+        var co = document.getElementById('editQrPreviewPage');
+        var cx = el.offsetLeft + el.offsetWidth / 2;
+        var cy = el.offsetTop + el.offsetHeight / 2;
+        var pos = {
+            x: Math.max(5, Math.min(95, Math.round(cx / co.offsetWidth * 100))),
+            y: Math.max(5, Math.min(95, Math.round(cy / co.offsetHeight * 100))),
+            size: parseInt(document.getElementById('editQrSize').value) || 80,
+            showId: true
+        };
+
+        var url = editQrClient.verify_url || (location.origin + '/verify.html?id=' + editQrClient.document_id + '&type=translation');
+        var mp = await embedQrInPdf(editQrFileData, url, editQrClient.document_id, pos.x, pos.y, pos.size);
+
+        var ext = 'pdf';
+        var nm = 'translations/' + Date.now() + '-' + Math.random().toString(36).substr(2, 9) + '.' + ext;
+        var r = await db.storage.from('uploads').upload(nm, mp, { cacheControl: '3600', upsert: false });
+        if (r.error) throw r.error;
+
+        var newUrl = db.storage.from('uploads').getPublicUrl(nm).data.publicUrl;
+
+        await db.from('translation_clients').update({
+            file_url: newUrl,
+            qr_position: JSON.stringify(pos),
+            updated_at: new Date().toISOString()
+        }).eq('id', editQrClient.id);
+
+        showNotification('✅ Posisi QR berhasil diupdate!');
+        closeEditQrModal();
+        loadTerjemahan();
+    } catch (e) {
+        showNotification('Error: ' + e.message, 'error');
+        btn.innerHTML = '<i class="fas fa-save"></i> Simpan Posisi Baru';
+        btn.disabled = false;
     }
 }

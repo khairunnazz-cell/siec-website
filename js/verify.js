@@ -74,11 +74,10 @@ async function verifyDocument() {
 
 function renderResult(data, type) {
     var html = '';
+    var hasReviewed = data.has_reviewed === true;
 
     if (type === 'translation') {
-        var hasReviewed = data.has_reviewed === true;
         var downloadBtn = '';
-
         if (data.file_url) {
             if (hasReviewed) {
                 downloadBtn =
@@ -94,13 +93,8 @@ function renderResult(data, type) {
                     '<div class="review-prompt-card">' +
                     '<div class="review-icon">⭐</div>' +
                     '<h3>Bantu Kami Menjadi Lebih Baik</h3>' +
-                    '<p class="review-message">' +
-                    'Sebelum Anda mendownload dokumen, kami akan sangat menghargai jika Ananda berkenan meluangkan waktu sejenak untuk berbagi pengalaman dengan layanan kami. ' +
-                    'Masukan Anda sangat berarti bagi pengembangan SIEC dan akan membantu calon pengguna lainnya. 🙏' +
-                    '</p>' +
-                    '<button class="btn btn-primary review-btn" onclick="showReviewForm()">' +
-                    '<i class="fas fa-star"></i> Berikan Testimoni & Lanjut Download' +
-                    '</button>' +
+                    '<p class="review-message">Sebelum Anda mendownload dokumen, kami akan sangat menghargai jika Ananda berkenan meluangkan waktu sejenak untuk berbagi pengalaman dengan layanan kami. Masukan Anda sangat berarti bagi pengembangan SIEC dan akan membantu calon pengguna lainnya. 🙏</p>' +
+                    '<button class="btn btn-primary review-btn" onclick="showReviewForm()"><i class="fas fa-star"></i> Berikan Testimoni & Lanjut Download</button>' +
                     '<p class="review-hint">Hanya butuh 30 detik ⏱️</p>' +
                     '</div>' +
                     '</div>';
@@ -120,16 +114,30 @@ function renderResult(data, type) {
             '<div class="result-item"><label>Status</label><p><span class="status-badge status-valid">✓ Valid</span></p></div>' +
             '</div>' +
             downloadBtn +
-            '<p style="margin-top:16px;color:var(--success);font-size:0.85rem;text-align:center">' +
-            '<i class="fas fa-shield-alt"></i> Dokumen ini resmi diterbitkan oleh SIEC</p>';
+            '<p style="margin-top:16px;color:var(--success);font-size:0.85rem;text-align:center"><i class="fas fa-shield-alt"></i> Dokumen ini resmi diterbitkan oleh SIEC</p>';
     } else {
+        // TOEFL with review system
         var dlBtn = '';
         if (data.file_url) {
-            dlBtn =
-                '<div class="download-section">' +
-                '<a href="' + data.file_url + '" target="_blank" class="btn btn-success download-btn">' +
-                '<i class="fas fa-download"></i> Download Sertifikat</a>' +
-                '</div>';
+            if (hasReviewed) {
+                dlBtn =
+                    '<div class="download-section">' +
+                    '<a href="' + data.file_url + '" target="_blank" class="btn btn-success download-btn">' +
+                    '<i class="fas fa-download"></i> Download Sertifikat</a>' +
+                    '<p class="thank-you-msg">💚 Terima kasih atas review Anda!</p>' +
+                    '</div>';
+            } else {
+                dlBtn =
+                    '<div class="review-prompt-section">' +
+                    '<div class="review-prompt-card">' +
+                    '<div class="review-icon">⭐</div>' +
+                    '<h3>Bantu Kami Menjadi Lebih Baik</h3>' +
+                    '<p class="review-message">Sebelum Anda mendownload sertifikat, kami akan sangat menghargai jika Anda berkenan meluangkan waktu sejenak untuk berbagi pengalaman dengan layanan tes TOEFL Prediction kami. 🙏</p>' +
+                    '<button class="btn btn-primary review-btn" onclick="showReviewForm()"><i class="fas fa-star"></i> Berikan Testimoni & Lanjut Download</button>' +
+                    '<p class="review-hint">Hanya butuh 30 detik ⏱️</p>' +
+                    '</div>' +
+                    '</div>';
+            }
         }
         html =
             '<div class="result-header"><i class="fas fa-check-circle"></i><span>SERTIFIKAT TERVERIFIKASI ✅</span></div>' +
@@ -144,8 +152,7 @@ function renderResult(data, type) {
             '<div class="result-item"><label>Status</label><p><span class="status-badge status-valid">✓ Valid</span></p></div>' +
             '</div>' +
             dlBtn +
-            '<p style="margin-top:16px;color:var(--success);font-size:0.85rem;text-align:center">' +
-            '<i class="fas fa-shield-alt"></i> Sertifikat ini resmi diterbitkan oleh SIEC</p>';
+            '<p style="margin-top:16px;color:var(--success);font-size:0.85rem;text-align:center"><i class="fas fa-shield-alt"></i> Sertifikat ini resmi diterbitkan oleh SIEC</p>';
     }
 
     return html;
@@ -153,15 +160,9 @@ function renderResult(data, type) {
 
 // REVIEW FORM
 async function showReviewForm() {
-    // Load existing testimonials untuk ditampilkan
     var existingReviews = '';
     try {
-        var r = await db.from('testimonials')
-            .select('*')
-            .eq('is_approved', true)
-            .order('created_at', { ascending: false })
-            .limit(5);
-
+        var r = await db.from('testimonials').select('*').eq('is_approved', true).order('created_at', { ascending: false }).limit(5);
         if (r.data && r.data.length > 0) {
             var reviewCards = r.data.map(function(t) {
                 var stars = '';
@@ -169,6 +170,10 @@ async function showReviewForm() {
                 var initials = t.client_name.split(' ').map(function(w) { return w[0]; }).slice(0, 2).join('').toUpperCase();
                 var colors = ['#2563eb', '#7c3aed', '#10b981', '#f59e0b', '#ec4899', '#06b6d4'];
                 var color = colors[Math.abs(t.client_name.charCodeAt(0)) % colors.length];
+
+                var avatar = t.photo_url
+                    ? '<div class="mini-avatar" style="background-image:url(' + t.photo_url + ');background-size:cover;background-position:center"></div>'
+                    : '<div class="mini-avatar" style="background:' + color + '">' + initials + '</div>';
 
                 var univLabel = '';
                 if (t.document_type === 'Abstrak Skripsi' && t.universitas) {
@@ -178,36 +183,24 @@ async function showReviewForm() {
                     else if (short.indexOf('Al-Kifayah') !== -1) short = 'STAI Al-Kifayah';
                     univLabel = '<span class="mini-univ">🎓 ' + short + '</span>';
                 }
-
                 var reviewShort = t.review_text.length > 120 ? t.review_text.substring(0, 120) + '...' : t.review_text;
-
                 return '<div class="mini-review-card">' +
                     '<div class="mini-review-top">' +
-                    '<div class="mini-avatar" style="background:' + color + '">' + initials + '</div>' +
-                    '<div class="mini-info">' +
-                    '<div class="mini-name">' + t.client_name + '</div>' +
-                    '<div class="mini-stars">' + stars + '</div>' +
-                    univLabel +
-                    '</div>' +
+                    avatar +
+                    '<div class="mini-info"><div class="mini-name">' + t.client_name + '</div><div class="mini-stars">' + stars + '</div>' + univLabel + '</div>' +
                     '</div>' +
                     '<p class="mini-text">"' + reviewShort + '"</p>' +
                     '</div>';
             }).join('');
-
             existingReviews =
                 '<div class="existing-reviews-section">' +
-                '<div class="existing-reviews-header">' +
-                '<i class="fas fa-comments"></i>' +
-                '<span>Apa kata klien lain tentang SIEC:</span>' +
-                '</div>' +
-                '<div class="mini-reviews-scroll">' +
-                reviewCards +
-                '</div>' +
+                '<div class="existing-reviews-header"><i class="fas fa-comments"></i><span>Apa kata klien lain tentang SIEC:</span></div>' +
+                '<div class="mini-reviews-scroll">' + reviewCards + '</div>' +
                 '</div>';
         }
-    } catch (e) {
-        console.error(e);
-    }
+    } catch (e) { console.error(e); }
+
+    var clientName = currentDoc.client_name || currentDoc.participant_name || 'Klien';
 
     var modal = document.createElement('div');
     modal.className = 'review-modal';
@@ -219,20 +212,31 @@ async function showReviewForm() {
         '<button onclick="closeReviewModal()" class="btn-close">&times;</button>' +
         '</div>' +
         '<div class="review-modal-body">' +
-
-        '<p class="review-greeting">Halo <strong>' + currentDoc.client_name + '</strong> 👋</p>' +
+        '<p class="review-greeting">Halo <strong>' + clientName + '</strong> 👋</p>' +
         '<p class="review-intro">Bagaimana pengalaman Anda menggunakan layanan SIEC? Kami sangat menantikan masukan Anda untuk terus meningkatkan kualitas layanan kami.</p>' +
 
         '<div class="rating-section">' +
         '<label>Berikan Rating Anda:</label>' +
         '<div class="star-rating" id="starRating">' +
-        '<span class="star" data-rating="1" onclick="setRating(1)">⭐</span>' +
-        '<span class="star" data-rating="2" onclick="setRating(2)">⭐</span>' +
-        '<span class="star" data-rating="3" onclick="setRating(3)">⭐</span>' +
-        '<span class="star" data-rating="4" onclick="setRating(4)">⭐</span>' +
-        '<span class="star" data-rating="5" onclick="setRating(5)">⭐</span>' +
+        '<span class="star" onclick="setRating(1)">⭐</span>' +
+        '<span class="star" onclick="setRating(2)">⭐</span>' +
+        '<span class="star" onclick="setRating(3)">⭐</span>' +
+        '<span class="star" onclick="setRating(4)">⭐</span>' +
+        '<span class="star" onclick="setRating(5)">⭐</span>' +
         '</div>' +
         '<p class="rating-label" id="ratingLabel">Klik bintang untuk memberi rating</p>' +
+        '</div>' +
+
+        '<div class="photo-upload-section">' +
+        '<label>📸 Upload Foto Anda (Opsional)</label>' +
+        '<div class="photo-upload-box">' +
+        '<input type="file" id="reviewPhoto" accept="image/*" onchange="previewReviewPhoto(this)" style="display:none">' +
+        '<div id="photoPreview" class="photo-preview-empty" onclick="document.getElementById(\'reviewPhoto\').click()">' +
+        '<i class="fas fa-camera"></i>' +
+        '<span>Klik untuk upload foto</span>' +
+        '<small>JPG/PNG max 2MB</small>' +
+        '</div>' +
+        '</div>' +
         '</div>' +
 
         '<div class="review-textarea-section">' +
@@ -242,16 +246,11 @@ async function showReviewForm() {
         '</div>' +
 
         '<div class="review-actions">' +
-        '<button class="btn btn-primary" onclick="submitReview()" id="submitReviewBtn">' +
-        '<i class="fas fa-paper-plane"></i> Kirim & Lanjut Download' +
-        '</button>' +
+        '<button class="btn btn-primary" onclick="submitReview()" id="submitReviewBtn"><i class="fas fa-paper-plane"></i> Kirim & Lanjut Download</button>' +
         '<button class="btn btn-outline" onclick="closeReviewModal()">Nanti Saja</button>' +
         '</div>' +
-
-        '<p class="privacy-note">🔒 Review Anda akan ditampilkan di website kami. Privasi Anda terjaga.</p>' +
-
+        '<p class="privacy-note">🔒 Review & foto Anda akan ditampilkan di website kami. Privasi Anda terjaga.</p>' +
         existingReviews +
-
         '</div>' +
         '</div>';
 
@@ -267,6 +266,36 @@ async function showReviewForm() {
             });
         }
     }, 100);
+}
+
+var reviewPhotoFile = null;
+
+function previewReviewPhoto(input) {
+    var f = input.files[0];
+    if (!f) return;
+    if (f.size > 2 * 1024 * 1024) {
+        showNotification('Foto max 2MB!', 'error');
+        input.value = '';
+        return;
+    }
+    reviewPhotoFile = f;
+    var reader = new FileReader();
+    reader.onload = function(e) {
+        var preview = document.getElementById('photoPreview');
+        preview.className = 'photo-preview-filled';
+        preview.innerHTML = '<img src="' + e.target.result + '" alt="Preview">' +
+            '<button type="button" onclick="removeReviewPhoto(event)" class="photo-remove-btn"><i class="fas fa-times"></i></button>';
+    };
+    reader.readAsDataURL(f);
+}
+
+function removeReviewPhoto(e) {
+    e.stopPropagation();
+    reviewPhotoFile = null;
+    document.getElementById('reviewPhoto').value = '';
+    var preview = document.getElementById('photoPreview');
+    preview.className = 'photo-preview-empty';
+    preview.innerHTML = '<i class="fas fa-camera"></i><span>Klik untuk upload foto</span><small>JPG/PNG max 2MB</small>';
 }
 
 function closeReviewModal() {
@@ -303,18 +332,35 @@ async function submitReview() {
     btn.disabled = true;
 
     try {
+        var photoUrl = '';
+        if (reviewPhotoFile) {
+            var ext = reviewPhotoFile.name.split('.').pop();
+            var fn = 'reviews/' + Date.now() + '-' + Math.random().toString(36).substr(2, 9) + '.' + ext;
+            var up = await db.storage.from('uploads').upload(fn, reviewPhotoFile, { cacheControl: '3600', upsert: false });
+            if (!up.error) photoUrl = db.storage.from('uploads').getPublicUrl(fn).data.publicUrl;
+        }
+
+        var clientName = currentDoc.client_name || currentDoc.participant_name;
+        var docType = currentDoc.document_type || 'TOEFL Prediction';
+
         await db.from('testimonials').insert({
-            client_id: currentDoc.id,
-            document_id: currentDoc.document_id,
-            client_name: currentDoc.client_name,
-            document_type: currentDoc.document_type,
+            client_id: currentDoc._type === 'translation' ? currentDoc.id : null,
+            document_id: currentDoc.document_id || currentDoc.certificate_id,
+            client_name: clientName,
+            document_type: docType,
             universitas: currentDoc.universitas || null,
             rating: selectedRating,
             review_text: reviewText,
+            photo_url: photoUrl || null,
             is_approved: true
         });
 
-        await db.from('translation_clients').update({ has_reviewed: true }).eq('id', currentDoc.id);
+        // Mark as reviewed
+        if (currentDoc._type === 'translation') {
+            await db.from('translation_clients').update({ has_reviewed: true }).eq('id', currentDoc.id);
+        } else {
+            await db.from('toefl_certificates').update({ has_reviewed: true }).eq('id', currentDoc.id);
+        }
 
         showNotification('🎉 Terima kasih atas review Anda!');
         closeReviewModal();
