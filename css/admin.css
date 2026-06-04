@@ -718,3 +718,384 @@ body.dark-mode .testi-admin-card { background: #1e293b; color: #e2e8f0; }
 body.dark-mode .testi-text { background: #0f172a; color: #cbd5e1; }
 body.dark-mode .testi-author strong { color: #f1f5f9; }
 body.dark-mode .testi-author small { color: #94a3b8; }
+
+/* ============================================
+   RESPONSIVE FIX - TERJEMAHAN PAGE
+   ============================================ */
+
+/* Filter Bar Responsive */
+@media (max-width: 992px) {
+    .filter-bar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .filter-bar input,
+    .filter-bar select {
+        width: 100%;
+        min-width: unset;
+    }
+}
+
+/* Section Toolbar */
+@media (max-width: 768px) {
+    .section-toolbar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+    }
+    .section-toolbar h3 {
+        text-align: center;
+    }
+    .section-toolbar > div {
+        flex-direction: column;
+        width: 100%;
+    }
+    .section-toolbar .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Data Table Wrapper - Horizontal Scroll on Mobile */
+.data-table-container {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    max-width: 100%;
+}
+
+@media (max-width: 992px) {
+    .data-table {
+        min-width: 900px;
+    }
+}
+
+/* Form Card Responsive */
+@media (max-width: 768px) {
+    .form-card {
+        padding: 16px;
+    }
+    .form-row {
+        grid-template-columns: 1fr !important;
+        gap: 12px;
+    }
+    .form-row.three-cols {
+        grid-template-columns: 1fr !important;
+    }
+    .form-actions {
+        flex-direction: column;
+    }
+    .form-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Upload Box Responsive */
+@media (max-width: 768px) {
+    .upload-box {
+        padding: 12px;
+    }
+    .file-upload-label {
+        padding: 20px 12px;
+    }
+    .file-upload-label i {
+        font-size: 2rem;
+    }
+    .file-upload-label span {
+        font-size: 0.9rem;
+    }
+}
+
+/* Live Preview Responsive */
+@media (max-width: 768px) {
+    .live-preview-container {
+        margin: 12px -8px 16px;
+        border-radius: 8px;
+    }
+    .live-preview-header {
+        padding: 8px 12px;
+        flex-direction: column;
+        gap: 6px;
+        align-items: flex-start;
+    }
+    .live-preview-header h6 {
+        font-size: 0.75rem;
+    }
+    .live-preview-doc {
+        padding: 4px;
+    }
+    .live-preview-page {
+        min-height: 400px !important;
+    }
+    .live-preview-page iframe {
+        height: 400px !important;
+    }
+}
+
+/* Position Indicator Responsive */
+@media (max-width: 768px) {
+    .position-indicator {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+        padding: 12px;
+        font-size: 0.75rem;
+    }
+    .position-indicator > span {
+        text-align: center;
+    }
+    .position-indicator label {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    .position-indicator input[type="range"] {
+        flex: 1;
+        min-width: 100px;
+    }
+}
+
+/* QR Drag - Responsive Size */
+@media (max-width: 768px) {
+    .qr-doc-overlay {
+        padding: 2px;
+    }
+    .qr-doc-overlay canvas,
+    .qr-doc-overlay > div {
+        max-width: 60px;
+        max-height: 60px;
+    }
+}
+
+/* Stats Grid Responsive */
+@media (max-width: 992px) {
+    .stats-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Action Buttons Responsive */
+@media (max-width: 768px) {
+    .action-buttons {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+    }
+    .action-buttons .btn {
+        padding: 6px 10px;
+        font-size: 0.75rem;
+    }
+    .action-buttons .btn i {
+        font-size: 0.8rem;
+    }
+}
+
+/* Admin Header Responsive */
+@media (max-width: 768px) {
+    .admin-header {
+        padding: 12px;
+    }
+    .admin-header h2 {
+        font-size: 1.1rem;
+    }
+    .admin-user {
+        gap: 6px;
+    }
+    .admin-user span {
+        font-size: 0.8rem;
+        display: none;
+    }
+    .admin-user span:has-text("Administrator") {
+        display: none;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-user span {
+        display: none;
+    }
+    .admin-content {
+        padding: 12px;
+    }
+}
+
+/* Section Padding Responsive */
+@media (max-width: 768px) {
+    .admin-content {
+        padding: 12px;
+    }
+    .admin-section {
+        padding: 0;
+    }
+}
+
+/* Modal Responsive */
+@media (max-width: 768px) {
+    .print-preview-modal {
+        padding: 8px;
+    }
+    .print-modal-content {
+        padding: 16px;
+        max-height: 95vh;
+    }
+    .print-modal-header h4 {
+        font-size: 1rem;
+    }
+    .print-actions {
+        flex-direction: column;
+        gap: 8px;
+    }
+    .print-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
+
+/* Edit QR Modal Responsive */
+@media (max-width: 768px) {
+    .review-modal-content {
+        max-width: 95vw !important;
+        padding: 12px !important;
+    }
+    .review-modal-header {
+        padding: 12px 0 !important;
+        margin: 0 !important;
+    }
+    .review-modal-header h3 {
+        font-size: 1rem;
+    }
+    .review-modal-body {
+        padding: 12px 0 !important;
+    }
+}
+
+/* Status Badge Responsive */
+@media (max-width: 768px) {
+    .status-badge {
+        font-size: 0.7rem;
+        padding: 3px 8px;
+    }
+}
+
+/* Layout Options Responsive */
+@media (max-width: 600px) {
+    .layout-options {
+        justify-content: center;
+        gap: 8px;
+    }
+    .layout-option {
+        flex: 1;
+        min-width: 80px;
+        max-width: 100px;
+    }
+    .layout-preview {
+        width: 100% !important;
+        height: 70px;
+    }
+    .layout-option span {
+        font-size: 0.7rem;
+    }
+}
+
+/* Abstrak Fields Responsive */
+@media (max-width: 768px) {
+    #abstrakFields {
+        padding: 12px !important;
+    }
+    #abstrakFields .form-row {
+        grid-template-columns: 1fr !important;
+    }
+}
+
+/* Bulk Action Buttons */
+@media (max-width: 768px) {
+    .section-toolbar > div[style*="flex"] {
+        display: flex !important;
+        flex-direction: column !important;
+        width: 100% !important;
+    }
+}
+
+/* Result Modal Iframe */
+@media (max-width: 768px) {
+    #resultPreviewContent iframe,
+    #printPreviewContent iframe,
+    #certPrintContent iframe {
+        height: 300px !important;
+    }
+}
+
+/* Photo Preview Responsive */
+@media (max-width: 480px) {
+    .photo-preview-empty,
+    .photo-preview-filled {
+        width: 100px;
+        height: 100px;
+    }
+}
+
+/* Sidebar Toggle Always Visible on Mobile */
+@media (max-width: 992px) {
+    .sidebar-toggle {
+        display: block !important;
+    }
+    .admin-sidebar {
+        position: fixed;
+        left: -280px;
+        top: 0;
+        bottom: 0;
+        z-index: 1000;
+        transition: left 0.3s ease;
+    }
+    .admin-sidebar.active {
+        left: 0;
+    }
+    .admin-main {
+        margin-left: 0 !important;
+    }
+}
+
+/* Overlay when sidebar open on mobile */
+@media (max-width: 992px) {
+    .admin-sidebar.active::after {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: -1;
+    }
+}
+
+/* Table Row Min Height */
+.data-table tbody tr {
+    transition: background 0.2s;
+}
+
+.data-table tbody tr:hover {
+    background: rgba(37, 99, 235, 0.05);
+}
+
+@media (max-width: 768px) {
+    .data-table th,
+    .data-table td {
+        padding: 8px 6px;
+        font-size: 0.8rem;
+    }
+}
+
+/* Word break for long text */
+.data-table td {
+    word-break: break-word;
+    max-width: 300px;
+}
+
+@media (max-width: 768px) {
+    .data-table td {
+        max-width: 200px;
+    }
+}
