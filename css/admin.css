@@ -1099,3 +1099,196 @@ body.dark-mode .testi-author small { color: #94a3b8; }
         max-width: 200px;
     }
 }
+
+/* ============================================
+   TABLE TO CARD VIEW ON MOBILE
+   ============================================ */
+
+@media (max-width: 768px) {
+    /* Hide table header on mobile */
+    .data-table thead {
+        display: none;
+    }
+
+    /* Make table elements stack */
+    .data-table,
+    .data-table tbody,
+    .data-table tr,
+    .data-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .data-table {
+        min-width: 100% !important;
+    }
+
+    /* Each row becomes a card */
+    .data-table tbody tr {
+        background: white;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+        margin-bottom: 12px;
+        padding: 14px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+    }
+
+    /* Each cell becomes a row with label */
+    .data-table td {
+        padding: 6px 0;
+        border: none;
+        text-align: right;
+        position: relative;
+        padding-left: 40%;
+        min-height: 32px;
+        word-break: break-word;
+        max-width: 100%;
+        font-size: 0.85rem;
+    }
+
+    /* Add label using data-label attribute */
+    .data-table td::before {
+        content: attr(data-label);
+        position: absolute;
+        left: 0;
+        width: 38%;
+        text-align: left;
+        font-weight: 600;
+        color: #64748b;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+    }
+
+    /* Special styling for checkbox column */
+    .data-table td:first-child {
+        padding-left: 0;
+        text-align: center;
+        border-bottom: 1px solid #f1f5f9;
+        padding-bottom: 8px;
+        margin-bottom: 8px;
+    }
+
+    .data-table td:first-child::before {
+        display: none;
+    }
+
+    /* Action buttons take full width row */
+    .data-table td:last-child {
+        padding-left: 0;
+        text-align: center;
+        border-top: 1px solid #f1f5f9;
+        padding-top: 8px;
+        margin-top: 8px;
+    }
+
+    .data-table td:last-child::before {
+        display: none;
+    }
+
+    .data-table td:last-child .action-buttons {
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .data-table td:last-child .action-buttons .btn {
+        flex: 1;
+        min-width: 70px;
+        max-width: 100px;
+    }
+
+    /* Container adjustment */
+    .data-table-container {
+        background: transparent;
+        box-shadow: none;
+        padding: 0;
+        border: none;
+    }
+}
+
+/* Slightly larger mobile - keep table but more compact */
+@media (min-width: 600px) and (max-width: 768px) {
+    .data-table td {
+        font-size: 0.85rem;
+    }
+}
+
+/* Very small screens */
+@media (max-width: 400px) {
+    .data-table tbody tr {
+        padding: 10px;
+    }
+    .data-table td {
+        font-size: 0.8rem;
+        padding-left: 45%;
+    }
+    .data-table td::before {
+        width: 43%;
+        font-size: 0.7rem;
+    }
+}
+
+Update js/admin.js - Tambahkan data-label di Tabel
+
+Buka js/admin.js, cari fungsi renderTerjemahanTable dan ganti SELURUH fungsi dengan:
+
+JavaScript
+
+function renderTerjemahanTable(data) {
+    var tb = document.getElementById('terjemahanTableBody');
+    if (!tb) return;
+
+    data.sort(function(a, b) {
+        var av = a[sortConfig.column] || '';
+        var bv = b[sortConfig.column] || '';
+        if (av < bv) return sortConfig.asc ? -1 : 1;
+        if (av > bv) return sortConfig.asc ? 1 : -1;
+        return 0;
+    });
+
+    if (!data.length) {
+        tb.innerHTML = '<tr><td colspan="9" class="loading-cell">Tidak ada data</td></tr>';
+        document.getElementById('selectedCount').textContent = '0';
+        return;
+    }
+
+    tb.innerHTML = data.map(function(c) {
+        var statusBadge = '<span class="status-badge status-' + c.status + '">' + c.status + '</span>';
+        var duration = c.completed_at ? calculateDuration(c.created_at, c.completed_at) : (c.status === 'processing' ? calculateDuration(c.created_at, new Date().toISOString()) : '-');
+        var docId = c.document_id || '-';
+
+        var docDisplay = escapeHtml(c.document_type);
+        if (c.document_type === 'Abstrak Skripsi') {
+            if (c.jurusan) docDisplay += '<br><small style="color:#666;font-size:0.7rem">📚 ' + escapeHtml(c.jurusan) + '</small>';
+            if (c.judul_skripsi) {
+                var judulShort = c.judul_skripsi.length > 40 ? c.judul_skripsi.substring(0, 40) + '...' : c.judul_skripsi;
+                docDisplay += '<br><small style="color:#666;font-size:0.7rem;font-style:italic">"' + escapeHtml(judulShort) + '"</small>';
+            }
+        }
+
+        var actions = '';
+        if (c.status === 'completed' && c.file_url) {
+            actions = '<a href="' + c.file_url + '" target="_blank" class="btn btn-sm btn-success" title="Download"><i class="fas fa-download"></i></a> ' +
+                '<button class="btn btn-sm btn-info" onclick="sendWhatsApp(\'' + c.id + '\')" title="Kirim WA"><i class="fab fa-whatsapp"></i></button> ' +
+                '<button class="btn btn-sm btn-primary" onclick="viewResult(\'' + c.id + '\')" title="Preview"><i class="fas fa-eye"></i></button> ' +
+                '<button class="btn btn-sm" style="background:#8b5cf6;color:white" onclick="editQrPosition(\'' + c.id + '\')" title="Edit Posisi QR"><i class="fas fa-qrcode"></i></button>';
+        } else {
+            actions = '<button class="btn btn-sm btn-success" onclick="uploadDoc(\'' + c.id + '\')" title="Upload"><i class="fas fa-upload"></i></button>';
+        }
+        actions += ' <button class="btn btn-sm btn-warning" onclick="editClient(\'' + c.id + '\')" title="Edit"><i class="fas fa-edit"></i></button>';
+        actions += ' <button class="btn btn-sm btn-danger" onclick="deleteClient(\'' + c.id + '\')" title="Hapus"><i class="fas fa-trash"></i></button>';
+
+        return '<tr>' +
+            '<td data-label=""><input type="checkbox" class="row-check" value="' + c.id + '" onchange="updateSelectedCount()"></td>' +
+            '<td data-label="ID"><strong style="color:var(--primary)">' + docId + '</strong></td>' +
+            '<td data-label="Klien">' + escapeHtml(c.client_name) + '</td>' +
+            '<td data-label="HP">' + escapeHtml(c.client_phone) + '</td>' +
+            '<td data-label="Dokumen">' + docDisplay + '</td>' +
+            '<td data-label="Bahasa">' + c.source_language + '→' + c.target_language + '</td>' +
+            '<td data-label="Status">' + statusBadge + '</td>' +
+            '<td data-label="Durasi">' + duration + '</td>' +
+            '<td data-label=""><div class="action-buttons">' + actions + '</div></td>' +
+            '</tr>';
+    }).join('');
+    updateSelectedCount();
+}
