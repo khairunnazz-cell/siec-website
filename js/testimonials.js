@@ -23,6 +23,7 @@ async function loadTestimonials() {
         }
 
         allTestimonials = r.data;
+        renderRatingStats();
         renderCarousel();
         startAutoRotate();
     } catch (e) {
@@ -30,6 +31,46 @@ async function loadTestimonials() {
         var section = document.getElementById('testimonialsSection');
         if (section) section.style.display = 'none';
     }
+}
+
+function renderRatingStats() {
+    var statsContainer = document.getElementById('ratingStats');
+    if (!statsContainer || !allTestimonials.length) return;
+
+    var total = allTestimonials.length;
+    var sumRating = allTestimonials.reduce(function(sum, t) { return sum + (t.rating || 0); }, 0);
+    var avg = (sumRating / total).toFixed(1);
+
+    var ratingCount = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    allTestimonials.forEach(function(t) {
+        if (ratingCount[t.rating] !== undefined) ratingCount[t.rating]++;
+    });
+
+    var avgInt = Math.round(parseFloat(avg));
+    var bigStars = '';
+    for (var i = 1; i <= 5; i++) {
+        bigStars += i <= avgInt ? '<span class="big-star active">⭐</span>' : '<span class="big-star">☆</span>';
+    }
+
+    var bars = '';
+    for (var i = 5; i >= 1; i--) {
+        var pct = total > 0 ? Math.round((ratingCount[i] / total) * 100) : 0;
+        bars += '<div class="rating-bar-row">' +
+            '<span class="rating-bar-label">' + i + ' ⭐</span>' +
+            '<div class="rating-bar-track"><div class="rating-bar-fill" style="width:' + pct + '%"></div></div>' +
+            '<span class="rating-bar-count">' + ratingCount[i] + '</span>' +
+            '</div>';
+    }
+
+    statsContainer.innerHTML =
+        '<div class="rating-stats-grid">' +
+        '<div class="rating-stats-left">' +
+        '<div class="big-rating-number">' + avg + '</div>' +
+        '<div class="big-stars-row">' + bigStars + '</div>' +
+        '<div class="total-reviews">Berdasarkan <strong>' + total + '</strong> review</div>' +
+        '</div>' +
+        '<div class="rating-stats-right">' + bars + '</div>' +
+        '</div>';
 }
 
 function getUniversitasShort(univ) {
@@ -47,6 +88,10 @@ function renderTestimonialCard(t) {
     var colors = ['#2563eb', '#7c3aed', '#10b981', '#f59e0b', '#ec4899', '#06b6d4'];
     var color = colors[Math.abs(t.client_name.charCodeAt(0)) % colors.length];
 
+    var avatar = t.photo_url
+        ? '<div class="author-avatar-big" style="background-image:url(' + t.photo_url + ');background-size:cover;background-position:center"></div>'
+        : '<div class="author-avatar-big" style="background:' + color + '">' + initials + '</div>';
+
     var subtitle = '';
     if (t.document_type === 'Abstrak Skripsi' && t.universitas) {
         subtitle = '<div class="author-doc"><i class="fas fa-graduation-cap"></i> ' + escapeHtmlT(getUniversitasShort(t.universitas)) + '</div>';
@@ -62,7 +107,7 @@ function renderTestimonialCard(t) {
         '<div class="testimonial-stars-big">' + stars + '</div>' +
         '<p class="testimonial-text-big">' + escapeHtmlT(t.review_text) + '</p>' +
         '<div class="testimonial-author-big">' +
-        '<div class="author-avatar-big" style="background:' + color + '">' + initials + '</div>' +
+        avatar +
         '<div class="author-info-big">' +
         '<div class="author-name-big">' + escapeHtmlT(t.client_name) + '</div>' +
         subtitle +
@@ -75,25 +120,15 @@ function renderTestimonialCard(t) {
 function renderCarousel() {
     var container = document.getElementById('testimonialsCarousel');
     if (!container) return;
-
     container.innerHTML =
         '<div class="carousel-wrapper">' +
-        '<button class="carousel-arrow carousel-prev" onclick="prevTestimonial()">' +
-        '<i class="fas fa-chevron-left"></i>' +
-        '</button>' +
-        '<div class="carousel-container" id="carouselContainer">' +
-        allTestimonials.map(renderTestimonialCard).join('') +
-        '</div>' +
-        '<button class="carousel-arrow carousel-next" onclick="nextTestimonial()">' +
-        '<i class="fas fa-chevron-right"></i>' +
-        '</button>' +
+        '<button class="carousel-arrow carousel-prev" onclick="prevTestimonial()"><i class="fas fa-chevron-left"></i></button>' +
+        '<div class="carousel-container" id="carouselContainer">' + allTestimonials.map(renderTestimonialCard).join('') + '</div>' +
+        '<button class="carousel-arrow carousel-next" onclick="nextTestimonial()"><i class="fas fa-chevron-right"></i></button>' +
         '</div>' +
         '<div class="carousel-dots" id="carouselDots">' +
-        allTestimonials.map(function(_, i) {
-            return '<button class="carousel-dot' + (i === 0 ? ' active' : '') + '" onclick="goToTestimonial(' + i + ')"></button>';
-        }).join('') +
+        allTestimonials.map(function(_, i) { return '<button class="carousel-dot' + (i === 0 ? ' active' : '') + '" onclick="goToTestimonial(' + i + ')"></button>'; }).join('') +
         '</div>';
-
     showTestimonial(0);
 }
 
@@ -112,16 +147,11 @@ function goToTestimonial(i) { showTestimonial(i); resetAutoRotate(); }
 
 function startAutoRotate() {
     if (testimonialInterval) clearInterval(testimonialInterval);
-    testimonialInterval = setInterval(function() {
-        showTestimonial(currentTestimonialIndex + 1);
-    }, 5000);
+    testimonialInterval = setInterval(function() { showTestimonial(currentTestimonialIndex + 1); }, 5000);
 }
 
 function resetAutoRotate() {
-    if (testimonialInterval) {
-        clearInterval(testimonialInterval);
-        startAutoRotate();
-    }
+    if (testimonialInterval) { clearInterval(testimonialInterval); startAutoRotate(); }
 }
 
 function escapeHtmlT(text) {
