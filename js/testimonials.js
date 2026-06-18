@@ -77,7 +77,6 @@ function getUniversitasShort(univ) {
     if (!univ) return '';
     if (univ.indexOf('Sultan Syarif Kasim') !== -1) return 'UIN Suska Riau';
     if (univ.indexOf('Sulthan Syarif Hasyim') !== -1) return 'STAI SSH Siak';
-    if (univ.indexOf('Al-Kifayah') !== -1) return 'STAI Al-Kifayah Riau';
     return univ.length > 30 ? univ.substring(0, 30) + '...' : univ;
 }
 
