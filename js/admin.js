@@ -7,7 +7,7 @@ var DATA_KAMPUS = {
     'Universitas Islam Negeri Sultan Syarif Kasim Riau': {
         fakultas: {
             'Tarbiyah dan Keguruan': ['Pendidikan Agama Islam (PAI)','Pendidikan Bahasa Arab (PBA)','Pendidikan Bahasa Inggris (PBI)','Manajemen Pendidikan Islam (MPI)','Pendidikan Matematika','Pendidikan Kimia','Pendidikan Guru Madrasah Ibtidaiyah (PGMI)','Pendidikan Islam Anak Usia Dini (PIAUD)','Tadris IPA','Tadris IPS','Pendidikan Ekonomi','Pendidikan Geografi','Pendidikan Bahasa Indonesia','Bimbingan dan Konseling Pendidikan Islam (BKPI)'],
-            'Ushuluddin': ['Ilmu Akidah','Ilmu Al-Quran dan Tafsir','Perbandingan Agama']
+            'Ushuluddin': ['Akidah dan Filsafat Islam','Ilmu Hadis','Ilmu Al-Quran dan Tafsir','Studi Agama-Agama']
         }
     },
     'STAI Sulthan Syarif Hasyim Siak Sri Indrapura Riau': {
