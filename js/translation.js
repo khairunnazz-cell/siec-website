@@ -1,6 +1,6 @@
 // ============================================
 // SIEC - Cek Status Penerjemahan
-// Membaca dari translation_clients
+// Support: translation_clients & online_registrations
 // ============================================
 
 async function checkStatus() {
@@ -13,48 +13,52 @@ async function checkStatus() {
     }
 
     try {
-        // Cari berdasarkan document_id ATAU client_phone
         // Cek di translation_clients dulu
-var result = await db.from('translation_clients')
-    .select('*')
-    .or('document_id.eq.' + input + ',client_phone.eq.' + input)
-    .order('created_at', { ascending: false });
+        var result = await db.from('translation_clients')
+            .select('*')
+            .or('document_id.eq.' + input + ',client_phone.eq.' + input)
+            .order('created_at', { ascending: false });
 
-// Jika tidak ada, cek di online_registrations
-if (!result.data || result.data.length === 0) {
-    result = await db.from('online_registrations')
-        .select('*')
-        .or('reg_code.eq.' + input + ',client_phone.eq.' + input)
-        .order('created_at', { ascending: false });
+        // Jika tidak ada, cek di online_registrations
+        if (!result.data || result.data.length === 0) {
+            result = await db.from('online_registrations')
+                .select('*')
+                .or('reg_code.eq.' + input + ',client_phone.eq.' + input)
+                .order('created_at', { ascending: false });
 
-    if (result.data && result.data.length > 0) {
-        // Map ke format yang sama
-        result.data = result.data.map(function(reg) {
-            var statusMap = {
-                'checking': 'Menunggu Verifikasi Pembayaran',
-                'valid': 'Pembayaran Valid - Menunggu Proses',
-                'rejected': 'Pembayaran Ditolak',
-                'in_progress': 'Sedang Diterjemahkan',
-                'completed': 'Selesai'
-            };
-            return {
-                document_id: reg.reg_code,
-                client_name: reg.client_name,
-                client_phone: reg.client_phone,
-                document_type: 'Abstrak Skripsi (Online)',
-                source_language: 'Indonesia',
-                target_language: reg.language_1.split('→')[1] || 'English',
-                status: reg.payment_status === 'in_progress' ? 'processing' : (reg.payment_status === 'completed' ? 'completed' : 'pending'),
-                created_at: reg.created_at,
-                completed_at: reg.payment_status === 'completed' ? reg.updated_at : null,
-                updated_at: reg.updated_at,
-                file_url: reg.file_url,
-                _custom_status: statusMap[reg.payment_status] || reg.payment_status,
-                _is_online_reg: true
-            };
-        });
-    }
-}
+            if (result.data && result.data.length > 0) {
+                var statusMap = {
+                    'checking': 'Menunggu Verifikasi Pembayaran',
+                    'valid': 'Pembayaran Valid - Menunggu Proses',
+                    'rejected': 'Pembayaran Ditolak',
+                    'in_progress': 'Sedang Diterjemahkan',
+                    'completed': 'Selesai'
+                };
+
+                result.data = result.data.map(function(reg) {
+                    return {
+                        document_id: reg.reg_code,
+                        client_name: reg.client_name,
+                        client_phone: reg.client_phone,
+                        document_type: 'Abstrak Skripsi (Online)',
+                        source_language: 'Indonesia',
+                        target_language: (reg.language_1 || '').split('→')[1] || (reg.language_1 || '').split('->')[1] || 'English',
+                        status: reg.payment_status === 'in_progress' ? 'processing' :
+                                reg.payment_status === 'completed' ? 'completed' :
+                                reg.payment_status === 'rejected' ? 'rejected' :
+                                reg.payment_status === 'valid' ? 'processing' : 'pending',
+                        created_at: reg.created_at,
+                        completed_at: reg.payment_status === 'completed' ? reg.updated_at : null,
+                        updated_at: reg.updated_at,
+                        file_url: reg.file_url,
+                        _custom_status: statusMap[reg.payment_status] || reg.payment_status,
+                        _is_online_reg: true,
+                        _rejection_reason: reg.payment_status === 'rejected' ? (reg.notes || '').replace('Ditolak: ', '') : null,
+                        _payment_status: reg.payment_status
+                    };
+                });
+            }
+        }
 
         resultDiv.style.display = 'block';
 
@@ -76,6 +80,39 @@ if (!result.data || result.data.length === 0) {
 
         var data = result.data[0];
 
+        // Khusus rejected
+        if (data._rejection_reason) {
+            resultDiv.className = 'verify-result result-invalid';
+            resultDiv.innerHTML =
+                '<div class="result-header" style="color:#ef4444">' +
+                '<i class="fas fa-times-circle"></i>' +
+                '<span>PEMBAYARAN DITOLAK</span>' +
+                '</div>' +
+
+                '<div style="margin:16px 0;padding:16px;background:#fef2f2;border:2px solid #ef4444;border-radius:12px">' +
+                '<p style="color:#991b1b;font-weight:700;margin-bottom:8px"><i class="fas fa-exclamation-triangle"></i> Alasan Penolakan:</p>' +
+                '<p style="color:#7f1d1d;font-size:1rem">' + data._rejection_reason + '</p>' +
+                '</div>' +
+
+                '<div class="result-details">' +
+                '<div class="result-item"><label>Kode Pendaftaran</label><p>' + data.document_id + '</p></div>' +
+                '<div class="result-item"><label>Nama Klien</label><p>' + data.client_name + '</p></div>' +
+                '<div class="result-item"><label>Jenis Dokumen</label><p>' + data.document_type + '</p></div>' +
+                '<div class="result-item"><label>Bahasa</label><p>' + data.source_language + ' → ' + data.target_language + '</p></div>' +
+                '<div class="result-item"><label>Tanggal Daftar</label><p>' + formatDate(data.created_at) + '</p></div>' +
+                '<div class="result-item"><label>Diperbarui</label><p>' + formatDate(data.updated_at) + '</p></div>' +
+                '</div>' +
+
+                '<div style="margin-top:20px;text-align:center;padding:16px;background:#fef3c7;border:2px solid #f59e0b;border-radius:12px">' +
+                '<p style="color:#78350f;font-weight:600;margin-bottom:12px">💡 Silakan hubungi kami untuk informasi lebih lanjut atau melakukan pembayaran ulang</p>' +
+                '<a href="https://wa.me/' + WA_NUMBER + '?text=Halo%20SIEC,%20saya%20ingin%20menanyakan%20tentang%20pendaftaran%20' + data.document_id + '%20yang%20ditolak" target="_blank" class="btn btn-success" style="display:inline-flex;gap:8px;padding:12px 24px">' +
+                '<i class="fab fa-whatsapp"></i> Hubungi via WhatsApp' +
+                '</a>' +
+                '</div>';
+            return;
+        }
+
+        // Status normal
         var statusMap = {
             'pending':    { label: 'Menunggu Konfirmasi',   step: 1, color: '#94a3b8' },
             'processing': { label: 'Sedang Diterjemahkan',  step: 2, color: '#f59e0b' },
@@ -84,6 +121,11 @@ if (!result.data || result.data.length === 0) {
         };
 
         var status = statusMap[data.status] || statusMap['pending'];
+
+        // Override label jika ada custom status
+        if (data._custom_status) {
+            status.label = data._custom_status;
+        }
 
         // Hitung durasi
         var durationText = '';
@@ -108,6 +150,27 @@ if (!result.data || result.data.length === 0) {
                 '</div>';
         }
 
+        // Info pembayaran untuk online reg
+        var paymentInfo = '';
+        if (data._is_online_reg) {
+            if (data._payment_status === 'checking') {
+                paymentInfo =
+                    '<div style="margin-top:16px;padding:12px;background:#fef3c7;border:2px solid #f59e0b;border-radius:8px;text-align:center">' +
+                    '<p style="color:#78350f;margin:0"><i class="fas fa-clock"></i> Pembayaran sedang diverifikasi oleh admin</p>' +
+                    '</div>';
+            } else if (data._payment_status === 'valid') {
+                paymentInfo =
+                    '<div style="margin-top:16px;padding:12px;background:#dbeafe;border:2px solid #2563eb;border-radius:8px;text-align:center">' +
+                    '<p style="color:#1e40af;margin:0"><i class="fas fa-check-circle"></i> Pembayaran tervalidasi, menunggu penerjemah</p>' +
+                    '</div>';
+            } else if (data._payment_status === 'in_progress') {
+                paymentInfo =
+                    '<div style="margin-top:16px;padding:12px;background:#fef3c7;border:2px solid #f59e0b;border-radius:8px;text-align:center">' +
+                    '<p style="color:#78350f;margin:0"><i class="fas fa-cogs"></i> Dokumen sedang diterjemahkan oleh tim kami</p>' +
+                    '</div>';
+            }
+        }
+
         resultDiv.className = 'verify-result result-valid';
         resultDiv.innerHTML =
             '<div class="result-header">' +
@@ -129,10 +192,12 @@ if (!result.data || result.data.length === 0) {
             '<span style="' + (status.step >= 5 ? 'color:' + status.color + ';font-weight:700' : '') + '">Diserahkan</span>' +
             '</div>' +
 
+            paymentInfo +
+
             // Detail
-            '<div class="result-details">' +
+            '<div class="result-details" style="margin-top:16px">' +
             '<div class="result-item">' +
-            '<label>ID Dokumen</label>' +
+            '<label>ID/Kode</label>' +
             '<p>' + (data.document_id || 'Belum tersedia') + '</p>' +
             '</div>' +
             '<div class="result-item">' +

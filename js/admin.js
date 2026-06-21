@@ -1327,20 +1327,60 @@ async function showRegDetail(id) {
 async function validatePayment(id) {
     if (!confirm('Tandai pembayaran ini VALID?')) return;
     try {
-        await db.from('online_registrations').update({ payment_status: 'valid', updated_at: new Date().toISOString() }).eq('id', id);
-        showNotification('✅ Pembayaran divalidasi!');
+        // Hapus gambar resi dari storage untuk hemat space
+        var reg = (await db.from('online_registrations').select('receipt_url').eq('id', id).single()).data;
+        if (reg && reg.receipt_url) {
+            var path = reg.receipt_url.split('/registrations/')[1];
+            if (path) await db.storage.from('registrations').remove([path]);
+        }
+
+        await db.from('online_registrations').update({
+            payment_status: 'valid',
+            receipt_url: null,
+            receipt_name: null,
+            updated_at: new Date().toISOString()
+        }).eq('id', id);
+
+        showNotification('✅ Pembayaran divalidasi! Resi dihapus dari storage.');
         loadOnlineReg();
     } catch (e) { showNotification('Error: ' + e.message, 'error'); }
 }
 
 async function rejectPayment(id) {
-    if (!confirm('Tolak pembayaran ini?')) return;
+    var reason = prompt('Alasan penolakan pembayaran:');
+    if (!reason) return;
+
     try {
-        await db.from('online_registrations').update({ payment_status: 'rejected', updated_at: new Date().toISOString() }).eq('id', id);
-        showNotification('❌ Pembayaran ditolak!');
+        var reg = (await db.from('online_registrations').select('*').eq('id', id).single()).data;
+
+        await db.from('online_registrations').update({
+            payment_status: 'rejected',
+            notes: 'Ditolak: ' + reason,
+            updated_at: new Date().toISOString()
+        }).eq('id', id);
+
+        // Kirim WA ke klien
+        if (reg) {
+            var phone = (reg.client_phone || '').replace(/[^0-9]/g, '');
+            if (phone.startsWith('0')) phone = '62' + phone.substring(1);
+            if (!phone.startsWith('62')) phone = '62' + phone;
+
+            var msg = 'Assalamu\'alaikum *' + reg.client_name + '* 🙏\n\n';
+            msg += 'Mohon maaf, pembayaran untuk pendaftaran terjemahan Anda dengan kode *' + reg.reg_code + '* belum dapat kami verifikasi.\n\n';
+            msg += '❌ *Alasan:*\n' + reason + '\n\n';
+            msg += 'Silakan lakukan pembayaran ulang sebesar *' + formatRp(reg.total_price) + '* ke:\n\n';
+            msg += '🏦 BSI\na.n. LKP SYAFII INTENSIVE ENGLISH COURSE\nNo. Rek: 1304202088\n\n';
+            msg += 'Setelah transfer, silakan hubungi kami kembali dengan menyertakan bukti transfer.\n\n';
+            msg += 'Terima kasih atas pengertiannya. 🙏\n_Tim SIEC_';
+
+            window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
+        }
+
+        showNotification('❌ Pembayaran ditolak! WA dibuka.');
         loadOnlineReg();
     } catch (e) { showNotification('Error: ' + e.message, 'error'); }
 }
+
 
 async function sendToTranslator(regId) {
     try {
@@ -1492,33 +1532,38 @@ function loadQrPages() {
         { title: 'Beranda', url: location.origin + '/', icon: 'fas fa-home' },
         { title: 'Program Belajar', url: location.origin + '/programs.html', icon: 'fas fa-book' },
         { title: 'Verifikasi Dokumen', url: location.origin + '/verify.html', icon: 'fas fa-check-circle' },
-        { title: 'Cek Status Terjemahan', url: location.origin + '/translation-status.html', icon: 'fas fa-search' },
+        { title: 'Cek Status', url: location.origin + '/translation-status.html', icon: 'fas fa-search' },
         { title: 'Pendaftaran Online', url: location.origin + '/register.html', icon: 'fas fa-file-alt' },
         { title: 'WhatsApp SIEC', url: 'https://wa.me/' + WA_NUMBER, icon: 'fab fa-whatsapp' },
-        { title: 'Lokasi SIEC (Maps)', url: 'https://maps.app.goo.gl/ew5MKzkz6bvbgb1j6', icon: 'fas fa-map-marker-alt' }
+        { title: 'Lokasi (Maps)', url: 'https://maps.app.goo.gl/ew5MKzkz6bvbgb1j6', icon: 'fas fa-map-marker-alt' }
     ];
 
     var hiddenPages = JSON.parse(localStorage.getItem('siec_hidden_qr_pages') || '[]');
+    var logoUrl = encodeURIComponent(location.origin + '/assets/logo.png');
 
     grid.innerHTML = pages.map(function(p, i) {
         var isHidden = hiddenPages.indexOf(i) > -1;
         var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(p.url) + '&ecc=H&margin=4';
 
-        return '<div class="qr-page-card ' + (isHidden ? 'hidden-card' : '') + '" id="qrCard' + i + '">' +
-            (isHidden ? '' : '<img src="' + qrUrl + '" width="180" height="180" style="border-radius:8px">') +
+        return '<div class="qr-page-card ' + (isHidden ? 'hidden-card' : '') + '">' +
+            (isHidden ? '<div style="padding:40px;color:#94a3b8"><i class="fas fa-eye-slash" style="font-size:2rem"></i></div>' :
+                '<div style="position:relative;display:inline-block">' +
+                '<img src="' + qrUrl + '" width="180" height="180" style="border-radius:8px;display:block">' +
+                '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:40px;height:40px;border-radius:50%;overflow:hidden;background:white;border:2px solid white;box-shadow:0 0 0 1px #2563eb">' +
+                '<img src="assets/logo.png" style="width:100%;height:100%;object-fit:contain" onerror="this.parentElement.innerHTML=\'<div style=width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:white><span style=font-weight:800;color:#2563eb;font-size:10px>SIEC</span></div>\'">' +
+                '</div>' +
+                '</div>'
+            ) +
             '<div class="qr-page-title"><i class="' + p.icon + '"></i> ' + p.title + '</div>' +
             '<div class="qr-page-url">' + p.url + '</div>' +
             '<div class="qr-page-actions">' +
             (isHidden
-                ? '<button class="btn btn-sm btn-success" onclick="toggleQrPage(' + i + ', false)"><i class="fas fa-eye"></i> Tampilkan</button>'
-                : '<button class="btn btn-sm btn-warning" onclick="toggleQrPage(' + i + ', true)"><i class="fas fa-eye-slash"></i> Sembunyikan</button>'
+                ? '<button class="btn btn-sm btn-success" onclick="toggleQrPage(' + i + ',false)"><i class="fas fa-eye"></i> Tampilkan</button>'
+                : '<button class="btn btn-sm btn-warning" onclick="toggleQrPage(' + i + ',true)"><i class="fas fa-eye-slash"></i></button> ' +
+                  '<button class="btn btn-sm btn-primary" onclick="shareQrPage(\'' + encodeURIComponent(p.url) + '\',\'' + p.title + '\')"><i class="fas fa-share-alt"></i></button> ' +
+                  '<a href="' + qrUrl + '" download="QR-' + p.title.replace(/\s/g, '-') + '.png" class="btn btn-sm btn-success"><i class="fas fa-download"></i></a>'
             ) +
-            (isHidden ? '' :
-                '<button class="btn btn-sm btn-primary" onclick="shareQrPage(\'' + encodeURIComponent(p.url) + '\', \'' + p.title + '\')"><i class="fas fa-share-alt"></i> Share</button> ' +
-                '<a href="' + qrUrl + '" download="QR-' + p.title.replace(/\s/g, '-') + '.png" class="btn btn-sm btn-success"><i class="fas fa-download"></i></a>'
-            ) +
-            '</div>' +
-            '</div>';
+            '</div></div>';
     }).join('');
 }
 
