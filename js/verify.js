@@ -41,12 +41,37 @@ async function verifyDocument() {
     try {
         var data, error;
         if (currentTab === 'translation') {
-            var result = await db.from('translation_clients').select('*').eq('document_id', input).eq('status', 'completed').single();
-            data = result.data; error = result.error;
-        } else {
-            var result2 = await db.from('toefl_certificates').select('*').eq('certificate_id', input).single();
-            data = result2.data; error = result2.error;
+    // Cek di translation_clients dulu
+    var result = await db.from('translation_clients').select('*').eq('document_id', input).eq('status', 'completed').single();
+    data = result.data; error = result.error;
+
+    // Jika tidak ada, cek di online_registrations
+    if (!data) {
+        var result2 = await db.from('online_registrations').select('*').eq('reg_code', input).eq('payment_status', 'completed').single();
+        if (result2.data) {
+            var reg = result2.data;
+            data = {
+                document_id: reg.reg_code,
+                client_name: reg.client_name,
+                client_phone: reg.client_phone,
+                document_type: 'Abstrak Skripsi (Online)',
+                document_title: reg.judul_skripsi,
+                source_language: 'Indonesia',
+                target_language: (reg.language_1 || '').split('→')[1] || (reg.language_1 || '').split('->')[1] || 'English',
+                issued_date: reg.updated_at,
+                completed_at: reg.updated_at,
+                file_url: reg.result_file_url,
+                has_reviewed: reg.has_reviewed === true,
+                id: reg.id,
+                _from_online: true
+            };
+            error = null;
         }
+    }
+} else {
+    var result3 = await db.from('toefl_certificates').select('*').eq('certificate_id', input).single();
+    data = result3.data; error = result3.error;
+}
 
         resultDiv.style.display = 'block';
 

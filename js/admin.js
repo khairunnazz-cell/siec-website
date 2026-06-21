@@ -1278,6 +1278,17 @@ async function loadOnlineReg() {
                 actions += '<button class="btn btn-sm btn-info" onclick="sendToTranslator(\'' + reg.id + '\')" title="Kirim ke Penerjemah"><i class="fas fa-paper-plane"></i></button> ';
             }
 
+            if (reg.payment_status === 'in_progress') {
+                actions += '<button class="btn btn-sm" style="background:#10b981;color:white" onclick="uploadHasilTerjemahan(\'' + reg.id + '\')" title="Upload Hasil"><i class="fas fa-upload"></i> Upload Hasil</button> ';
+            }
+
+            if (reg.payment_status === 'completed' && reg.result_file_url) {
+                actions += '<a href="' + reg.result_file_url + '" target="_blank" class="btn btn-sm btn-success" title="Download"><i class="fas fa-download"></i></a> ';
+                actions += '<button class="btn btn-sm btn-info" onclick="sendResultToClient(\'' + reg.id + '\')" title="Kirim WA"><i class="fab fa-whatsapp"></i></button> ';
+                actions += '<button class="btn btn-sm btn-primary" onclick="previewResult(\'' + reg.id + '\')" title="Preview"><i class="fas fa-eye"></i></button> ';
+                actions += '<button class="btn btn-sm" style="background:#8b5cf6;color:white" onclick="editQrOnlineReg(\'' + reg.id + '\')" title="Edit Posisi QR"><i class="fas fa-qrcode"></i></button> ';
+            }
+
             actions += '<button class="btn btn-sm btn-danger" onclick="deleteOnlineReg(\'' + reg.id + '\')" title="Hapus"><i class="fas fa-trash"></i></button>';
 
             return '<tr>' +
@@ -1585,5 +1596,489 @@ function shareQrPage(url, title) {
     } else {
         navigator.clipboard.writeText(decodeURIComponent(url));
         showNotification('✅ Link disalin: ' + title);
+    }
+}
+
+// ============================================
+// UPLOAD HASIL TERJEMAHAN UNTUK PENDAFTARAN ONLINE
+// ============================================
+var currentOnlineReg = null;
+var onlineResultFileData = null;
+
+async function uploadHasilTerjemahan(regId) {
+    try {
+        var r = await db.from('online_registrations').select('*').eq('id', regId).single();
+        if (!r.data) return;
+        currentOnlineReg = r.data;
+        onlineResultFileData = null;
+
+        var modal = document.createElement('div');
+        modal.className = 'review-modal';
+        modal.id = 'uploadHasilModal';
+        modal.innerHTML =
+            '<div class="review-modal-content" style="max-width:850px">' +
+            '<div class="review-modal-header">' +
+            '<h3><i class="fas fa-upload"></i> Upload Hasil Terjemahan</h3>' +
+            '<button onclick="closeUploadHasilModal()" class="btn-close">&times;</button>' +
+            '</div>' +
+            '<div class="review-modal-body">' +
+            '<div style="background:#dbeafe;padding:12px;border-radius:8px;margin-bottom:16px">' +
+            '<p style="margin:0"><b>Klien:</b> ' + currentOnlineReg.client_name + '</p>' +
+            '<p style="margin:0"><b>Kode:</b> ' + currentOnlineReg.reg_code + '</p>' +
+            '<p style="margin:0"><b>Bahasa:</b> ' + currentOnlineReg.language_1 + '</p>' +
+            '<p style="margin:0"><b>Judul:</b> ' + currentOnlineReg.judul_skripsi + '</p>' +
+            '</div>' +
+
+            '<div class="upload-box">' +
+            '<h5><i class="fas fa-cloud-upload-alt"></i> Upload File Hasil Terjemahan (PDF)</h5>' +
+            '<p class="hint">QR Code akan ditempel langsung di dalam PDF</p>' +
+            '<div class="file-upload-area">' +
+            '<input type="file" id="onlineResultFile" accept=".pdf" onchange="handleOnlineResultFile(this)">' +
+            '<label for="onlineResultFile" class="file-upload-label">' +
+            '<i class="fas fa-file-pdf"></i><span>Pilih file PDF hasil terjemahan</span>' +
+            '<span class="file-hint">PDF max 10MB</span>' +
+            '</label>' +
+            '</div>' +
+            '<div id="onlineResultFileInfo" class="file-info" style="display:none">' +
+            '<i class="fas fa-file-pdf"></i><span id="onlineResultFileName">-</span>' +
+            '<button type="button" onclick="removeOnlineResultFile()" class="btn-remove-file"><i class="fas fa-times"></i></button>' +
+            '</div>' +
+            '</div>' +
+
+            '<div id="onlineLivePreview" class="live-preview-container" style="display:none">' +
+            '<div class="live-preview-header"><h6><i class="fas fa-hand-pointer"></i> Drag QR ke posisi</h6></div>' +
+            '<div class="live-preview-doc"><div class="live-preview-page" id="onlinePreviewPage">' +
+            '<iframe id="onlinePreviewFrame" style="display:none;width:100%;border:none"></iframe>' +
+            '<div id="onlineQrDrag" class="qr-doc-overlay" style="left:80%;top:85%;position:absolute"><div id="onlineQrCanvas" style="display:inline-block"></div><div id="onlineQrIdText" class="qr-doc-id">' + currentOnlineReg.reg_code + '</div></div>' +
+            '</div></div>' +
+            '<div class="position-indicator">' +
+            '<span>X:<strong id="onlinePosX">80%</strong> Y:<strong id="onlinePosY">85%</strong></span>' +
+            '<span>|</span>' +
+            '<button type="button" onclick="onlineQrSizeDown()" class="btn-size">−</button>' +
+            '<input type="range" id="onlineQrSize" min="40" max="150" value="80" style="width:80px" oninput="onlineResizeQr()">' +
+            '<button type="button" onclick="onlineQrSizeUp()" class="btn-size">+</button>' +
+            '<strong id="onlineQrSizeVal">80px</strong>' +
+            '</div>' +
+            '</div>' +
+
+            '<div class="review-actions">' +
+            '<button class="btn btn-primary" onclick="saveOnlineResult()" id="saveOnlineResultBtn"><i class="fas fa-save"></i> Upload & Selesaikan</button>' +
+            '<button class="btn btn-outline" onclick="closeUploadHasilModal()">Batal</button>' +
+            '</div>' +
+            '</div>' +
+            '</div>';
+        document.body.appendChild(modal);
+    } catch (e) { showNotification('Error: ' + e.message, 'error'); }
+}
+
+function closeUploadHasilModal() {
+    var m = document.getElementById('uploadHasilModal');
+    if (m) m.remove();
+    currentOnlineReg = null;
+    onlineResultFileData = null;
+}
+
+function handleOnlineResultFile(input) {
+    var f = input.files[0];
+    if (!f) return;
+    if (f.size > 10485760) { showNotification('Max 10MB!', 'error'); return; }
+    if (f.type !== 'application/pdf') { showNotification('Harus PDF!', 'error'); return; }
+
+    onlineResultFileData = f;
+    document.getElementById('onlineResultFileInfo').style.display = 'flex';
+    document.getElementById('onlineResultFileName').textContent = f.name;
+    document.getElementById('onlineLivePreview').style.display = 'block';
+
+    var page = document.getElementById('onlinePreviewPage');
+    var fr = document.getElementById('onlinePreviewFrame');
+
+    var reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            var pdfDoc = await PDFLib.PDFDocument.load(e.target.result);
+            var pg = pdfDoc.getPages()[0];
+            var pw = pg.getWidth(), ph = pg.getHeight();
+            var cw = page.parentElement.offsetWidth || 600;
+            var ch = Math.round(cw * (ph / pw));
+            page.style.width = cw + 'px';
+            page.style.height = ch + 'px';
+            if (fr) { fr.src = URL.createObjectURL(f); fr.style.display = 'block'; fr.style.height = ch + 'px'; }
+
+            var verifyUrl = location.origin + '/verify.html?id=' + currentOnlineReg.reg_code + '&type=translation';
+            setTimeout(function() { generateQr('onlineQrCanvas', verifyUrl, 80); }, 600);
+            setTimeout(function() { initOnlineDrag(); }, 1500);
+        } catch (err) { console.error(err); }
+    };
+    reader.readAsArrayBuffer(f);
+}
+
+function removeOnlineResultFile() {
+    onlineResultFileData = null;
+    document.getElementById('onlineResultFile').value = '';
+    document.getElementById('onlineResultFileInfo').style.display = 'none';
+    document.getElementById('onlineLivePreview').style.display = 'none';
+}
+
+function initOnlineDrag() {
+    var el = document.getElementById('onlineQrDrag');
+    var co = document.getElementById('onlinePreviewPage');
+    if (!el || !co) return;
+    if (co.offsetWidth === 0) { setTimeout(initOnlineDrag, 500); return; }
+    var d = false, sx = 0, sy = 0, ol = 0, ot = 0;
+    function st(x, y) { d = true; el.classList.add('dragging'); sx = x; sy = y; ol = el.offsetLeft; ot = el.offsetTop; }
+    function mv(x, y) {
+        if (!d) return;
+        var cw = co.offsetWidth, ch = co.offsetHeight;
+        var nl = Math.max(0, Math.min(ol + (x - sx), cw - el.offsetWidth));
+        var nt = Math.max(0, Math.min(ot + (y - sy), ch - el.offsetHeight));
+        el.style.left = nl + 'px'; el.style.top = nt + 'px';
+        var cx = nl + el.offsetWidth / 2, cy = nt + el.offsetHeight / 2;
+        var px = Math.max(5, Math.min(95, Math.round(cx / cw * 100)));
+        var py = Math.max(5, Math.min(95, Math.round(cy / ch * 100)));
+        document.getElementById('onlinePosX').textContent = px + '%';
+        document.getElementById('onlinePosY').textContent = py + '%';
+    }
+    function en() { if (!d) return; d = false; el.classList.remove('dragging'); }
+    el.onmousedown = function(e) { st(e.clientX, e.clientY); e.preventDefault(); };
+    document.addEventListener('mousemove', function(e) { mv(e.clientX, e.clientY); });
+    document.addEventListener('mouseup', en);
+    el.ontouchstart = function(e) { var t = e.touches[0]; st(t.clientX, t.clientY); e.preventDefault(); };
+    document.addEventListener('touchmove', function(e) { if (!d) return; var t = e.touches[0]; mv(t.clientX, t.clientY); e.preventDefault(); }, { passive: false });
+    document.addEventListener('touchend', en);
+}
+
+function onlineResizeQr() {
+    var s = document.getElementById('onlineQrSize');
+    var v = parseInt(s.value);
+    document.getElementById('onlineQrSizeVal').textContent = v + 'px';
+    if (currentOnlineReg) {
+        var verifyUrl = location.origin + '/verify.html?id=' + currentOnlineReg.reg_code + '&type=translation';
+        generateQr('onlineQrCanvas', verifyUrl, v);
+    }
+}
+function onlineQrSizeUp() { var s = document.getElementById('onlineQrSize'); s.value = Math.min(parseInt(s.value) + 10, 150); onlineResizeQr(); }
+function onlineQrSizeDown() { var s = document.getElementById('onlineQrSize'); s.value = Math.max(parseInt(s.value) - 10, 40); onlineResizeQr(); }
+
+async function saveOnlineResult() {
+    if (!onlineResultFileData) { showNotification('Upload file dulu!', 'error'); return; }
+    if (!currentOnlineReg) return;
+
+    var btn = document.getElementById('saveOnlineResultBtn');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+    btn.disabled = true;
+
+    try {
+        var el = document.getElementById('onlineQrDrag');
+        var co = document.getElementById('onlinePreviewPage');
+        var cx = el.offsetLeft + el.offsetWidth / 2;
+        var cy = el.offsetTop + el.offsetHeight / 2;
+        var pos = {
+            x: Math.max(5, Math.min(95, Math.round(cx / co.offsetWidth * 100))),
+            y: Math.max(5, Math.min(95, Math.round(cy / co.offsetHeight * 100))),
+            size: parseInt(document.getElementById('onlineQrSize').value) || 80,
+            showId: true
+        };
+
+        var verifyUrl = location.origin + '/verify.html?id=' + currentOnlineReg.reg_code + '&type=translation';
+        var mp = await embedQrInPdf(onlineResultFileData, verifyUrl, currentOnlineReg.reg_code, pos.x, pos.y, pos.size);
+        var nm = 'results/' + Date.now() + '-' + Math.random().toString(36).substr(2, 9) + '.pdf';
+        var r = await db.storage.from('registrations').upload(nm, mp, { cacheControl: '3600', upsert: false });
+        if (r.error) throw r.error;
+        var newUrl = db.storage.from('registrations').getPublicUrl(nm).data.publicUrl;
+
+        await db.from('online_registrations').update({
+            result_file_url: newUrl,
+            result_file_name: onlineResultFileData.name,
+            qr_position: JSON.stringify(pos),
+            payment_status: 'completed',
+            updated_at: new Date().toISOString()
+        }).eq('id', currentOnlineReg.id);
+
+        showNotification('✅ Hasil berhasil diupload!');
+        var cId = currentOnlineReg.id;
+        closeUploadHasilModal();
+        loadOnlineReg();
+
+        setTimeout(function() {
+            if (confirm('Kirim notifikasi WhatsApp ke klien sekarang?')) sendResultToClient(cId);
+        }, 1000);
+    } catch (e) {
+        showNotification('Error: ' + e.message, 'error');
+        btn.innerHTML = '<i class="fas fa-save"></i> Upload & Selesaikan';
+        btn.disabled = false;
+    }
+}
+
+// ============================================
+// KIRIM HASIL KE KLIEN VIA WA
+// ============================================
+async function sendResultToClient(regId) {
+    try {
+        var r = await db.from('online_registrations').select('*').eq('id', regId).single();
+        if (!r.data) return;
+        var reg = r.data;
+
+        var phone = (reg.client_phone || '').replace(/[^0-9]/g, '');
+        if (phone.startsWith('0')) phone = '62' + phone.substring(1);
+        if (!phone.startsWith('62')) phone = '62' + phone;
+
+        var verifyUrl = location.origin + '/verify.html?id=' + reg.reg_code + '&type=translation';
+        var statusUrl = location.origin + '/translation-status.html';
+
+        var msg = 'Assalamu\'alaikum *' + reg.client_name + '* 🙏\n\n';
+        msg += 'Alhamdulillah, terjemahan abstrak skripsi Anda di *SIEC* sudah *SELESAI*! 🎉\n\n';
+        msg += '📄 *Detail Dokumen:*\n';
+        msg += '• Kode: ' + reg.reg_code + '\n';
+        msg += '• Bahasa: ' + reg.language_1 + '\n';
+        msg += '• Universitas: ' + reg.universitas + '\n';
+        if (reg.judul_skripsi) msg += '• Judul: _"' + reg.judul_skripsi + '"_\n';
+        msg += '\n🔍 *Akses & Download Dokumen:*\n' + verifyUrl + '\n\n';
+        msg += '_Silakan klik link di atas untuk memverifikasi keaslian dan mendownload dokumen Anda._\n\n';
+        msg += '📊 *Cek Status:*\n' + statusUrl + '\n\n';
+        msg += '💡 *Bantu Kami Berkembang:*\nAnda akan diminta memberikan testimoni singkat saat mengakses dokumen. Pengalaman Anda sangat berarti bagi kami. 🙏\n\n';
+        msg += 'Terima kasih telah mempercayakan SIEC! 🙏\n\n_Tim SIEC_';
+
+        window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
+        showNotification('✅ WhatsApp dibuka!');
+    } catch (e) { showNotification('Error: ' + e.message, 'error'); }
+}
+
+// ============================================
+// PREVIEW HASIL
+// ============================================
+async function previewResult(regId) {
+    try {
+        var r = await db.from('online_registrations').select('*').eq('id', regId).single();
+        if (!r.data || !r.data.result_file_url) { showNotification('Belum ada file hasil', 'error'); return; }
+        var reg = r.data;
+
+        var modal = document.createElement('div');
+        modal.className = 'review-modal';
+        modal.id = 'previewResultModal';
+        modal.innerHTML =
+            '<div class="review-modal-content" style="max-width:850px">' +
+            '<div class="review-modal-header">' +
+            '<h3><i class="fas fa-eye"></i> Preview Hasil Terjemahan</h3>' +
+            '<button onclick="closePreviewResultModal()" class="btn-close">&times;</button>' +
+            '</div>' +
+            '<div class="review-modal-body">' +
+            '<div style="background:#dbeafe;padding:12px;border-radius:8px;margin-bottom:16px">' +
+            '<p style="margin:0"><b>Klien:</b> ' + reg.client_name + '</p>' +
+            '<p style="margin:0"><b>Kode:</b> ' + reg.reg_code + '</p>' +
+            '<p style="margin:0"><b>File:</b> ' + (reg.result_file_name || 'PDF') + '</p>' +
+            '</div>' +
+            '<iframe src="' + reg.result_file_url + '" style="width:100%;height:600px;border:2px solid #ddd;border-radius:8px"></iframe>' +
+            '<div class="review-actions" style="margin-top:16px">' +
+            '<a href="' + reg.result_file_url + '" target="_blank" class="btn btn-success"><i class="fas fa-download"></i> Download</a>' +
+            '<button class="btn btn-outline" onclick="closePreviewResultModal()">Tutup</button>' +
+            '</div>' +
+            '</div>' +
+            '</div>';
+        document.body.appendChild(modal);
+    } catch (e) { showNotification('Error: ' + e.message, 'error'); }
+}
+
+function closePreviewResultModal() {
+    var m = document.getElementById('previewResultModal');
+    if (m) m.remove();
+}
+
+// ============================================
+// EDIT QR POSITION UNTUK ONLINE REG
+// ============================================
+var editOnlineReg = null;
+var editOnlineFileData = null;
+
+async function editQrOnlineReg(regId) {
+    try {
+        var r = await db.from('online_registrations').select('*').eq('id', regId).single();
+        if (!r.data || !r.data.result_file_url) { showNotification('File tidak ditemukan!', 'error'); return; }
+        editOnlineReg = r.data;
+        editOnlineFileData = null;
+
+        var modal = document.createElement('div');
+        modal.className = 'review-modal';
+        modal.id = 'editOnlineQrModal';
+        modal.innerHTML =
+            '<div class="review-modal-content" style="max-width:850px">' +
+            '<div class="review-modal-header">' +
+            '<h3><i class="fas fa-qrcode"></i> Edit Posisi QR Code</h3>' +
+            '<button onclick="closeEditOnlineQrModal()" class="btn-close">&times;</button>' +
+            '</div>' +
+            '<div class="review-modal-body">' +
+            '<div style="background:#dbeafe;padding:12px;border-radius:8px;margin-bottom:16px">' +
+            '<p style="margin:0"><b>Klien:</b> ' + editOnlineReg.client_name + '</p>' +
+            '<p style="margin:0"><b>Kode:</b> ' + editOnlineReg.reg_code + '</p>' +
+            '<p style="margin:0;color:#dc2626;font-size:0.85rem"><i class="fas fa-info-circle"></i> Upload file PDF original (tanpa QR) lalu drag QR ke posisi baru</p>' +
+            '</div>' +
+            '<div class="upload-box">' +
+            '<h5><i class="fas fa-upload"></i> Upload Ulang File Original</h5>' +
+            '<div class="file-upload-area">' +
+            '<input type="file" id="editOnlineQrFile" accept=".pdf" onchange="handleEditOnlineQrFile(this)">' +
+            '<label for="editOnlineQrFile" class="file-upload-label">' +
+            '<i class="fas fa-file-pdf"></i><span>Pilih file PDF original</span>' +
+            '</label>' +
+            '</div>' +
+            '</div>' +
+            '<div id="editOnlineQrLivePreview" class="live-preview-container" style="display:none">' +
+            '<div class="live-preview-header"><h6><i class="fas fa-hand-pointer"></i> Drag QR ke posisi baru</h6></div>' +
+            '<div class="live-preview-doc"><div class="live-preview-page" id="editOnlineQrPreviewPage">' +
+            '<iframe id="editOnlineQrPreviewFrame" style="display:none;width:100%;border:none"></iframe>' +
+            '<div id="editOnlineQrDrag" class="qr-doc-overlay" style="left:80%;top:85%;position:absolute"><div id="editOnlineQrCanvas" style="display:inline-block"></div><div class="qr-doc-id">' + editOnlineReg.reg_code + '</div></div>' +
+            '</div></div>' +
+            '<div class="position-indicator">' +
+            '<span>X:<strong id="editOnlinePosX">80%</strong> Y:<strong id="editOnlinePosY">85%</strong></span>' +
+            '<span>|</span>' +
+            '<button type="button" onclick="editOnlineSizeDown()" class="btn-size">−</button>' +
+            '<input type="range" id="editOnlineQrSize" min="40" max="150" value="80" style="width:80px" oninput="editOnlineResize()">' +
+            '<button type="button" onclick="editOnlineSizeUp()" class="btn-size">+</button>' +
+            '<strong id="editOnlineQrSizeVal">80px</strong>' +
+            '</div>' +
+            '</div>' +
+            '<div class="review-actions">' +
+            '<button class="btn btn-primary" onclick="saveEditedOnlineQr()" id="saveEditOnlineQrBtn"><i class="fas fa-save"></i> Simpan Posisi Baru</button>' +
+            '<button class="btn btn-outline" onclick="closeEditOnlineQrModal()">Batal</button>' +
+            '</div>' +
+            '</div>' +
+            '</div>';
+        document.body.appendChild(modal);
+    } catch (e) { showNotification('Error: ' + e.message, 'error'); }
+}
+
+function closeEditOnlineQrModal() {
+    var m = document.getElementById('editOnlineQrModal');
+    if (m) m.remove();
+    editOnlineReg = null;
+    editOnlineFileData = null;
+}
+
+function handleEditOnlineQrFile(input) {
+    var f = input.files[0];
+    if (!f) return;
+    if (f.size > 10485760) { showNotification('Max 10MB!', 'error'); return; }
+    if (f.type !== 'application/pdf') { showNotification('Harus PDF!', 'error'); return; }
+    editOnlineFileData = f;
+    document.getElementById('editOnlineQrLivePreview').style.display = 'block';
+    var page = document.getElementById('editOnlineQrPreviewPage');
+    var fr = document.getElementById('editOnlineQrPreviewFrame');
+
+    var reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            var pdfDoc = await PDFLib.PDFDocument.load(e.target.result);
+            var pg = pdfDoc.getPages()[0];
+            var pw = pg.getWidth(), ph = pg.getHeight();
+            var cw = page.parentElement.offsetWidth || 600;
+            var ch = Math.round(cw * (ph / pw));
+            page.style.width = cw + 'px';
+            page.style.height = ch + 'px';
+            if (fr) { fr.src = URL.createObjectURL(f); fr.style.display = 'block'; fr.style.height = ch + 'px'; }
+
+            if (editOnlineReg.qr_position) {
+                try {
+                    var pos = JSON.parse(editOnlineReg.qr_position);
+                    setTimeout(function() {
+                        var drag = document.getElementById('editOnlineQrDrag');
+                        if (drag) {
+                            var nl = (pos.x / 100) * cw - 50;
+                            var nt = (pos.y / 100) * ch - 50;
+                            drag.style.left = nl + 'px';
+                            drag.style.top = nt + 'px';
+                            document.getElementById('editOnlinePosX').textContent = pos.x + '%';
+                            document.getElementById('editOnlinePosY').textContent = pos.y + '%';
+                        }
+                        var sz = document.getElementById('editOnlineQrSize');
+                        if (sz && pos.size) { sz.value = pos.size; document.getElementById('editOnlineQrSizeVal').textContent = pos.size + 'px'; }
+                    }, 800);
+                } catch (e) {}
+            }
+
+            var verifyUrl = location.origin + '/verify.html?id=' + editOnlineReg.reg_code + '&type=translation';
+            setTimeout(function() { generateQr('editOnlineQrCanvas', verifyUrl, 80); }, 600);
+            setTimeout(function() { initEditOnlineDrag(); }, 1500);
+        } catch (err) { console.error(err); }
+    };
+    reader.readAsArrayBuffer(f);
+}
+
+function initEditOnlineDrag() {
+    var el = document.getElementById('editOnlineQrDrag');
+    var co = document.getElementById('editOnlineQrPreviewPage');
+    if (!el || !co) return;
+    if (co.offsetWidth === 0) { setTimeout(initEditOnlineDrag, 500); return; }
+    var d = false, sx = 0, sy = 0, ol = 0, ot = 0;
+    function st(x, y) { d = true; el.classList.add('dragging'); sx = x; sy = y; ol = el.offsetLeft; ot = el.offsetTop; }
+    function mv(x, y) {
+        if (!d) return;
+        var cw = co.offsetWidth, ch = co.offsetHeight;
+        var nl = Math.max(0, Math.min(ol + (x - sx), cw - el.offsetWidth));
+        var nt = Math.max(0, Math.min(ot + (y - sy), ch - el.offsetHeight));
+        el.style.left = nl + 'px'; el.style.top = nt + 'px';
+        var cx = nl + el.offsetWidth / 2, cy = nt + el.offsetHeight / 2;
+        var px = Math.max(5, Math.min(95, Math.round(cx / cw * 100)));
+        var py = Math.max(5, Math.min(95, Math.round(cy / ch * 100)));
+        document.getElementById('editOnlinePosX').textContent = px + '%';
+        document.getElementById('editOnlinePosY').textContent = py + '%';
+    }
+    function en() { if (!d) return; d = false; el.classList.remove('dragging'); }
+    el.onmousedown = function(e) { st(e.clientX, e.clientY); e.preventDefault(); };
+    document.addEventListener('mousemove', function(e) { mv(e.clientX, e.clientY); });
+    document.addEventListener('mouseup', en);
+    el.ontouchstart = function(e) { var t = e.touches[0]; st(t.clientX, t.clientY); e.preventDefault(); };
+    document.addEventListener('touchmove', function(e) { if (!d) return; var t = e.touches[0]; mv(t.clientX, t.clientY); e.preventDefault(); }, { passive: false });
+    document.addEventListener('touchend', en);
+}
+
+function editOnlineResize() {
+    var s = document.getElementById('editOnlineQrSize');
+    var v = parseInt(s.value);
+    document.getElementById('editOnlineQrSizeVal').textContent = v + 'px';
+    if (editOnlineReg) {
+        var verifyUrl = location.origin + '/verify.html?id=' + editOnlineReg.reg_code + '&type=translation';
+        generateQr('editOnlineQrCanvas', verifyUrl, v);
+    }
+}
+function editOnlineSizeUp() { var s = document.getElementById('editOnlineQrSize'); s.value = Math.min(parseInt(s.value) + 10, 150); editOnlineResize(); }
+function editOnlineSizeDown() { var s = document.getElementById('editOnlineQrSize'); s.value = Math.max(parseInt(s.value) - 10, 40); editOnlineResize(); }
+
+async function saveEditedOnlineQr() {
+    if (!editOnlineFileData) { showNotification('Upload file PDF dulu!', 'error'); return; }
+    if (!editOnlineReg) return;
+    var btn = document.getElementById('saveEditOnlineQrBtn');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+    btn.disabled = true;
+
+    try {
+        var el = document.getElementById('editOnlineQrDrag');
+        var co = document.getElementById('editOnlineQrPreviewPage');
+        var cx = el.offsetLeft + el.offsetWidth / 2;
+        var cy = el.offsetTop + el.offsetHeight / 2;
+        var pos = {
+            x: Math.max(5, Math.min(95, Math.round(cx / co.offsetWidth * 100))),
+            y: Math.max(5, Math.min(95, Math.round(cy / co.offsetHeight * 100))),
+            size: parseInt(document.getElementById('editOnlineQrSize').value) || 80,
+            showId: true
+        };
+
+        var verifyUrl = location.origin + '/verify.html?id=' + editOnlineReg.reg_code + '&type=translation';
+        var mp = await embedQrInPdf(editOnlineFileData, verifyUrl, editOnlineReg.reg_code, pos.x, pos.y, pos.size);
+        var nm = 'results/' + Date.now() + '-' + Math.random().toString(36).substr(2, 9) + '.pdf';
+        var r = await db.storage.from('registrations').upload(nm, mp, { cacheControl: '3600', upsert: false });
+        if (r.error) throw r.error;
+        var newUrl = db.storage.from('registrations').getPublicUrl(nm).data.publicUrl;
+
+        await db.from('online_registrations').update({
+            result_file_url: newUrl,
+            qr_position: JSON.stringify(pos),
+            updated_at: new Date().toISOString()
+        }).eq('id', editOnlineReg.id);
+
+        showNotification('✅ Posisi QR berhasil diupdate!');
+        closeEditOnlineQrModal();
+        loadOnlineReg();
+    } catch (e) {
+        showNotification('Error: ' + e.message, 'error');
+        btn.innerHTML = '<i class="fas fa-save"></i> Simpan Posisi Baru';
+        btn.disabled = false;
     }
 }
