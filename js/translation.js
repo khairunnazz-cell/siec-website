@@ -14,10 +14,47 @@ async function checkStatus() {
 
     try {
         // Cari berdasarkan document_id ATAU client_phone
-        var result = await db.from('translation_clients')
-            .select('*')
-            .or('document_id.eq.' + input + ',client_phone.eq.' + input)
-            .order('created_at', { ascending: false });
+        // Cek di translation_clients dulu
+var result = await db.from('translation_clients')
+    .select('*')
+    .or('document_id.eq.' + input + ',client_phone.eq.' + input)
+    .order('created_at', { ascending: false });
+
+// Jika tidak ada, cek di online_registrations
+if (!result.data || result.data.length === 0) {
+    result = await db.from('online_registrations')
+        .select('*')
+        .or('reg_code.eq.' + input + ',client_phone.eq.' + input)
+        .order('created_at', { ascending: false });
+
+    if (result.data && result.data.length > 0) {
+        // Map ke format yang sama
+        result.data = result.data.map(function(reg) {
+            var statusMap = {
+                'checking': 'Menunggu Verifikasi Pembayaran',
+                'valid': 'Pembayaran Valid - Menunggu Proses',
+                'rejected': 'Pembayaran Ditolak',
+                'in_progress': 'Sedang Diterjemahkan',
+                'completed': 'Selesai'
+            };
+            return {
+                document_id: reg.reg_code,
+                client_name: reg.client_name,
+                client_phone: reg.client_phone,
+                document_type: 'Abstrak Skripsi (Online)',
+                source_language: 'Indonesia',
+                target_language: reg.language_1.split('→')[1] || 'English',
+                status: reg.payment_status === 'in_progress' ? 'processing' : (reg.payment_status === 'completed' ? 'completed' : 'pending'),
+                created_at: reg.created_at,
+                completed_at: reg.payment_status === 'completed' ? reg.updated_at : null,
+                updated_at: reg.updated_at,
+                file_url: reg.file_url,
+                _custom_status: statusMap[reg.payment_status] || reg.payment_status,
+                _is_online_reg: true
+            };
+        });
+    }
+}
 
         resultDiv.style.display = 'block';
 

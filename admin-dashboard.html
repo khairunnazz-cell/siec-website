@@ -23,6 +23,9 @@
             <a href="#" class="sidebar-link" data-section="articles"><i class="fas fa-newspaper"></i> Artikel</a>
             <a href="#" class="sidebar-link" data-section="programs"><i class="fas fa-book"></i> Program</a>
             <a href="#" class="sidebar-link" data-section="terjemahan"><i class="fas fa-language"></i> Terjemahan</a>
+            <a href="#" class="sidebar-link" data-section="online-reg"><i class="fas fa-clipboard-list"></i> Pendaftaran Online</a>
+            <a href="#" class="sidebar-link" data-section="penerjemah"><i class="fas fa-user-tie"></i> Penerjemah</a>
+            <a href="#" class="sidebar-link" data-section="qr-pages"><i class="fas fa-qrcode"></i> QR Halaman</a>
             <a href="#" class="sidebar-link" data-section="testimonials"><i class="fas fa-star"></i> Testimoni</a>
             <a href="#" class="sidebar-link" data-section="toefl"><i class="fas fa-certificate"></i> TOEFL</a>
             <div class="sidebar-divider"></div>
@@ -247,6 +250,74 @@
                     </table>
                 </div>
             </section>
+
+            <!-- PENDAFTARAN ONLINE -->
+<section class="admin-section" id="section-online-reg">
+    <div class="section-toolbar">
+        <h3>Pendaftaran Online</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <select id="regStatusFilter" onchange="loadOnlineReg()" style="padding:8px 12px;border:1px solid #ddd;border-radius:8px">
+                <option value="">Semua Status</option>
+                <option value="checking">Checking</option>
+                <option value="valid">Valid</option>
+                <option value="rejected">Ditolak</option>
+                <option value="in_progress">In Progress</option>
+                <option value="completed">Selesai</option>
+            </select>
+        </div>
+    </div>
+    <div class="data-table-container">
+        <table class="data-table">
+            <thead><tr><th>Kode</th><th>Nama</th><th>Univ</th><th>Bahasa</th><th>Total</th><th>Bayar</th><th>Penerjemah</th><th>Aksi</th></tr></thead>
+            <tbody id="onlineRegTableBody"><tr><td colspan="8" class="loading-cell"><div class="spinner"></div></td></tr></tbody>
+        </table>
+    </div>
+    <!-- Modal Detail -->
+    <div id="regDetailModal" class="print-preview-modal" style="display:none">
+        <div class="print-modal-content" style="max-width:800px">
+            <div class="print-modal-header"><h4>Detail Pendaftaran</h4><button onclick="closePrintPreview('regDetailModal')" class="btn-close">&times;</button></div>
+            <div id="regDetailContent"></div>
+            <div class="print-actions"><button class="btn btn-outline" onclick="closePrintPreview('regDetailModal')">Tutup</button></div>
+        </div>
+    </div>
+</section>
+
+<!-- PENERJEMAH -->
+<section class="admin-section" id="section-penerjemah">
+    <div class="section-toolbar">
+        <h3>Data Penerjemah</h3>
+        <button class="btn btn-primary" onclick="showTranslatorForm()"><i class="fas fa-plus"></i> Tambah</button>
+    </div>
+    <div id="translatorForm" class="admin-form" style="display:none"><div class="form-card">
+        <h4 id="translatorFormTitle">Tambah Penerjemah</h4>
+        <input type="hidden" id="trId">
+        <div class="form-row">
+            <div class="form-group"><label>Nama *</label><input type="text" id="trName" required></div>
+            <div class="form-group"><label>No. WhatsApp *</label><input type="text" id="trPhone" required></div>
+        </div>
+        <div class="form-row">
+            <div class="form-group"><label>Email</label><input type="email" id="trEmail"></div>
+            <div class="form-group"><label>Spesialisasi</label><input type="text" id="trSpec" placeholder="Contoh: English, Arabic"></div>
+        </div>
+        <div class="form-group"><label class="checkbox-label"><input type="checkbox" id="trActive" checked><span>Aktif</span></label></div>
+        <div class="form-actions">
+            <button class="btn btn-primary" onclick="saveTranslator()"><i class="fas fa-save"></i> Simpan</button>
+            <button class="btn btn-outline" onclick="hideTranslatorForm()">Batal</button>
+        </div>
+    </div></div>
+    <div class="data-table-container">
+        <table class="data-table">
+            <thead><tr><th>Nama</th><th>WhatsApp</th><th>Spesialisasi</th><th>Total Terjemahan</th><th>Status</th><th>Aksi</th></tr></thead>
+            <tbody id="translatorTableBody"><tr><td colspan="6" class="loading-cell"><div class="spinner"></div></td></tr></tbody>
+        </table>
+    </div>
+</section>
+
+<!-- QR HALAMAN -->
+<section class="admin-section" id="section-qr-pages">
+    <div class="section-toolbar"><h3>QR Code Halaman Website</h3></div>
+    <div id="qrPagesGrid" class="qr-pages-grid"></div>
+</section>
 
             <!-- TESTIMONIALS SECTION -->
 <section class="admin-section" id="section-testimonials">

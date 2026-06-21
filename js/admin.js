@@ -136,11 +136,14 @@ function switchSection(s) {
     document.querySelectorAll('.sidebar-link').forEach(function(x) { x.classList.remove('active'); });
     var e = document.getElementById('section-' + s); if (e) e.classList.add('active');
     var l = document.querySelector('[data-section="' + s + '"]'); if (l) l.classList.add('active');
-    var m = { 'dashboard': 'Dashboard', 'articles': 'Artikel', 'programs': 'Program', 'terjemahan': 'Terjemahan', 'toefl': 'TOEFL', 'testimonials': 'Testimoni' };
+    var m = { 'dashboard': 'Dashboard', 'articles': 'Artikel', 'programs': 'Program', 'terjemahan': 'Terjemahan', 'toefl': 'TOEFL', 'testimonials': 'Testimoni', 'online-reg': 'Pendaftaran Online', 'penerjemah': 'Penerjemah', 'qr-pages': 'QR Halaman' };
     var t = document.getElementById('pageTitle'); if (t) t.textContent = m[s] || 'Dashboard';
     document.getElementById('adminSidebar').classList.remove('active');
     if (s === 'dashboard') loadAnalytics();
     if (s === 'testimonials') loadTestimonialsAdmin();
+    if (s === 'online-reg') loadOnlineReg();
+    if (s === 'penerjemah') loadTranslators();
+    if (s === 'qr-pages') loadQrPages();
 }
 
 // ============================================
@@ -1243,4 +1246,299 @@ async function deleteTestimonial(id) {
         showNotification('🗑️ Testimoni dihapus!');
         loadTestimonialsAdmin();
     } catch (e) { showNotification('Error: ' + e.message, 'error'); }
+}
+// ============================================
+// PENDAFTARAN ONLINE
+// ============================================
+async function loadOnlineReg() {
+    var tb = document.getElementById('onlineRegTableBody');
+    if (!tb) return;
+    try {
+        var statusFilter = document.getElementById('regStatusFilter').value;
+        var query = db.from('online_registrations').select('*').order('created_at', { ascending: false });
+        if (statusFilter) query = query.eq('payment_status', statusFilter);
+        var r = await query;
+        if (!r.data || !r.data.length) { tb.innerHTML = '<tr><td colspan="8" class="loading-cell">Belum ada pendaftaran</td></tr>'; return; }
+
+        tb.innerHTML = r.data.map(function(reg) {
+            var statusColor = { checking: '#f59e0b', valid: '#10b981', rejected: '#ef4444', in_progress: '#2563eb', completed: '#065f46' };
+            var statusLabel = { checking: 'Checking', valid: 'Valid', rejected: 'Ditolak', in_progress: 'In Progress', completed: 'Selesai' };
+            var badge = '<span class="status-badge" style="background:' + (statusColor[reg.payment_status] || '#94a3b8') + '20;color:' + (statusColor[reg.payment_status] || '#94a3b8') + '">' + (statusLabel[reg.payment_status] || reg.payment_status) + '</span>';
+
+            var univShort = (reg.universitas || '').length > 20 ? reg.universitas.substring(0, 20) + '...' : reg.universitas;
+
+            var actions = '<button class="btn btn-sm btn-primary" onclick="showRegDetail(\'' + reg.id + '\')" title="Detail"><i class="fas fa-eye"></i></button> ';
+
+            if (reg.payment_status === 'checking') {
+                actions += '<button class="btn btn-sm btn-success" onclick="validatePayment(\'' + reg.id + '\')" title="Valid"><i class="fas fa-check"></i></button> ';
+                actions += '<button class="btn btn-sm btn-danger" onclick="rejectPayment(\'' + reg.id + '\')" title="Tolak"><i class="fas fa-times"></i></button> ';
+            }
+
+            if (reg.payment_status === 'valid') {
+                actions += '<button class="btn btn-sm btn-info" onclick="sendToTranslator(\'' + reg.id + '\')" title="Kirim ke Penerjemah"><i class="fas fa-paper-plane"></i></button> ';
+            }
+
+            actions += '<button class="btn btn-sm btn-danger" onclick="deleteOnlineReg(\'' + reg.id + '\')" title="Hapus"><i class="fas fa-trash"></i></button>';
+
+            return '<tr>' +
+                '<td data-label="Kode"><strong style="color:var(--primary);font-size:0.8rem">' + reg.reg_code + '</strong></td>' +
+                '<td data-label="Nama">' + escapeHtml(reg.client_name) + '</td>' +
+                '<td data-label="Univ">' + escapeHtml(univShort) + '</td>' +
+                '<td data-label="Bahasa">' + reg.language_1 + '</td>' +
+                '<td data-label="Total">' + formatRp(reg.total_price) + '</td>' +
+                '<td data-label="Bayar">' + badge + '</td>' +
+                '<td data-label="Penerjemah">' + (reg.translator_status === 'assigned' ? '✅' : '-') + '</td>' +
+                '<td data-label=""><div class="action-buttons">' + actions + '</div></td>' +
+                '</tr>';
+        }).join('');
+    } catch (e) { console.error(e); }
+}
+
+function formatRp(n) { return 'Rp ' + (n || 0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
+
+async function showRegDetail(id) {
+    try {
+        var r = await db.from('online_registrations').select('*').eq('id', id).single();
+        if (!r.data) return;
+        var reg = r.data;
+        var content = document.getElementById('regDetailContent');
+
+        content.innerHTML =
+            '<div class="reg-detail-grid">' +
+            '<div class="reg-detail-item"><label>Kode</label><p>' + reg.reg_code + '</p></div>' +
+            '<div class="reg-detail-item"><label>Nama</label><p>' + reg.client_name + '</p></div>' +
+            '<div class="reg-detail-item"><label>HP</label><p>' + reg.client_phone + '</p></div>' +
+            '<div class="reg-detail-item"><label>NIM</label><p>' + (reg.nim || '-') + '</p></div>' +
+            '<div class="reg-detail-item"><label>Universitas</label><p>' + reg.universitas + '</p></div>' +
+            (reg.fakultas ? '<div class="reg-detail-item"><label>Fakultas</label><p>' + reg.fakultas + '</p></div>' : '') +
+            (reg.jurusan ? '<div class="reg-detail-item"><label>Jurusan</label><p>' + reg.jurusan + '</p></div>' : '') +
+            '<div class="reg-detail-item" style="grid-column:span 2"><label>Judul Skripsi</label><p>' + reg.judul_skripsi + '</p></div>' +
+            '<div class="reg-detail-item"><label>Bahasa</label><p>' + reg.language_1 + (reg.language_2 ? ' & ' + reg.language_2 : '') + '</p></div>' +
+            '<div class="reg-detail-item"><label>Total Bayar</label><p style="color:#2563eb;font-size:1.2rem">' + formatRp(reg.total_price) + ' (kode unik: ' + reg.unique_code + ')</p></div>' +
+            '</div>' +
+            (reg.file_url ? '<div style="margin:12px 0"><a href="' + reg.file_url + '" target="_blank" class="btn btn-sm btn-primary"><i class="fas fa-download"></i> Download File Abstrak (' + (reg.file_name || 'file') + ')</a></div>' : '') +
+            '<h4 style="margin-top:16px">📸 Bukti Transfer:</h4>' +
+            (reg.receipt_url ? '<img src="' + reg.receipt_url + '" class="receipt-preview-large" onclick="window.open(\'' + reg.receipt_url + '\')">' : '<p style="color:#666">Tidak ada</p>');
+
+        document.getElementById('regDetailModal').style.display = 'flex';
+    } catch (e) { console.error(e); }
+}
+
+async function validatePayment(id) {
+    if (!confirm('Tandai pembayaran ini VALID?')) return;
+    try {
+        await db.from('online_registrations').update({ payment_status: 'valid', updated_at: new Date().toISOString() }).eq('id', id);
+        showNotification('✅ Pembayaran divalidasi!');
+        loadOnlineReg();
+    } catch (e) { showNotification('Error: ' + e.message, 'error'); }
+}
+
+async function rejectPayment(id) {
+    if (!confirm('Tolak pembayaran ini?')) return;
+    try {
+        await db.from('online_registrations').update({ payment_status: 'rejected', updated_at: new Date().toISOString() }).eq('id', id);
+        showNotification('❌ Pembayaran ditolak!');
+        loadOnlineReg();
+    } catch (e) { showNotification('Error: ' + e.message, 'error'); }
+}
+
+async function sendToTranslator(regId) {
+    try {
+        var reg = (await db.from('online_registrations').select('*').eq('id', regId).single()).data;
+        if (!reg) return;
+
+        var translators = (await db.from('translators').select('*').eq('is_active', true).order('total_translated', { ascending: true })).data;
+        if (!translators || !translators.length) {
+            showNotification('Belum ada penerjemah! Tambah dulu di menu Penerjemah.', 'error');
+            return;
+        }
+
+        var options = translators.map(function(t) { return t.name + ' (' + t.phone + ')'; }).join('\n');
+        var choice = prompt('Pilih penerjemah (ketik nomor):\n\n' + translators.map(function(t, i) { return (i + 1) + '. ' + t.name + ' - ' + (t.specialization || 'Umum'); }).join('\n'));
+
+        if (!choice) return;
+        var idx = parseInt(choice) - 1;
+        if (idx < 0 || idx >= translators.length) { showNotification('Pilihan tidak valid!', 'error'); return; }
+
+        var translator = translators[idx];
+        var phone = (translator.phone || '').replace(/[^0-9]/g, '');
+        if (phone.startsWith('0')) phone = '62' + phone.substring(1);
+        if (!phone.startsWith('62')) phone = '62' + phone;
+
+        var msg = 'Assalamu\'alaikum *' + translator.name + '* 🙏\n\n';
+        msg += 'Semoga Bapak/Ibu dalam keadaan sehat wal\'afiat.\n\n';
+        msg += 'Kami dari *SIEC (Syaf Intensive English Course)* ingin meminta kesediaan Bapak/Ibu untuk menerjemahkan abstrak skripsi berikut:\n\n';
+        msg += '📄 *Detail Dokumen:*\n';
+        msg += '• Mahasiswa: ' + reg.client_name + '\n';
+        msg += '• NIM: ' + (reg.nim || '-') + '\n';
+        msg += '• Universitas: ' + reg.universitas + '\n';
+        msg += '• Bahasa: ' + reg.language_1 + '\n';
+        msg += '• Judul: _"' + reg.judul_skripsi + '"_\n\n';
+        msg += '📎 *File Abstrak:*\n' + reg.file_url + '\n\n';
+        msg += 'Mohon Bapak/Ibu berkenan membalas pesan ini dengan:\n';
+        msg += '✅ *"Siap"* - jika bersedia menerjemahkan\n';
+        msg += '❌ *"Maaf, tidak bisa"* - beserta alasannya\n\n';
+        msg += 'Kami sangat menghargai waktu dan keahlian Bapak/Ibu. Terima kasih banyak atas kerja samanya. 🙏\n\n';
+        msg += '_Hormat kami,_\n_Tim SIEC_';
+
+        window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
+
+        await db.from('online_registrations').update({
+            translator_id: translator.id,
+            translator_status: 'assigned',
+            payment_status: 'in_progress',
+            updated_at: new Date().toISOString()
+        }).eq('id', regId);
+
+        await db.from('translators').update({
+            total_translated: (translator.total_translated || 0) + 1
+        }).eq('id', translator.id);
+
+        showNotification('✅ File dikirim ke ' + translator.name + '!');
+        loadOnlineReg();
+    } catch (e) { showNotification('Error: ' + e.message, 'error'); }
+}
+
+async function deleteOnlineReg(id) {
+    if (!confirm('Hapus pendaftaran ini?')) return;
+    await db.from('online_registrations').delete().eq('id', id);
+    showNotification('Dihapus!');
+    loadOnlineReg();
+}
+
+// ============================================
+// PENERJEMAH
+// ============================================
+function showTranslatorForm(t) {
+    var f = document.getElementById('translatorForm');
+    f.style.display = 'block';
+    f.scrollIntoView({ behavior: 'smooth' });
+    if (t) {
+        document.getElementById('translatorFormTitle').textContent = 'Edit Penerjemah';
+        document.getElementById('trId').value = t.id;
+        document.getElementById('trName').value = t.name;
+        document.getElementById('trPhone').value = t.phone;
+        document.getElementById('trEmail').value = t.email || '';
+        document.getElementById('trSpec').value = t.specialization || '';
+        document.getElementById('trActive').checked = t.is_active;
+    } else {
+        document.getElementById('translatorFormTitle').textContent = 'Tambah Penerjemah';
+        ['trId', 'trName', 'trPhone', 'trEmail', 'trSpec'].forEach(function(id) {
+            var e = document.getElementById(id); if (e) e.value = '';
+        });
+        document.getElementById('trActive').checked = true;
+    }
+}
+
+function hideTranslatorForm() { document.getElementById('translatorForm').style.display = 'none'; }
+
+async function saveTranslator() {
+    var name = document.getElementById('trName').value.trim();
+    var phone = document.getElementById('trPhone').value.trim();
+    if (!name || !phone) { showNotification('Nama & No. WA wajib!', 'error'); return; }
+    var id = document.getElementById('trId').value;
+    var data = {
+        name: name,
+        phone: phone,
+        email: document.getElementById('trEmail').value.trim() || null,
+        specialization: document.getElementById('trSpec').value.trim() || null,
+        is_active: document.getElementById('trActive').checked
+    };
+    try {
+        var r = id ? await db.from('translators').update(data).eq('id', id) : await db.from('translators').insert(data);
+        if (r.error) throw r.error;
+        showNotification(id ? 'Updated!' : 'Penerjemah ditambahkan!');
+        hideTranslatorForm();
+        loadTranslators();
+    } catch (e) { showNotification('Error: ' + e.message, 'error'); }
+}
+
+async function loadTranslators() {
+    var tb = document.getElementById('translatorTableBody');
+    if (!tb) return;
+    try {
+        var r = await db.from('translators').select('*').order('created_at', { ascending: false });
+        if (!r.data || !r.data.length) { tb.innerHTML = '<tr><td colspan="6" class="loading-cell">Belum ada penerjemah</td></tr>'; return; }
+        tb.innerHTML = r.data.map(function(t) {
+            return '<tr>' +
+                '<td data-label="Nama"><strong>' + escapeHtml(t.name) + '</strong></td>' +
+                '<td data-label="WA">' + escapeHtml(t.phone) + '</td>' +
+                '<td data-label="Spesialisasi">' + (t.specialization || '-') + '</td>' +
+                '<td data-label="Total">' + (t.total_translated || 0) + '</td>' +
+                '<td data-label="Status"><span class="status-badge ' + (t.is_active ? 'status-published' : 'status-draft') + '">' + (t.is_active ? 'Aktif' : 'Off') + '</span></td>' +
+                '<td data-label=""><div class="action-buttons">' +
+                '<button class="btn btn-sm btn-primary" onclick=\'showTranslatorForm(' + JSON.stringify(t) + ')\'>Edit</button> ' +
+                '<button class="btn btn-sm btn-danger" onclick="deleteTranslator(\'' + t.id + '\')">Hapus</button>' +
+                '</div></td></tr>';
+        }).join('');
+    } catch (e) { console.error(e); }
+}
+
+async function deleteTranslator(id) {
+    if (!confirm('Hapus penerjemah ini?')) return;
+    await db.from('translators').delete().eq('id', id);
+    showNotification('Dihapus!');
+    loadTranslators();
+}
+
+// ============================================
+// QR HALAMAN WEBSITE
+// ============================================
+function loadQrPages() {
+    var grid = document.getElementById('qrPagesGrid');
+    if (!grid) return;
+
+    var pages = [
+        { title: 'Beranda', url: location.origin + '/', icon: 'fas fa-home' },
+        { title: 'Program Belajar', url: location.origin + '/programs.html', icon: 'fas fa-book' },
+        { title: 'Verifikasi Dokumen', url: location.origin + '/verify.html', icon: 'fas fa-check-circle' },
+        { title: 'Cek Status Terjemahan', url: location.origin + '/translation-status.html', icon: 'fas fa-search' },
+        { title: 'Pendaftaran Online', url: location.origin + '/register.html', icon: 'fas fa-file-alt' },
+        { title: 'WhatsApp SIEC', url: 'https://wa.me/' + WA_NUMBER, icon: 'fab fa-whatsapp' },
+        { title: 'Lokasi SIEC (Maps)', url: 'https://maps.app.goo.gl/ew5MKzkz6bvbgb1j6', icon: 'fas fa-map-marker-alt' }
+    ];
+
+    var hiddenPages = JSON.parse(localStorage.getItem('siec_hidden_qr_pages') || '[]');
+
+    grid.innerHTML = pages.map(function(p, i) {
+        var isHidden = hiddenPages.indexOf(i) > -1;
+        var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' + encodeURIComponent(p.url) + '&ecc=H&margin=4';
+
+        return '<div class="qr-page-card ' + (isHidden ? 'hidden-card' : '') + '" id="qrCard' + i + '">' +
+            (isHidden ? '' : '<img src="' + qrUrl + '" width="180" height="180" style="border-radius:8px">') +
+            '<div class="qr-page-title"><i class="' + p.icon + '"></i> ' + p.title + '</div>' +
+            '<div class="qr-page-url">' + p.url + '</div>' +
+            '<div class="qr-page-actions">' +
+            (isHidden
+                ? '<button class="btn btn-sm btn-success" onclick="toggleQrPage(' + i + ', false)"><i class="fas fa-eye"></i> Tampilkan</button>'
+                : '<button class="btn btn-sm btn-warning" onclick="toggleQrPage(' + i + ', true)"><i class="fas fa-eye-slash"></i> Sembunyikan</button>'
+            ) +
+            (isHidden ? '' :
+                '<button class="btn btn-sm btn-primary" onclick="shareQrPage(\'' + encodeURIComponent(p.url) + '\', \'' + p.title + '\')"><i class="fas fa-share-alt"></i> Share</button> ' +
+                '<a href="' + qrUrl + '" download="QR-' + p.title.replace(/\s/g, '-') + '.png" class="btn btn-sm btn-success"><i class="fas fa-download"></i></a>'
+            ) +
+            '</div>' +
+            '</div>';
+    }).join('');
+}
+
+function toggleQrPage(index, hide) {
+    var hidden = JSON.parse(localStorage.getItem('siec_hidden_qr_pages') || '[]');
+    if (hide) {
+        if (hidden.indexOf(index) === -1) hidden.push(index);
+    } else {
+        hidden = hidden.filter(function(i) { return i !== index; });
+    }
+    localStorage.setItem('siec_hidden_qr_pages', JSON.stringify(hidden));
+    loadQrPages();
+    showNotification(hide ? 'QR disembunyikan!' : 'QR ditampilkan!');
+}
+
+function shareQrPage(url, title) {
+    if (navigator.share) {
+        navigator.share({ title: 'SIEC - ' + title, url: decodeURIComponent(url) });
+    } else {
+        navigator.clipboard.writeText(decodeURIComponent(url));
+        showNotification('✅ Link disalin: ' + title);
+    }
 }
