@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pendaftaran Terjemahan Abstrak Skripsi - SIEC</title>
+    <meta name="description" content="Daftar terjemahan abstrak skripsi online di SIEC. Melayani UIN Suska Riau, STAI SSH Siak, dan universitas lainnya.">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/register.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar" id="navbar">
+        <div class="container nav-container">
+            <a href="index.html" class="nav-logo">
+                <img src="assets/logo.png" alt="SIEC" class="nav-logo-img">
+                <div class="logo-text">
+                    <span class="logo-main">SIEC</span>
+                    <span class="logo-sub">Syaf Intensive English Course</span>
+                </div>
+            </a>
+            <button class="nav-toggle" id="navToggle"><span></span><span></span><span></span></button>
+            <ul class="nav-menu" id="navMenu">
+                <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Beranda</a></li>
+                <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Program</a></li>
+                <li><a href="verify.html" class="nav-link"><i class="fas fa-check-circle"></i> Verifikasi</a></li>
+                <li><a href="translation-status.html" class="nav-link"><i class="fas fa-search"></i> Cek Status</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <section class="page-hero">
+        <div class="container">
+            <h1><i class="fas fa-graduation-cap"></i> Pendaftaran Terjemahan Abstrak Skripsi</h1>
+            <p>Isi formulir di bawah untuk mendaftar layanan terjemahan abstrak skripsi SIEC</p>
+        </div>
+    </section>
+
+    <section class="register-page">
+        <div class="container">
+            <div class="register-box" id="registerBox">
+                <!-- STEP 1: Form Data -->
+                <div class="reg-step active" id="step1">
+                    <div class="step-header">
+                        <div class="step-indicator"><span class="step-num active">1</span><span class="step-line"></span><span class="step-num">2</span><span class="step-line"></span><span class="step-num">3</span></div>
+                        <h2>📝 Data Pendaftaran</h2>
+                    </div>
+
+                    <div class="reg-form">
+                        <div class="form-row">
+                            <div class="form-group"><label>Nama Lengkap *</label><input type="text" id="rName" required placeholder="Nama sesuai dokumen"></div>
+                            <div class="form-group"><label>No. WhatsApp *</label><input type="text" id="rPhone" required placeholder="Contoh: 081234567890"></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label>Email</label><input type="email" id="rEmail" placeholder="email@contoh.com"></div>
+                            <div class="form-group"><label>NIM *</label><input type="text" id="rNim" required placeholder="Contoh: 11910312345"></div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group"><label>Semester</label><input type="text" id="rSemester" placeholder="Contoh: 8"></div>
+                            <div class="form-group">
+                                <label>Universitas *</label>
+                                <select id="rUniv" onchange="onRegUnivChange()" required>
+                                    <option value="">-- Pilih Universitas --</option>
+                                    <option value="Universitas Islam Negeri Sultan Syarif Kasim Riau">UIN Sultan Syarif Kasim Riau</option>
+                                    <option value="Institut Agama Islam Sulthan Syarif Hasyim Siak Sri Indrapura">Institut Sulthan Syarif Hasyim Siak</option>
+                                    <option value="lainnya">Universitas Lainnya</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Custom Universitas -->
+                        <div class="form-group" id="customUnivGroup" style="display:none">
+                            <label>Nama Universitas *</label>
+                            <input type="text" id="rUnivCustom" placeholder="Ketik nama universitas Anda">
+                        </div>
+
+                        <!-- Fakultas (UIN only) -->
+                        <div class="form-group" id="rFakultasGroup" style="display:none">
+                            <label>Fakultas *</label>
+                            <select id="rFakultas" onchange="onRegFakultasChange()">
+                                <option value="">-- Pilih Fakultas --</option>
+                            </select>
+                        </div>
+
+                        <!-- Jurusan -->
+                        <div class="form-group" id="rJurusanGroup" style="display:none">
+                            <label>Jurusan *</label>
+                            <select id="rJurusan">
+                                <option value="">-- Pilih Jurusan --</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Judul Skripsi *</label>
+                            <textarea id="rJudul" rows="3" required placeholder="Tuliskan judul lengkap skripsi Anda"></textarea>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Jumlah Bahasa Terjemahan *</label>
+                            <div class="lang-options">
+                                <label class="lang-option" onclick="selectLang(1)">
+                                    <input type="radio" name="langCount" value="1" checked>
+                                    <div class="lang-card" id="langCard1">
+                                        <span class="lang-title">1 Bahasa</span>
+                                        <span class="lang-desc">Indonesia → English</span>
+                                        <span class="lang-price" id="price1">-</span>
+                                    </div>
+                                </label>
+                                <label class="lang-option" onclick="selectLang(2)">
+                                    <input type="radio" name="langCount" value="2">
+                                    <div class="lang-card" id="langCard2">
+                                        <span class="lang-title">2 Bahasa</span>
+                                        <span class="lang-desc">Indonesia → English & Indonesia → Arabic</span>
+                                        <span class="lang-price" id="price2">-</span>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Upload File -->
+                        <div class="form-group">
+                            <label>Upload File Abstrak *</label>
+                            <p class="hint">Format: .doc atau .docx saja</p>
+                            <div class="file-upload-area">
+                                <input type="file" id="rFile" accept=".doc,.docx" onchange="onRegFileSelect(this)" required>
+                                <label for="rFile" class="file-upload-label">
+                                    <i class="fas fa-file-word"></i>
+                                    <span>Pilih file abstrak</span>
+                                    <span class="file-hint">.doc / .docx</span>
+                                </label>
+                            </div>
+                            <div id="rFileInfo" class="file-info" style="display:none">
+                                <i class="fas fa-file-word"></i>
+                                <span id="rFileName">-</span>
+                                <button type="button" onclick="removeRegFile()" class="btn-remove-file"><i class="fas fa-times"></i></button>
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Catatan (Opsional)</label>
+                            <input type="text" id="rNotes" placeholder="Catatan tambahan jika ada">
+                        </div>
+
+                        <button class="btn btn-primary btn-full" onclick="goToStep2()">
+                            <i class="fas fa-arrow-right"></i> Lanjut ke Pembayaran
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP 2: Pembayaran -->
+                <div class="reg-step" id="step2">
+                    <div class="step-header">
+                        <div class="step-indicator"><span class="step-num done">✓</span><span class="step-line done"></span><span class="step-num active">2</span><span class="step-line"></span><span class="step-num">3</span></div>
+                        <h2>💳 Pembayaran</h2>
+                    </div>
+
+                    <div class="payment-summary" id="paymentSummary">
+                        <!-- Diisi JavaScript -->
+                    </div>
+
+                    <div class="bank-info">
+                        <h3><i class="fas fa-university"></i> Transfer ke Rekening Berikut:</h3>
+                        <div class="bank-card">
+                            <div class="bank-logo">BSI</div>
+                            <div class="bank-detail">
+                                <p class="bank-name">Bank Syariah Indonesia (BSI)</p>
+                                <p class="bank-accname">a.n. <strong>LKP SYAFII INTENSIVE ENGLISH COURSE</strong></p>
+                                <p class="bank-accnum" id="bankAccNum">1304202088</p>
+                                <button class="btn btn-sm btn-outline" onclick="copyAccount()"><i class="fas fa-copy"></i> Salin No. Rekening</button>
+                            </div>
+                        </div>
+                        <div class="transfer-amount">
+                            <p>Jumlah yang harus ditransfer:</p>
+                            <div class="amount-display" id="amountDisplay">Rp 0</div>
+                            <p class="amount-note">⚠️ Transfer <strong>TEPAT</strong> sesuai jumlah di atas (termasuk kode unik)</p>
+                        </div>
+                    </div>
+
+                    <!-- Upload Bukti Transfer -->
+                    <div class="form-group">
+                        <label>Upload Bukti Transfer *</label>
+                        <div class="file-upload-area">
+                            <input type="file" id="rReceipt" accept="image/*" onchange="onReceiptSelect(this)" required>
+                            <label for="rReceipt" class="file-upload-label">
+                                <i class="fas fa-camera"></i>
+                                <span>Upload foto/screenshot bukti transfer</span>
+                                <span class="file-hint">JPG / PNG max 5MB</span>
+                            </label>
+                        </div>
+                        <div id="rReceiptInfo" class="file-info" style="display:none">
+                            <i class="fas fa-image"></i>
+                            <span id="rReceiptName">-</span>
+                            <button type="button" onclick="removeReceipt()" class="btn-remove-file"><i class="fas fa-times"></i></button>
+                        </div>
+                        <div id="receiptPreview" style="display:none;margin-top:12px;text-align:center">
+                            <img id="receiptImg" style="max-width:300px;max-height:400px;border-radius:12px;border:2px solid #e2e8f0">
+                        </div>
+                    </div>
+
+                    <div class="reg-nav-buttons">
+                        <button class="btn btn-outline" onclick="backToStep1()"><i class="fas fa-arrow-left"></i> Kembali</button>
+                        <button class="btn btn-primary" onclick="submitRegistration()" id="submitRegBtn"><i class="fas fa-paper-plane"></i> Kirim Pendaftaran</button>
+                    </div>
+                </div>
+
+                <!-- STEP 3: Konfirmasi -->
+                <div class="reg-step" id="step3">
+                    <div class="step-header">
+                        <div class="step-indicator"><span class="step-num done">✓</span><span class="step-line done"></span><span class="step-num done">✓</span><span class="step-line done"></span><span class="step-num active">3</span></div>
+                        <h2>✅ Pendaftaran Berhasil!</h2>
+                    </div>
+                    <div id="confirmationContent">
+                        <!-- Diisi JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <a href="https://wa.me/6281234567890?text=Halo%20SIEC,%20saya%20ingin%20bertanya%20tentang%20terjemahan%20abstrak" class="wa-float" target="_blank">
+        <i class="fab fa-whatsapp"></i>
+        <span class="wa-tooltip">Chat Kami!</span>
+    </a>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2024 SIEC - Syaf Intensive English Course. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/app.js"></script>
+    <script src="js/register.js"></script>
+</body>
+</html>
