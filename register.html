@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Pendaftaran Terjemahan - SIEC</title>
-    <meta name="description" content="Daftar terjemahan dokumen online di SIEC. Melayani terjemahan abstrak skripsi, ijazah, transkrip, dan dokumen lainnya.">
+    <meta name="description" content="Daftar terjemahan dokumen online di SIEC.">
     <link rel="stylesheet" href="css/style.css">
     <link rel="stylesheet" href="css/register.css">
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
@@ -38,82 +38,177 @@
         <div class="container">
             <div class="register-box" id="registerBox">
 
-                <!-- STEP 0: Pilih Layanan -->
-                <div class="reg-step active" id="step0">
+                <!-- STEP 1: Data Diri -->
+                <div class="reg-step active" id="step1">
                     <div class="step-header">
-                        <h2>🌐 Pilih Layanan Terjemahan</h2>
-                        <p style="color:#64748b">Pilih jenis terjemahan yang Anda butuhkan</p>
+                        <div class="step-indicator">
+                            <span class="step-num active">1</span><span class="step-line"></span>
+                            <span class="step-num">2</span><span class="step-line"></span>
+                            <span class="step-num">3</span><span class="step-line"></span>
+                            <span class="step-num">4</span>
+                        </div>
+                        <h2>👤 Data Diri</h2>
+                        <p style="color:#64748b;font-size:0.9rem">Lengkapi data diri Anda</p>
                     </div>
-                    <div class="service-options" id="serviceOptions">
-                        <!-- Diisi oleh JS berdasarkan universitas -->
-                    </div>
-                    <div class="form-group" style="margin-top:20px">
-                        <label>Universitas *</label>
-                        <select id="rUniv0" onchange="onUnivStep0Change()" required>
-                            <option value="">-- Pilih Universitas --</option>
-                            <option value="Universitas Islam Negeri Sultan Syarif Kasim Riau">UIN Sultan Syarif Kasim Riau</option>
-                            <option value="Institut Agama Islam Sulthan Syarif Hasyim Siak Sri Indrapura">Institut Sulthan Syarif Hasyim Siak</option>
-                            <option value="lainnya">Universitas Lainnya</option>
-                        </select>
-                    </div>
-                    <div class="form-group" id="customUnivGroup0" style="display:none">
-                        <label>Nama Universitas *</label>
-                        <input type="text" id="rUnivCustom0" placeholder="Ketik nama universitas Anda">
-                    </div>
-                    <div id="langOptionsContainer" style="display:none">
-                        <label style="font-weight:600;color:#334155;display:block;margin-bottom:12px">Pilih Bahasa Terjemahan *</label>
-                        <div class="lang-options" id="langOptions"></div>
-                    </div>
-                    <button class="btn btn-primary btn-full" onclick="goToStep1()" id="btnToStep1" style="display:none;margin-top:20px">
-                        <i class="fas fa-arrow-right"></i> Lanjut Isi Data
-                    </button>
-                </div>
-
-                <!-- STEP 1: Form Data -->
-                <div class="reg-step" id="step1">
-                    <div class="step-header">
-                        <div class="step-indicator"><span class="step-num done">✓</span><span class="step-line done"></span><span class="step-num active">2</span><span class="step-line"></span><span class="step-num">3</span><span class="step-line"></span><span class="step-num">4</span></div>
-                        <h2>📝 Data Pendaftaran</h2>
-                    </div>
-                    <div class="selected-service" id="selectedService"></div>
                     <div class="reg-form">
                         <div class="form-row">
-                            <div class="form-group"><label>Nama Lengkap *</label><input type="text" id="rName" required placeholder="Nama sesuai dokumen"></div>
-                            <div class="form-group"><label>No. WhatsApp *</label><input type="text" id="rPhone" required placeholder="081234567890"></div>
+                            <div class="form-group">
+                                <label>Nama Lengkap *</label>
+                                <input type="text" id="rName" required placeholder="Nama sesuai dokumen">
+                            </div>
+                            <div class="form-group">
+                                <label>No. WhatsApp *</label>
+                                <input type="text" id="rPhone" required placeholder="081234567890">
+                            </div>
                         </div>
-                        <div class="form-row">
-                            <div class="form-group"><label>Email</label><input type="email" id="rEmail" placeholder="email@contoh.com"></div>
-                            <div class="form-group"><label>NIM *</label><input type="text" id="rNim" required placeholder="11910312345"></div>
+                        <div class="form-group">
+                            <label>Email (Opsional)</label>
+                            <input type="email" id="rEmail" placeholder="email@contoh.com">
                         </div>
-                        <div class="form-row">
-                            <div class="form-group"><label>Semester</label><input type="text" id="rSemester" placeholder="8"></div>
-                            <div class="form-group" id="rFakultasGroup" style="display:none"><label>Fakultas *</label><select id="rFakultas" onchange="onRegFakultasChange()"><option value="">-- Pilih --</option></select></div>
+                        <button class="btn btn-primary btn-full" onclick="goToStep2()">
+                            <i class="fas fa-arrow-right"></i> Lanjut Pilih Layanan
+                        </button>
+                    </div>
+                </div>
+
+                <!-- STEP 2: Pilih Layanan & Detail -->
+                <div class="reg-step" id="step2">
+                    <div class="step-header">
+                        <div class="step-indicator">
+                            <span class="step-num done">✓</span><span class="step-line done"></span>
+                            <span class="step-num active">2</span><span class="step-line"></span>
+                            <span class="step-num">3</span><span class="step-line"></span>
+                            <span class="step-num">4</span>
                         </div>
-                        <div class="form-group" id="rJurusanGroup" style="display:none"><label>Jurusan *</label><select id="rJurusan"><option value="">-- Pilih --</option></select></div>
-                        <div class="form-group"><label>Judul Skripsi *</label><textarea id="rJudul" rows="3" required placeholder="Judul lengkap skripsi"></textarea></div>
+                        <h2>📋 Pilih Layanan Terjemahan</h2>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Jenis Dokumen yang Diterjemahkan *</label>
+                        <select id="rDocType" onchange="onDocTypeReg()" required>
+                            <option value="">-- Pilih Jenis Dokumen --</option>
+                            <option value="Abstrak Skripsi">Abstrak Skripsi</option>
+                            <option value="Ijazah">Ijazah</option>
+                            <option value="Transkrip Nilai">Transkrip Nilai</option>
+                            <option value="Akta Kelahiran">Akta Kelahiran</option>
+                            <option value="KTP">KTP</option>
+                            <option value="Surat Keterangan">Surat Keterangan</option>
+                            <option value="Kontrak">Kontrak</option>
+                            <option value="Lainnya">Lainnya</option>
+                        </select>
+                    </div>
+
+                    <!-- Khusus Abstrak Skripsi -->
+                    <div id="abstrakSection" style="display:none">
+                        <div style="background:#f0f9ff;padding:16px;border-radius:12px;border:2px solid #2563eb;margin-bottom:16px">
+                            <p style="margin:0 0 12px;font-weight:700;color:#2563eb"><i class="fas fa-graduation-cap"></i> Detail Akademik</p>
+
+                            <div class="form-group">
+                                <label>Universitas *</label>
+                                <select id="rUniv" onchange="onUnivChange()">
+                                    <option value="">-- Pilih Universitas --</option>
+                                    <option value="Universitas Islam Negeri Sultan Syarif Kasim Riau">UIN Sultan Syarif Kasim Riau</option>
+                                    <option value="Institut Agama Islam Sulthan Syarif Hasyim Siak Sri Indrapura">Institut Sulthan Syarif Hasyim Siak</option>
+                                    <option value="lainnya">Universitas Lainnya</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group" id="customUnivGroup" style="display:none">
+                                <label>Nama Universitas *</label>
+                                <input type="text" id="rUnivCustom" placeholder="Ketik nama universitas Anda">
+                            </div>
+
+                            <div class="form-group" id="rFakultasGroup" style="display:none">
+                                <label>Fakultas *</label>
+                                <select id="rFakultas" onchange="onFakultasChange()">
+                                    <option value="">-- Pilih Fakultas --</option>
+                                </select>
+                            </div>
+
+                            <div class="form-group" id="rJurusanGroup" style="display:none">
+                                <label>Jurusan *</label>
+                                <select id="rJurusan">
+                                    <option value="">-- Pilih Jurusan --</option>
+                                </select>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group"><label>NIM *</label><input type="text" id="rNim" placeholder="11910312345"></div>
+                                <div class="form-group"><label>Semester</label><input type="text" id="rSemester" placeholder="8"></div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Judul Skripsi *</label>
+                                <textarea id="rJudul" rows="3" placeholder="Tuliskan judul lengkap skripsi"></textarea>
+                            </div>
+                        </div>
+
+                        <!-- Pilihan Bahasa muncul setelah pilih universitas -->
+                        <div id="langOptionsContainer" style="display:none">
+                            <div class="form-group">
+                                <label>Pilih Bahasa Terjemahan *</label>
+                                <div class="lang-options" id="langOptions"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Untuk dokumen non-abstrak -->
+                    <div id="otherDocSection" style="display:none">
+                        <div style="background:#fef3c7;padding:16px;border-radius:12px;border:2px solid #f59e0b;margin-bottom:16px;text-align:center">
+                            <p style="margin:0;color:#78350f">
+                                <i class="fas fa-info-circle"></i> Untuk dokumen selain Abstrak Skripsi, silakan hubungi kami via WhatsApp untuk informasi harga dan proses.
+                            </p>
+                            <a href="https://wa.me/6281234567890?text=Halo%20SIEC,%20saya%20ingin%20bertanya%20tentang%20terjemahan%20dokumen" target="_blank" class="btn btn-success" style="margin-top:12px">
+                                <i class="fab fa-whatsapp"></i> Hubungi WhatsApp
+                            </a>
+                        </div>
+                    </div>
+
+                    <!-- Upload File (muncul setelah pilih bahasa untuk abstrak) -->
+                    <div id="fileUploadSection" style="display:none">
                         <div class="form-group">
                             <label>Upload File Abstrak * <small>(.doc / .docx)</small></label>
                             <div class="file-upload-area">
-                                <input type="file" id="rFile" accept=".doc,.docx" onchange="onRegFileSelect(this)" required>
-                                <label for="rFile" class="file-upload-label"><i class="fas fa-file-word"></i><span>Pilih file</span><span class="file-hint">.doc / .docx</span></label>
+                                <input type="file" id="rFile" accept=".doc,.docx" onchange="onRegFileSelect(this)">
+                                <label for="rFile" class="file-upload-label">
+                                    <i class="fas fa-file-word"></i>
+                                    <span>Pilih file abstrak</span>
+                                    <span class="file-hint">.doc / .docx max 10MB</span>
+                                </label>
                             </div>
-                            <div id="rFileInfo" class="file-info" style="display:none"><i class="fas fa-file-word"></i><span id="rFileName">-</span><button type="button" onclick="removeRegFile()" class="btn-remove-file"><i class="fas fa-times"></i></button></div>
+                            <div id="rFileInfo" class="file-info" style="display:none">
+                                <i class="fas fa-file-word"></i>
+                                <span id="rFileName">-</span>
+                                <button type="button" onclick="removeRegFile()" class="btn-remove-file"><i class="fas fa-times"></i></button>
+                            </div>
                         </div>
-                        <div class="form-group"><label>Catatan (Opsional)</label><input type="text" id="rNotes" placeholder="Catatan tambahan"></div>
-                        <div class="reg-nav-buttons">
-                            <button class="btn btn-outline" onclick="backToStep0()"><i class="fas fa-arrow-left"></i> Kembali</button>
-                            <button class="btn btn-primary" onclick="goToStep2()"><i class="fas fa-arrow-right"></i> Lanjut Bayar</button>
+
+                        <div class="form-group">
+                            <label>Catatan (Opsional)</label>
+                            <input type="text" id="rNotes" placeholder="Catatan tambahan jika ada">
                         </div>
+                    </div>
+
+                    <div class="reg-nav-buttons">
+                        <button class="btn btn-outline" onclick="backToStep1()"><i class="fas fa-arrow-left"></i> Kembali</button>
+                        <button class="btn btn-primary" onclick="goToStep3()" id="btnToStep3"><i class="fas fa-arrow-right"></i> Lanjut Bayar</button>
                     </div>
                 </div>
 
-                <!-- STEP 2: Pembayaran -->
-                <div class="reg-step" id="step2">
+                <!-- STEP 3: Pembayaran -->
+                <div class="reg-step" id="step3">
                     <div class="step-header">
-                        <div class="step-indicator"><span class="step-num done">✓</span><span class="step-line done"></span><span class="step-num done">✓</span><span class="step-line done"></span><span class="step-num active">3</span><span class="step-line"></span><span class="step-num">4</span></div>
+                        <div class="step-indicator">
+                            <span class="step-num done">✓</span><span class="step-line done"></span>
+                            <span class="step-num done">✓</span><span class="step-line done"></span>
+                            <span class="step-num active">3</span><span class="step-line"></span>
+                            <span class="step-num">4</span>
+                        </div>
                         <h2>💳 Pembayaran</h2>
                     </div>
+
                     <div class="payment-summary" id="paymentSummary"></div>
+
                     <div class="bank-info">
                         <h3><i class="fas fa-university"></i> Transfer ke:</h3>
                         <div class="bank-card">
@@ -128,28 +223,47 @@
                         <div class="transfer-amount">
                             <p>Jumlah transfer:</p>
                             <div class="amount-display" id="amountDisplay">Rp 0</div>
-                            <p class="amount-note">⚠️ Transfer <strong>TEPAT</strong> sesuai jumlah di atas</p>
+                            <p class="amount-note">⚠️ Transfer <strong>TEPAT</strong> sesuai jumlah di atas (termasuk kode unik)</p>
                         </div>
                     </div>
+
                     <div class="form-group">
                         <label>Upload Bukti Transfer *</label>
                         <div class="file-upload-area">
                             <input type="file" id="rReceipt" accept="image/*" onchange="onReceiptSelect(this)">
-                            <label for="rReceipt" class="file-upload-label"><i class="fas fa-camera"></i><span>Upload foto bukti transfer</span><span class="file-hint">JPG / PNG max 5MB</span></label>
+                            <label for="rReceipt" class="file-upload-label">
+                                <i class="fas fa-camera"></i>
+                                <span>Upload foto bukti transfer</span>
+                                <span class="file-hint">JPG / PNG max 5MB</span>
+                            </label>
                         </div>
-                        <div id="rReceiptInfo" class="file-info" style="display:none"><i class="fas fa-image"></i><span id="rReceiptName">-</span><button type="button" onclick="removeReceipt()" class="btn-remove-file"><i class="fas fa-times"></i></button></div>
-                        <div id="receiptPreview" style="display:none;margin-top:12px;text-align:center"><img id="receiptImg" style="max-width:300px;max-height:400px;border-radius:12px;border:2px solid #e2e8f0"></div>
+                        <div id="rReceiptInfo" class="file-info" style="display:none">
+                            <i class="fas fa-image"></i>
+                            <span id="rReceiptName">-</span>
+                            <button type="button" onclick="removeReceipt()" class="btn-remove-file"><i class="fas fa-times"></i></button>
+                        </div>
+                        <div id="receiptPreview" style="display:none;margin-top:12px;text-align:center">
+                            <img id="receiptImg" style="max-width:300px;max-height:400px;border-radius:12px;border:2px solid #e2e8f0">
+                        </div>
                     </div>
+
                     <div class="reg-nav-buttons">
-                        <button class="btn btn-outline" onclick="backToStep1()"><i class="fas fa-arrow-left"></i> Kembali</button>
-                        <button class="btn btn-primary" onclick="submitRegistration()" id="submitRegBtn"><i class="fas fa-paper-plane"></i> Kirim Pendaftaran</button>
+                        <button class="btn btn-outline" onclick="backToStep2()"><i class="fas fa-arrow-left"></i> Kembali</button>
+                        <button class="btn btn-primary" onclick="submitRegistration()" id="submitRegBtn">
+                            <i class="fas fa-paper-plane"></i> Kirim Pendaftaran
+                        </button>
                     </div>
                 </div>
 
-                <!-- STEP 3: Konfirmasi -->
-                <div class="reg-step" id="step3">
+                <!-- STEP 4: Konfirmasi -->
+                <div class="reg-step" id="step4">
                     <div class="step-header">
-                        <div class="step-indicator"><span class="step-num done">✓</span><span class="step-line done"></span><span class="step-num done">✓</span><span class="step-line done"></span><span class="step-num done">✓</span><span class="step-line done"></span><span class="step-num active">4</span></div>
+                        <div class="step-indicator">
+                            <span class="step-num done">✓</span><span class="step-line done"></span>
+                            <span class="step-num done">✓</span><span class="step-line done"></span>
+                            <span class="step-num done">✓</span><span class="step-line done"></span>
+                            <span class="step-num active">4</span>
+                        </div>
                         <h2>✅ Pendaftaran Berhasil!</h2>
                     </div>
                     <div id="confirmationContent"></div>
@@ -158,9 +272,16 @@
         </div>
     </section>
 
-    <a href="https://wa.me/6281234567890" class="wa-float" target="_blank"><i class="fab fa-whatsapp"></i><span class="wa-tooltip">Chat Kami!</span></a>
+    <a href="https://wa.me/6281234567890" class="wa-float" target="_blank">
+        <i class="fab fa-whatsapp"></i>
+        <span class="wa-tooltip">Chat Kami!</span>
+    </a>
 
-    <footer class="footer"><div class="container"><div class="footer-bottom"><p>&copy; 2024 SIEC - Syaf Intensive English Course.</p></div></div></footer>
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom"><p>&copy; 2024 SIEC - Syaf Intensive English Course.</p></div>
+        </div>
+    </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="js/app.js"></script>
