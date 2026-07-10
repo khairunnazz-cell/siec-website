@@ -1541,6 +1541,7 @@ function loadQrPages() {
     if (!grid) return;
 
     var pages = [
+        { title: 'Daftar Tes Online', url: location.origin + '/test-register.html', icon: 'fas fa-clipboard-check' },
         { title: 'Beranda', url: location.origin + '/', icon: 'fas fa-home' },
         { title: 'Program Belajar', url: location.origin + '/programs.html', icon: 'fas fa-book' },
         { title: 'Verifikasi Dokumen', url: location.origin + '/verify.html', icon: 'fas fa-check-circle' },
@@ -2108,8 +2109,13 @@ async function loadTestRegs() {
                 actions += '<button class="btn btn-sm btn-success" onclick="validateTestPayment(\'' + t.id + '\')" title="Valid"><i class="fas fa-check"></i></button> ';
                 actions += '<button class="btn btn-sm btn-danger" onclick="rejectTestPayment(\'' + t.id + '\')" title="Tolak"><i class="fas fa-times"></i></button> ';
             }
-            if (t.payment_status === 'valid' && !t.info_sent) {
-                actions += '<button class="btn btn-sm btn-info" onclick="showTestInfoForm(\'' + t.id + '\')" title="Generate Info"><i class="fas fa-key"></i> Info Tes</button> ';
+            if (t.payment_status === 'valid') {
+                if (!t.info_sent) {
+                    actions += '<button class="btn btn-sm btn-info" onclick="showTestInfoForm(\'' + t.id + '\')" title="Generate Info"><i class="fas fa-key"></i> Info Tes</button> ';
+                } else {
+                    actions += '<button class="btn btn-sm btn-info" onclick="showTestInfoForm(\'' + t.id + '\')" title="Edit Info"><i class="fas fa-edit"></i> Edit Info</button> ';
+                    actions += '<button class="btn btn-sm" style="background:#10b981;color:white" onclick="resendTestInfo(\'' + t.id + '\')" title="Kirim Ulang WA"><i class="fab fa-whatsapp"></i> Kirim Ulang</button> ';
+                }
             }
             actions += '<button class="btn btn-sm btn-danger" onclick="deleteTestReg(\'' + t.id + '\')" title="Hapus"><i class="fas fa-trash"></i></button>';
 
@@ -2124,97 +2130,96 @@ async function loadTestRegs() {
     } catch (e) { console.error(e); }
 }
 
-async function showTestDetail(id) {
-    var r = await db.from('test_registrations').select('*').eq('id', id).single();
-    if (!r.data) return;
-    var t = r.data;
-    document.getElementById('testDetailContent').innerHTML =
-        '<div class="reg-detail-grid">' +
-        '<div class="reg-detail-item"><label>Kode</label><p>' + t.reg_code + '</p></div>' +
-        '<div class="reg-detail-item"><label>Jenis Tes</label><p>' + t.test_type + '</p></div>' +
-        '<div class="reg-detail-item"><label>Nama</label><p>' + t.full_name + '</p></div>' +
-        '<div class="reg-detail-item"><label>NIK</label><p>' + t.nik + '</p></div>' +
-        '<div class="reg-detail-item"><label>TTL</label><p>' + t.birth_place + ', ' + formatDate(t.birth_date) + '</p></div>' +
-        '<div class="reg-detail-item"><label>HP</label><p>' + t.phone + '</p></div>' +
-        '<div class="reg-detail-item" style="grid-column:span 2"><label>Alamat</label><p>' + t.address + '</p></div>' +
-        '<div class="reg-detail-item"><label>Total Bayar</label><p style="color:#2563eb;font-size:1.2rem">' + (t.test_currency === 'USD' ? '$' + t.total_price : formatRp(t.total_price)) + '</p></div>' +
-        '<div class="reg-detail-item"><label>Status</label><p>' + t.payment_status + (t.info_sent ? ' ✅ Info terkirim' : '') + '</p></div>' +
-        '</div>' +
-        (t.ktp_url ? '<h4>📄 KTP:</h4><img src="' + t.ktp_url + '" class="receipt-preview-large" onclick="window.open(\'' + t.ktp_url + '\')">' : '') +
-        (t.receipt_url ? '<h4>📸 Bukti Transfer:</h4><img src="' + t.receipt_url + '" class="receipt-preview-large" onclick="window.open(\'' + t.receipt_url + '\')">' : '') +
-        (t.test_id ? '<div style="background:#ecfdf5;padding:12px;border-radius:8px;margin-top:16px"><h4>🔑 Info Tes:</h4><p><b>ID:</b> ' + t.test_id + '</p><p><b>Password:</b> ' + t.test_password + '</p>' + (t.test_link ? '<p><b>Link Tes:</b> ' + t.test_link + '</p>' : '') + (t.zoom_link ? '<p><b>Zoom:</b> ' + t.zoom_link + '</p>' : '') + (t.test_date ? '<p><b>Jadwal Tes:</b> ' + formatDate(t.test_date) + ' ' + (t.test_time || '') + '</p>' : '') + '</div>' : '');
+async function showTestInfoForm(id) {
+    // Load existing data untuk edit mode
+    var existing = null;
+    try {
+        var r = await db.from('test_registrations').select('*').eq('id', id).single();
+        if (r.data) existing = r.data;
+    } catch (e) {}
 
-    document.getElementById('testDetailModal').style.display = 'flex';
-}
+    var meetingType = existing && existing.zoom_link ? (existing.zoom_link.indexOf('meet.google') > -1 ? 'gmeet' : 'zoom') : (existing && existing.info_sent ? 'none' : 'zoom');
 
-async function validateTestPayment(id) {
-    if (!confirm('Validasi pembayaran ini?')) return;
-    var r = await db.from('test_registrations').select('receipt_url').eq('id', id).single();
-    if (r.data && r.data.receipt_url) {
-        var path = r.data.receipt_url.split('/registrations/')[1];
-        if (path) await db.storage.from('registrations').remove([path]);
-    }
-    await db.from('test_registrations').update({ payment_status: 'valid', receipt_url: null, receipt_name: null, updated_at: new Date().toISOString() }).eq('id', id);
-    showNotification('✅ Pembayaran valid!');
-    loadTestRegs();
-}
-
-async function rejectTestPayment(id) {
-    var reason = prompt('Alasan penolakan:');
-    if (!reason) return;
-    var t = (await db.from('test_registrations').select('*').eq('id', id).single()).data;
-    await db.from('test_registrations').update({ payment_status: 'rejected', rejection_reason: reason, updated_at: new Date().toISOString() }).eq('id', id);
-    if (t) {
-        var phone = (t.phone || '').replace(/[^0-9]/g, '');
-        if (phone.startsWith('0')) phone = '62' + phone.substring(1);
-        if (!phone.startsWith('62')) phone = '62' + phone;
-        var msg = 'Assalamu\'alaikum *' + t.full_name + '* 🙏\n\nMohon maaf, pembayaran pendaftaran tes *' + t.test_type + '* (kode: ' + t.reg_code + ') belum dapat kami verifikasi.\n\n❌ *Alasan:* ' + reason + '\n\nSilakan hubungi kami untuk informasi lebih lanjut.\n\n_Tim SIEC_';
-        window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
-    }
-    showNotification('❌ Ditolak!');
-    loadTestRegs();
-}
-
-function showTestInfoForm(id) {
     document.getElementById('testInfoContent').innerHTML =
         '<div style="padding:16px">' +
         '<input type="hidden" id="testInfoId" value="' + id + '">' +
-        '<div class="form-group"><label>Test ID *</label><input type="text" id="tiId" placeholder="Contoh: 12345678"></div>' +
-        '<div class="form-group"><label>Password *</label><input type="text" id="tiPass" placeholder="Contoh: abc123"></div>' +
-        '<div class="form-group"><label>Link Tes</label><input type="text" id="tiLink" placeholder="https://test.ets.org/..."></div>' +
-        '<div class="form-group"><label>Link Zoom/GMeet</label><input type="text" id="tiZoom" placeholder="https://zoom.us/..."></div>' +
-        '<div class="form-row">' +
-        '<div class="form-group"><label>Tanggal Tes</label><input type="date" id="tiTestDate"></div>' +
-        '<div class="form-group"><label>Jam Tes</label><input type="text" id="tiTestTime" placeholder="09:00 WIB"></div>' +
+
+        '<div class="form-group">' +
+        '<label>Jenis Pertemuan *</label>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:8px">' +
+        '<label class="lang-option" style="margin:0"><input type="radio" name="meetingType" value="zoom" ' + (meetingType === 'zoom' ? 'checked' : '') + ' onchange="toggleMeetingFields()"><div class="lang-card" style="padding:12px"><span style="font-size:1.5rem">💻</span><span class="lang-title" style="font-size:0.85rem">Zoom</span></div></label>' +
+        '<label class="lang-option" style="margin:0"><input type="radio" name="meetingType" value="gmeet" ' + (meetingType === 'gmeet' ? 'checked' : '') + ' onchange="toggleMeetingFields()"><div class="lang-card" style="padding:12px"><span style="font-size:1.5rem">🎥</span><span class="lang-title" style="font-size:0.85rem">Google Meet</span></div></label>' +
+        '<label class="lang-option" style="margin:0"><input type="radio" name="meetingType" value="none" ' + (meetingType === 'none' ? 'checked' : '') + ' onchange="toggleMeetingFields()"><div class="lang-card" style="padding:12px"><span style="font-size:1.5rem">🚫</span><span class="lang-title" style="font-size:0.85rem">Tanpa Pertemuan</span></div></label>' +
         '</div>' +
-        '<div class="form-row">' +
-        '<div class="form-group"><label>Tanggal Zoom</label><input type="date" id="tiZoomDate"></div>' +
-        '<div class="form-group"><label>Jam Zoom</label><input type="text" id="tiZoomTime" placeholder="08:30 WIB"></div>' +
         '</div>' +
-        '<div class="form-group"><label>Catatan Tambahan</label><input type="text" id="tiNotes" placeholder="Instruksi khusus"></div>' +
+
+        '<div class="form-group"><label>Test ID *</label><input type="text" id="tiId" value="' + (existing && existing.test_id ? existing.test_id : '') + '" placeholder="Contoh: 12345678"></div>' +
+        '<div class="form-group"><label>Password *</label><input type="text" id="tiPass" value="' + (existing && existing.test_password ? existing.test_password : '') + '" placeholder="Contoh: abc123"></div>' +
+        '<div class="form-group"><label>Link Tes</label><input type="text" id="tiLink" value="' + (existing && existing.test_link ? existing.test_link : '') + '" placeholder="https://test.ets.org/..."></div>' +
+
+        '<div id="meetingFields">' +
+        '<div class="form-group" id="meetingLinkGroup"><label id="meetingLinkLabel">Link Zoom/GMeet</label><input type="text" id="tiZoom" value="' + (existing && existing.zoom_link ? existing.zoom_link : '') + '" placeholder="https://zoom.us/..."></div>' +
+        '<div class="form-row">' +
+        '<div class="form-group"><label>Tanggal Pertemuan</label><input type="date" id="tiZoomDate" value="' + (existing && existing.zoom_date ? existing.zoom_date : '') + '"></div>' +
+        '<div class="form-group"><label>Jam Pertemuan</label><input type="text" id="tiZoomTime" value="' + (existing && existing.zoom_time ? existing.zoom_time : '') + '" placeholder="08:30 WIB"></div>' +
+        '</div>' +
+        '</div>' +
+
+        '<div class="form-row">' +
+        '<div class="form-group"><label>Tanggal Tes *</label><input type="date" id="tiTestDate" value="' + (existing && existing.test_date ? existing.test_date : '') + '"></div>' +
+        '<div class="form-group"><label>Jam Tes</label><input type="text" id="tiTestTime" value="' + (existing && existing.test_time ? existing.test_time : '') + '" placeholder="09:00 WIB"></div>' +
+        '</div>' +
+
+        '<div class="form-group"><label>Catatan Tambahan</label><textarea id="tiNotes" rows="2" placeholder="Instruksi khusus untuk peserta">' + (existing && existing.test_notes ? existing.test_notes : '') + '</textarea></div>' +
+
         '<div class="review-actions">' +
-        '<button class="btn btn-primary" onclick="sendTestInfo()"><i class="fas fa-paper-plane"></i> Simpan & Kirim ke Peserta</button>' +
+        '<button class="btn btn-primary" onclick="sendTestInfo()"><i class="fas fa-paper-plane"></i> ' + (existing && existing.info_sent ? 'Update & Kirim Ulang' : 'Simpan & Kirim ke Peserta') + '</button>' +
         '<button class="btn btn-outline" onclick="closePrintPreview(\'testInfoModal\')">Batal</button>' +
         '</div>' +
         '</div>';
+
     document.getElementById('testInfoModal').style.display = 'flex';
+    setTimeout(toggleMeetingFields, 100);
+}
+
+function toggleMeetingFields() {
+    var checked = document.querySelector('input[name="meetingType"]:checked');
+    if (!checked) return;
+    var type = checked.value;
+    var meetingFields = document.getElementById('meetingFields');
+    var linkLabel = document.getElementById('meetingLinkLabel');
+
+    if (type === 'none') {
+        meetingFields.style.display = 'none';
+    } else {
+        meetingFields.style.display = 'block';
+        linkLabel.textContent = type === 'zoom' ? 'Link Zoom *' : 'Link Google Meet *';
+    }
 }
 
 async function sendTestInfo() {
     var id = document.getElementById('testInfoId').value;
     var testId = document.getElementById('tiId').value.trim();
     var testPass = document.getElementById('tiPass').value.trim();
+    var meetingType = document.querySelector('input[name="meetingType"]:checked').value;
+
     if (!testId || !testPass) { showNotification('ID & Password wajib!', 'error'); return; }
+    if (!document.getElementById('tiTestDate').value) { showNotification('Tanggal tes wajib!', 'error'); return; }
+
+    if (meetingType !== 'none') {
+        var meetingLink = document.getElementById('tiZoom').value.trim();
+        if (!meetingLink) { showNotification('Link ' + (meetingType === 'zoom' ? 'Zoom' : 'GMeet') + ' wajib!', 'error'); return; }
+    }
 
     var data = {
         test_id: testId,
         test_password: testPass,
         test_link: document.getElementById('tiLink').value.trim() || null,
-        zoom_link: document.getElementById('tiZoom').value.trim() || null,
+        zoom_link: meetingType !== 'none' ? document.getElementById('tiZoom').value.trim() : null,
         test_date: document.getElementById('tiTestDate').value || null,
         test_time: document.getElementById('tiTestTime').value.trim() || null,
-        zoom_date: document.getElementById('tiZoomDate').value || null,
-        zoom_time: document.getElementById('tiZoomTime').value.trim() || null,
+        zoom_date: meetingType !== 'none' ? (document.getElementById('tiZoomDate').value || null) : null,
+        zoom_time: meetingType !== 'none' ? (document.getElementById('tiZoomTime').value.trim() || null) : null,
         test_notes: document.getElementById('tiNotes').value.trim() || null,
         info_sent: true,
         updated_at: new Date().toISOString()
@@ -2224,43 +2229,70 @@ async function sendTestInfo() {
 
     var t = (await db.from('test_registrations').select('*').eq('id', id).single()).data;
     if (t) {
-        var phone = (t.phone || '').replace(/[^0-9]/g, '');
-        if (phone.startsWith('0')) phone = '62' + phone.substring(1);
-        if (!phone.startsWith('62')) phone = '62' + phone;
-
-        var msg = 'Assalamu\'alaikum *' + t.full_name + '* 🙏\n\n';
-        msg += 'Alhamdulillah, pembayaran Anda untuk *' + t.test_type + '* telah kami verifikasi! ✅\n\n';
-        msg += 'Berikut adalah informasi tes Anda:\n\n';
-        msg += '🔑 *Akses Tes:*\n';
-        msg += '• ID: *' + t.test_id + '*\n';
-        msg += '• Password: *' + t.test_password + '*\n';
-        if (t.test_link) msg += '• Link Tes: ' + t.test_link + '\n';
-        msg += '\n';
-        if (t.zoom_link) {
-            msg += '📹 *Zoom/GMeet:*\n';
-            msg += '• Link: ' + t.zoom_link + '\n';
-            if (t.zoom_date) msg += '• Jadwal: ' + t.zoom_date + ' ' + (t.zoom_time || '') + '\n';
-            msg += '\n';
-        }
-        if (t.test_date) {
-            msg += '📅 *Jadwal Pelaksanaan Tes:*\n';
-            msg += '• Tanggal: ' + t.test_date + '\n';
-            if (t.test_time) msg += '• Jam: ' + t.test_time + '\n';
-            msg += '\n';
-        }
-        if (t.test_notes) msg += '📝 *Catatan:*\n' + t.test_notes + '\n\n';
-        msg += '⚠️ *PENTING:*\n';
-        msg += '• Simpan ID & Password ini dengan baik\n';
-        msg += '• Pastikan koneksi internet stabil saat tes\n';
-        msg += '• Login 15 menit sebelum jadwal\n\n';
-        msg += 'Semoga sukses dalam tes Anda! 🙏✨\n\n_Tim SIEC_';
-
-        window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
+        sendTestInfoWA(t, meetingType);
     }
 
     closePrintPreview('testInfoModal');
-    showNotification('✅ Info tes terkirim!');
+    showNotification('✅ Info tes tersimpan & WA dibuka!');
     loadTestRegs();
+}
+
+function sendTestInfoWA(t, meetingType) {
+    var phone = (t.phone || '').replace(/[^0-9]/g, '');
+    if (phone.startsWith('0')) phone = '62' + phone.substring(1);
+    if (!phone.startsWith('62')) phone = '62' + phone;
+
+    // Deteksi meeting type dari link kalau tidak ada parameter
+    if (!meetingType) {
+        meetingType = t.zoom_link ? (t.zoom_link.indexOf('meet.google') > -1 ? 'gmeet' : 'zoom') : 'none';
+    }
+
+    var msg = 'Assalamu\'alaikum *' + t.full_name + '* 🙏\n\n';
+    msg += 'Alhamdulillah, pembayaran Anda untuk *' + t.test_type + '* telah kami verifikasi! ✅\n\n';
+    msg += 'Berikut adalah informasi tes Anda:\n\n';
+    msg += '🔑 *Akses Tes:*\n';
+    msg += '• ID: *' + t.test_id + '*\n';
+    msg += '• Password: *' + t.test_password + '*\n';
+    if (t.test_link) msg += '• Link Tes: ' + t.test_link + '\n';
+    msg += '\n';
+
+    if (meetingType !== 'none' && t.zoom_link) {
+        var meetIcon = meetingType === 'gmeet' ? '🎥' : '💻';
+        var meetName = meetingType === 'gmeet' ? 'Google Meet' : 'Zoom';
+        msg += meetIcon + ' *' + meetName + ' (Briefing):*\n';
+        msg += '• Link: ' + t.zoom_link + '\n';
+        if (t.zoom_date) msg += '• Tanggal: ' + formatDate(t.zoom_date) + '\n';
+        if (t.zoom_time) msg += '• Jam: ' + t.zoom_time + '\n';
+        msg += '\n';
+    }
+
+    if (t.test_date) {
+        msg += '📅 *Jadwal Pelaksanaan Tes:*\n';
+        msg += '• Tanggal: ' + formatDate(t.test_date) + '\n';
+        if (t.test_time) msg += '• Jam: ' + t.test_time + '\n';
+        msg += '\n';
+    }
+
+    if (t.test_notes) msg += '📝 *Catatan:*\n' + t.test_notes + '\n\n';
+
+    msg += '⚠️ *PENTING:*\n';
+    msg += '• Simpan ID & Password ini dengan baik\n';
+    msg += '• Pastikan koneksi internet stabil saat tes\n';
+    msg += '• Login 15 menit sebelum jadwal\n';
+    if (meetingType !== 'none') msg += '• Persiapkan perangkat untuk ' + (meetingType === 'gmeet' ? 'Google Meet' : 'Zoom') + '\n';
+    msg += '\n';
+
+    msg += 'Semoga sukses dalam tes Anda! 🙏✨\n\n_Tim SIEC_';
+
+    window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
+}
+
+async function resendTestInfo(id) {
+    var t = (await db.from('test_registrations').select('*').eq('id', id).single()).data;
+    if (!t) return;
+    if (!t.test_id) { showNotification('Info tes belum di-generate!', 'error'); return; }
+    sendTestInfoWA(t);
+    showNotification('✅ WhatsApp dibuka!');
 }
 
 async function deleteTestReg(id) {

@@ -338,6 +338,17 @@ async function submitRegistration() {
             if (r.error) throw r.error;
         }
 
+        // Kirim notifikasi email ke admin
+sendTranslationEmailNotification({
+    reg_code: codes[0].code,
+    client_name: document.getElementById('rName').value.trim(),
+    client_phone: document.getElementById('rPhone').value.trim(),
+    doc_type: document.getElementById('rDocType').value,
+    universitas: univName,
+    total: formatRupiah(regTotal),
+    languages: langs.length + ' bahasa'
+});
+
         var codesHtml = codes.map(function(c) {
             return '<div class="track-code-item">' +
                 '<div class="track-code-label">' + c.lang + '</div>' +
@@ -368,4 +379,38 @@ async function submitRegistration() {
         btn.innerHTML = '<i class="fas fa-paper-plane"></i> Kirim Pendaftaran';
         btn.disabled = false;
     }
+}
+
+function sendTranslationEmailNotification(data) {
+    var SERVICE_ID = 'service_xxxxxxx';        // ← GANTI dengan Service ID Anda
+    var TEMPLATE_ID = 'template_yyyyyyy';      // ← GANTI dengan Template ID BARU untuk terjemahan
+    var PUBLIC_KEY = 'xxxxxxxxxxxxxxxxx';      // ← GANTI dengan Public Key Anda
+
+    console.log('📧 Sending translation registration email...');
+
+    if (typeof emailjs === 'undefined') {
+        console.error('❌ EmailJS not loaded!');
+        return;
+    }
+
+    try {
+        emailjs.init(PUBLIC_KEY);
+    } catch (e) {
+        console.error('❌ EmailJS init failed:', e);
+        return;
+    }
+
+    emailjs.send(SERVICE_ID, TEMPLATE_ID, {
+        reg_code: data.reg_code,
+        name: data.client_name,
+        phone: data.client_phone,
+        doc_type: data.doc_type,
+        universitas: data.universitas || '-',
+        total: data.total,
+        languages: data.languages
+    }).then(function(response) {
+        console.log('✅ Translation email sent!', response.status);
+    }).catch(function(err) {
+        console.error('❌ Translation email failed:', err);
+    });
 }
