@@ -2130,6 +2130,56 @@ async function loadTestRegs() {
     } catch (e) { console.error(e); }
 }
 
+async function showTestDetail(id) {
+    var r = await db.from('test_registrations').select('*').eq('id', id).single();
+    if (!r.data) return;
+    var t = r.data;
+    document.getElementById('testDetailContent').innerHTML =
+        '<div class="reg-detail-grid">' +
+        '<div class="reg-detail-item"><label>Kode</label><p>' + t.reg_code + '</p></div>' +
+        '<div class="reg-detail-item"><label>Jenis Tes</label><p>' + t.test_type + '</p></div>' +
+        '<div class="reg-detail-item"><label>Nama</label><p>' + t.full_name + '</p></div>' +
+        '<div class="reg-detail-item"><label>NIK</label><p>' + t.nik + '</p></div>' +
+        '<div class="reg-detail-item"><label>TTL</label><p>' + t.birth_place + ', ' + formatDate(t.birth_date) + '</p></div>' +
+        '<div class="reg-detail-item"><label>HP</label><p>' + t.phone + '</p></div>' +
+        '<div class="reg-detail-item" style="grid-column:span 2"><label>Alamat</label><p>' + t.address + '</p></div>' +
+        '<div class="reg-detail-item"><label>Total Bayar</label><p style="color:#2563eb;font-size:1.2rem">' + (t.test_currency === 'USD' ? '$' + t.total_price : formatRp(t.total_price)) + '</p></div>' +
+        '<div class="reg-detail-item"><label>Status</label><p>' + t.payment_status + (t.info_sent ? ' ✅ Info terkirim' : '') + '</p></div>' +
+        '</div>' +
+        (t.ktp_url ? '<h4>📄 KTP:</h4><img src="' + t.ktp_url + '" class="receipt-preview-large" onclick="window.open(\'' + t.ktp_url + '\')">' : '') +
+        (t.receipt_url ? '<h4>📸 Bukti Transfer:</h4><img src="' + t.receipt_url + '" class="receipt-preview-large" onclick="window.open(\'' + t.receipt_url + '\')">' : '') +
+        (t.test_id ? '<div style="background:#ecfdf5;padding:12px;border-radius:8px;margin-top:16px"><h4>🔑 Info Tes:</h4><p><b>ID:</b> ' + t.test_id + '</p><p><b>Password:</b> ' + t.test_password + '</p>' + (t.test_link ? '<p><b>Link Tes:</b> ' + t.test_link + '</p>' : '') + (t.zoom_link ? '<p><b>Zoom:</b> ' + t.zoom_link + '</p>' : '') + (t.test_date ? '<p><b>Jadwal Tes:</b> ' + formatDate(t.test_date) + ' ' + (t.test_time || '') + '</p>' : '') + '</div>' : '');
+
+    document.getElementById('testDetailModal').style.display = 'flex';
+}
+
+async function validateTestPayment(id) {
+    if (!confirm('Validasi pembayaran ini?')) return;
+    var r = await db.from('test_registrations').select('receipt_url').eq('id', id).single();
+    if (r.data && r.data.receipt_url) {
+        var path = r.data.receipt_url.split('/registrations/')[1];
+        if (path) await db.storage.from('registrations').remove([path]);
+    }
+    await db.from('test_registrations').update({ payment_status: 'valid', receipt_url: null, receipt_name: null, updated_at: new Date().toISOString() }).eq('id', id);
+    showNotification('✅ Pembayaran valid!');
+    loadTestRegs();
+}
+
+async function rejectTestPayment(id) {
+    var reason = prompt('Alasan penolakan:');
+    if (!reason) return;
+    var t = (await db.from('test_registrations').select('*').eq('id', id).single()).data;
+    await db.from('test_registrations').update({ payment_status: 'rejected', rejection_reason: reason, updated_at: new Date().toISOString() }).eq('id', id);
+    if (t) {
+        var phone = (t.phone || '').replace(/[^0-9]/g, '');
+        if (phone.startsWith('0')) phone = '62' + phone.substring(1);
+        if (!phone.startsWith('62')) phone = '62' + phone;
+        var msg = 'Assalamu\'alaikum *' + t.full_name + '* 🙏\n\nMohon maaf, pembayaran pendaftaran tes *' + t.test_type + '* (kode: ' + t.reg_code + ') belum dapat kami verifikasi.\n\n❌ *Alasan:* ' + reason + '\n\nSilakan hubungi kami untuk informasi lebih lanjut.\n\n_Tim SIEC_';
+        window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
+    }
+    showNotification('❌ Ditolak!');
+    loadTestRegs();
+}
 async function showTestInfoForm(id) {
     // Load existing data untuk edit mode
     var existing = null;
