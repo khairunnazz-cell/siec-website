@@ -159,23 +159,44 @@ async function submitTestReg() {
 }
 
 function sendAdminEmailNotification(data) {
-    var SERVICE_ID = ' service_siec';       // ← Paste Service ID
-    var TEMPLATE_ID = ' template_hm8jzlq';     // ← Paste Template ID
-    var PUBLIC_KEY = ' khzQQWWoH8FvYAW9Z';   // ← Paste Public Key
+    var SERVICE_ID = 'service_siec';       // ← GANTI dengan Service ID Anda
+    var TEMPLATE_ID = ' template_hm8jzlq';     // ← GANTI dengan Template ID Anda
+    var PUBLIC_KEY = 'khzQQWWoH8FvYAW9Z';     // ← GANTI dengan Public Key Anda
 
-    if (typeof emailjs !== 'undefined') {
-        emailjs.init(PUBLIC_KEY);
-        emailjs.send(SERVICE_ID, TEMPLATE_ID, {
-            test_type: data.test_type,
-            name: data.full_name,
-            phone: data.phone,
-            reg_code: data.reg_code,
-            total: data.test_currency === 'USD' ? '$' + data.total_price : 'Rp ' + data.total_price.toLocaleString('id-ID')
-        }).then(function(response) {
-            console.log('✅ Email sent!', response.status);
-        }).catch(function(err) {
-            console.log('❌ Email failed:', err);
-        });
+    console.log('📧 Attempting to send email notification...');
+
+    if (typeof emailjs === 'undefined') {
+        console.error('❌ EmailJS library not loaded!');
+        return;
     }
+
+    // Init EmailJS
+    try {
+        emailjs.init(PUBLIC_KEY);
+    } catch (e) {
+        console.error('❌ EmailJS init failed:', e);
+        return;
+    }
+
+    var templateParams = {
+        test_type: data.test_type,
+        name: data.full_name,
+        phone: data.phone,
+        reg_code: data.reg_code,
+        total: data.test_currency === 'USD' ? '$' + data.total_price : 'Rp ' + data.total_price.toLocaleString('id-ID')
+    };
+
+    console.log('📧 Sending with params:', templateParams);
+
+    emailjs.send(SERVICE_ID, TEMPLATE_ID, templateParams)
+        .then(function(response) {
+            console.log('✅ Email sent successfully!', response.status, response.text);
+        })
+        .catch(function(err) {
+            console.error('❌ Email failed:', err);
+            console.error('Details:', JSON.stringify(err));
+        });
 }
+
+
 
