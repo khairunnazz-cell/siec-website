@@ -136,7 +136,7 @@ function switchSection(s) {
     document.querySelectorAll('.sidebar-link').forEach(function(x) { x.classList.remove('active'); });
     var e = document.getElementById('section-' + s); if (e) e.classList.add('active');
     var l = document.querySelector('[data-section="' + s + '"]'); if (l) l.classList.add('active');
-    var m = { 'dashboard': 'Dashboard', 'articles': 'Artikel', 'programs': 'Program', 'terjemahan': 'Terjemahan', 'toefl': 'TOEFL', 'testimonials': 'Testimoni', 'online-reg': 'Pendaftaran Online', 'penerjemah': 'Penerjemah', 'qr-pages': 'QR Halaman' };
+    var m = { 'dashboard': 'Dashboard', 'articles': 'Artikel', 'programs': 'Program', 'terjemahan': 'Terjemahan', 'toefl': 'TOEFL', 'testimonials': 'Testimoni', 'online-reg': 'Pendaftaran Online', 'penerjemah': 'Penerjemah', 'qr-pages': 'QR Halaman', 'test-reg': 'Pendaftaran Tes' };
     var t = document.getElementById('pageTitle'); if (t) t.textContent = m[s] || 'Dashboard';
     document.getElementById('adminSidebar').classList.remove('active');
     if (s === 'dashboard') loadAnalytics();
@@ -144,6 +144,7 @@ function switchSection(s) {
     if (s === 'online-reg') loadOnlineReg();
     if (s === 'penerjemah') loadTranslators();
     if (s === 'qr-pages') loadQrPages();
+    if (s === 'test-reg') loadTestRegs();
 }
 
 // ============================================
@@ -2081,4 +2082,190 @@ async function saveEditedOnlineQr() {
         btn.innerHTML = '<i class="fas fa-save"></i> Simpan Posisi Baru';
         btn.disabled = false;
     }
+}
+
+// ============================================
+// PENDAFTARAN TES
+// ============================================
+async function loadTestRegs() {
+    var tb = document.getElementById('testRegTableBody');
+    if (!tb) return;
+    try {
+        var filter = document.getElementById('testRegFilter').value;
+        var query = db.from('test_registrations').select('*').order('created_at', { ascending: false });
+        if (filter === 'info_sent') query = query.eq('info_sent', true);
+        else if (filter) query = query.eq('payment_status', filter);
+        var r = await query;
+        if (!r.data || !r.data.length) { tb.innerHTML = '<tr><td colspan="6" class="loading-cell">Belum ada</td></tr>'; return; }
+
+        tb.innerHTML = r.data.map(function(t) {
+            var statusColor = { checking: '#f59e0b', valid: '#10b981', rejected: '#ef4444' };
+            var statusLabel = t.info_sent ? 'Info Terkirim' : (t.payment_status === 'valid' ? 'Valid' : t.payment_status);
+            var badge = '<span class="status-badge" style="background:' + (t.info_sent ? '#065f46' : (statusColor[t.payment_status] || '#94a3b8')) + '20;color:' + (t.info_sent ? '#065f46' : (statusColor[t.payment_status] || '#94a3b8')) + '">' + statusLabel + '</span>';
+
+            var actions = '<button class="btn btn-sm btn-primary" onclick="showTestDetail(\'' + t.id + '\')" title="Detail"><i class="fas fa-eye"></i></button> ';
+            if (t.payment_status === 'checking') {
+                actions += '<button class="btn btn-sm btn-success" onclick="validateTestPayment(\'' + t.id + '\')" title="Valid"><i class="fas fa-check"></i></button> ';
+                actions += '<button class="btn btn-sm btn-danger" onclick="rejectTestPayment(\'' + t.id + '\')" title="Tolak"><i class="fas fa-times"></i></button> ';
+            }
+            if (t.payment_status === 'valid' && !t.info_sent) {
+                actions += '<button class="btn btn-sm btn-info" onclick="showTestInfoForm(\'' + t.id + '\')" title="Generate Info"><i class="fas fa-key"></i> Info Tes</button> ';
+            }
+            actions += '<button class="btn btn-sm btn-danger" onclick="deleteTestReg(\'' + t.id + '\')" title="Hapus"><i class="fas fa-trash"></i></button>';
+
+            return '<tr>' +
+                '<td data-label="Kode"><strong style="color:var(--primary);font-size:0.8rem">' + t.reg_code + '</strong></td>' +
+                '<td data-label="Nama">' + escapeHtml(t.full_name) + '</td>' +
+                '<td data-label="Tes">' + t.test_type + '</td>' +
+                '<td data-label="Total">' + (t.test_currency === 'USD' ? '$' + t.total_price : formatRp(t.total_price)) + '</td>' +
+                '<td data-label="Status">' + badge + '</td>' +
+                '<td data-label=""><div class="action-buttons">' + actions + '</div></td></tr>';
+        }).join('');
+    } catch (e) { console.error(e); }
+}
+
+async function showTestDetail(id) {
+    var r = await db.from('test_registrations').select('*').eq('id', id).single();
+    if (!r.data) return;
+    var t = r.data;
+    document.getElementById('testDetailContent').innerHTML =
+        '<div class="reg-detail-grid">' +
+        '<div class="reg-detail-item"><label>Kode</label><p>' + t.reg_code + '</p></div>' +
+        '<div class="reg-detail-item"><label>Jenis Tes</label><p>' + t.test_type + '</p></div>' +
+        '<div class="reg-detail-item"><label>Nama</label><p>' + t.full_name + '</p></div>' +
+        '<div class="reg-detail-item"><label>NIK</label><p>' + t.nik + '</p></div>' +
+        '<div class="reg-detail-item"><label>TTL</label><p>' + t.birth_place + ', ' + formatDate(t.birth_date) + '</p></div>' +
+        '<div class="reg-detail-item"><label>HP</label><p>' + t.phone + '</p></div>' +
+        '<div class="reg-detail-item" style="grid-column:span 2"><label>Alamat</label><p>' + t.address + '</p></div>' +
+        '<div class="reg-detail-item"><label>Total Bayar</label><p style="color:#2563eb;font-size:1.2rem">' + (t.test_currency === 'USD' ? '$' + t.total_price : formatRp(t.total_price)) + '</p></div>' +
+        '<div class="reg-detail-item"><label>Status</label><p>' + t.payment_status + (t.info_sent ? ' ✅ Info terkirim' : '') + '</p></div>' +
+        '</div>' +
+        (t.ktp_url ? '<h4>📄 KTP:</h4><img src="' + t.ktp_url + '" class="receipt-preview-large" onclick="window.open(\'' + t.ktp_url + '\')">' : '') +
+        (t.receipt_url ? '<h4>📸 Bukti Transfer:</h4><img src="' + t.receipt_url + '" class="receipt-preview-large" onclick="window.open(\'' + t.receipt_url + '\')">' : '') +
+        (t.test_id ? '<div style="background:#ecfdf5;padding:12px;border-radius:8px;margin-top:16px"><h4>🔑 Info Tes:</h4><p><b>ID:</b> ' + t.test_id + '</p><p><b>Password:</b> ' + t.test_password + '</p>' + (t.test_link ? '<p><b>Link Tes:</b> ' + t.test_link + '</p>' : '') + (t.zoom_link ? '<p><b>Zoom:</b> ' + t.zoom_link + '</p>' : '') + (t.test_date ? '<p><b>Jadwal Tes:</b> ' + formatDate(t.test_date) + ' ' + (t.test_time || '') + '</p>' : '') + '</div>' : '');
+
+    document.getElementById('testDetailModal').style.display = 'flex';
+}
+
+async function validateTestPayment(id) {
+    if (!confirm('Validasi pembayaran ini?')) return;
+    var r = await db.from('test_registrations').select('receipt_url').eq('id', id).single();
+    if (r.data && r.data.receipt_url) {
+        var path = r.data.receipt_url.split('/registrations/')[1];
+        if (path) await db.storage.from('registrations').remove([path]);
+    }
+    await db.from('test_registrations').update({ payment_status: 'valid', receipt_url: null, receipt_name: null, updated_at: new Date().toISOString() }).eq('id', id);
+    showNotification('✅ Pembayaran valid!');
+    loadTestRegs();
+}
+
+async function rejectTestPayment(id) {
+    var reason = prompt('Alasan penolakan:');
+    if (!reason) return;
+    var t = (await db.from('test_registrations').select('*').eq('id', id).single()).data;
+    await db.from('test_registrations').update({ payment_status: 'rejected', rejection_reason: reason, updated_at: new Date().toISOString() }).eq('id', id);
+    if (t) {
+        var phone = (t.phone || '').replace(/[^0-9]/g, '');
+        if (phone.startsWith('0')) phone = '62' + phone.substring(1);
+        if (!phone.startsWith('62')) phone = '62' + phone;
+        var msg = 'Assalamu\'alaikum *' + t.full_name + '* 🙏\n\nMohon maaf, pembayaran pendaftaran tes *' + t.test_type + '* (kode: ' + t.reg_code + ') belum dapat kami verifikasi.\n\n❌ *Alasan:* ' + reason + '\n\nSilakan hubungi kami untuk informasi lebih lanjut.\n\n_Tim SIEC_';
+        window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
+    }
+    showNotification('❌ Ditolak!');
+    loadTestRegs();
+}
+
+function showTestInfoForm(id) {
+    document.getElementById('testInfoContent').innerHTML =
+        '<div style="padding:16px">' +
+        '<input type="hidden" id="testInfoId" value="' + id + '">' +
+        '<div class="form-group"><label>Test ID *</label><input type="text" id="tiId" placeholder="Contoh: 12345678"></div>' +
+        '<div class="form-group"><label>Password *</label><input type="text" id="tiPass" placeholder="Contoh: abc123"></div>' +
+        '<div class="form-group"><label>Link Tes</label><input type="text" id="tiLink" placeholder="https://test.ets.org/..."></div>' +
+        '<div class="form-group"><label>Link Zoom/GMeet</label><input type="text" id="tiZoom" placeholder="https://zoom.us/..."></div>' +
+        '<div class="form-row">' +
+        '<div class="form-group"><label>Tanggal Tes</label><input type="date" id="tiTestDate"></div>' +
+        '<div class="form-group"><label>Jam Tes</label><input type="text" id="tiTestTime" placeholder="09:00 WIB"></div>' +
+        '</div>' +
+        '<div class="form-row">' +
+        '<div class="form-group"><label>Tanggal Zoom</label><input type="date" id="tiZoomDate"></div>' +
+        '<div class="form-group"><label>Jam Zoom</label><input type="text" id="tiZoomTime" placeholder="08:30 WIB"></div>' +
+        '</div>' +
+        '<div class="form-group"><label>Catatan Tambahan</label><input type="text" id="tiNotes" placeholder="Instruksi khusus"></div>' +
+        '<div class="review-actions">' +
+        '<button class="btn btn-primary" onclick="sendTestInfo()"><i class="fas fa-paper-plane"></i> Simpan & Kirim ke Peserta</button>' +
+        '<button class="btn btn-outline" onclick="closePrintPreview(\'testInfoModal\')">Batal</button>' +
+        '</div>' +
+        '</div>';
+    document.getElementById('testInfoModal').style.display = 'flex';
+}
+
+async function sendTestInfo() {
+    var id = document.getElementById('testInfoId').value;
+    var testId = document.getElementById('tiId').value.trim();
+    var testPass = document.getElementById('tiPass').value.trim();
+    if (!testId || !testPass) { showNotification('ID & Password wajib!', 'error'); return; }
+
+    var data = {
+        test_id: testId,
+        test_password: testPass,
+        test_link: document.getElementById('tiLink').value.trim() || null,
+        zoom_link: document.getElementById('tiZoom').value.trim() || null,
+        test_date: document.getElementById('tiTestDate').value || null,
+        test_time: document.getElementById('tiTestTime').value.trim() || null,
+        zoom_date: document.getElementById('tiZoomDate').value || null,
+        zoom_time: document.getElementById('tiZoomTime').value.trim() || null,
+        test_notes: document.getElementById('tiNotes').value.trim() || null,
+        info_sent: true,
+        updated_at: new Date().toISOString()
+    };
+
+    await db.from('test_registrations').update(data).eq('id', id);
+
+    var t = (await db.from('test_registrations').select('*').eq('id', id).single()).data;
+    if (t) {
+        var phone = (t.phone || '').replace(/[^0-9]/g, '');
+        if (phone.startsWith('0')) phone = '62' + phone.substring(1);
+        if (!phone.startsWith('62')) phone = '62' + phone;
+
+        var msg = 'Assalamu\'alaikum *' + t.full_name + '* 🙏\n\n';
+        msg += 'Alhamdulillah, pembayaran Anda untuk *' + t.test_type + '* telah kami verifikasi! ✅\n\n';
+        msg += 'Berikut adalah informasi tes Anda:\n\n';
+        msg += '🔑 *Akses Tes:*\n';
+        msg += '• ID: *' + t.test_id + '*\n';
+        msg += '• Password: *' + t.test_password + '*\n';
+        if (t.test_link) msg += '• Link Tes: ' + t.test_link + '\n';
+        msg += '\n';
+        if (t.zoom_link) {
+            msg += '📹 *Zoom/GMeet:*\n';
+            msg += '• Link: ' + t.zoom_link + '\n';
+            if (t.zoom_date) msg += '• Jadwal: ' + t.zoom_date + ' ' + (t.zoom_time || '') + '\n';
+            msg += '\n';
+        }
+        if (t.test_date) {
+            msg += '📅 *Jadwal Pelaksanaan Tes:*\n';
+            msg += '• Tanggal: ' + t.test_date + '\n';
+            if (t.test_time) msg += '• Jam: ' + t.test_time + '\n';
+            msg += '\n';
+        }
+        if (t.test_notes) msg += '📝 *Catatan:*\n' + t.test_notes + '\n\n';
+        msg += '⚠️ *PENTING:*\n';
+        msg += '• Simpan ID & Password ini dengan baik\n';
+        msg += '• Pastikan koneksi internet stabil saat tes\n';
+        msg += '• Login 15 menit sebelum jadwal\n\n';
+        msg += 'Semoga sukses dalam tes Anda! 🙏✨\n\n_Tim SIEC_';
+
+        window.open('https://wa.me/' + phone + '?text=' + encodeURIComponent(msg), '_blank');
+    }
+
+    closePrintPreview('testInfoModal');
+    showNotification('✅ Info tes terkirim!');
+    loadTestRegs();
+}
+
+async function deleteTestReg(id) {
+    if (!confirm('Hapus pendaftaran ini?')) return;
+    await db.from('test_registrations').delete().eq('id', id);
+    showNotification('Dihapus!');
+    loadTestRegs();
 }

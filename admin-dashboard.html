@@ -26,6 +26,7 @@
             <a href="#" class="sidebar-link" data-section="online-reg"><i class="fas fa-clipboard-list"></i> Pendaftaran Online</a>
             <a href="#" class="sidebar-link" data-section="penerjemah"><i class="fas fa-user-tie"></i> Penerjemah</a>
             <a href="#" class="sidebar-link" data-section="qr-pages"><i class="fas fa-qrcode"></i> QR Halaman</a>
+            <a href="#" class="sidebar-link" data-section="test-reg"><i class="fas fa-clipboard-check"></i> Pendaftaran Tes</a>
             <a href="#" class="sidebar-link" data-section="testimonials"><i class="fas fa-star"></i> Testimoni</a>
             <a href="#" class="sidebar-link" data-section="toefl"><i class="fas fa-certificate"></i> TOEFL</a>
             <div class="sidebar-divider"></div>
@@ -317,6 +318,41 @@
 <section class="admin-section" id="section-qr-pages">
     <div class="section-toolbar"><h3>QR Code Halaman Website</h3></div>
     <div id="qrPagesGrid" class="qr-pages-grid"></div>
+</section>
+
+<!-- PENDAFTARAN TES -->
+<section class="admin-section" id="section-test-reg">
+    <div class="section-toolbar">
+        <h3>Pendaftaran Tes</h3>
+        <select id="testRegFilter" onchange="loadTestRegs()" style="padding:8px 12px;border:1px solid #ddd;border-radius:8px">
+            <option value="">Semua</option>
+            <option value="checking">Checking</option>
+            <option value="valid">Valid</option>
+            <option value="info_sent">Info Terkirim</option>
+            <option value="rejected">Ditolak</option>
+        </select>
+    </div>
+    <div class="data-table-container">
+        <table class="data-table">
+            <thead><tr><th>Kode</th><th>Nama</th><th>Tes</th><th>Total</th><th>Status</th><th>Aksi</th></tr></thead>
+            <tbody id="testRegTableBody"><tr><td colspan="6" class="loading-cell"><div class="spinner"></div></td></tr></tbody>
+        </table>
+    </div>
+    <!-- Modal Detail -->
+    <div id="testDetailModal" class="print-preview-modal" style="display:none">
+        <div class="print-modal-content" style="max-width:700px">
+            <div class="print-modal-header"><h4>Detail Pendaftaran Tes</h4><button onclick="closePrintPreview('testDetailModal')" class="btn-close">&times;</button></div>
+            <div id="testDetailContent"></div>
+            <div class="print-actions"><button class="btn btn-outline" onclick="closePrintPreview('testDetailModal')">Tutup</button></div>
+        </div>
+    </div>
+    <!-- Modal Generate Info -->
+    <div id="testInfoModal" class="print-preview-modal" style="display:none">
+        <div class="print-modal-content" style="max-width:600px">
+            <div class="print-modal-header"><h4><i class="fas fa-key"></i> Generate Info Tes</h4><button onclick="closePrintPreview('testInfoModal')" class="btn-close">&times;</button></div>
+            <div id="testInfoContent"></div>
+        </div>
+    </div>
 </section>
 
             <!-- TESTIMONIALS SECTION -->
