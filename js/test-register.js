@@ -160,7 +160,7 @@ async function submitTestReg() {
 
 function sendAdminEmailNotification(data) {
     var SERVICE_ID = 'service_siec';       // ← GANTI dengan Service ID Anda
-    var TEMPLATE_ID = ' template_hm8jzlq';     // ← GANTI dengan Template ID Anda
+    var TEMPLATE_ID = 'template_hm8jzlq';     // ← GANTI dengan Template ID Anda
     var PUBLIC_KEY = 'khzQQWWoH8FvYAW9Z';     // ← GANTI dengan Public Key Anda
 
     console.log('📧 Attempting to send email notification...');
