@@ -382,9 +382,9 @@ sendTranslationEmailNotification({
 }
 
 function sendTranslationEmailNotification(data) {
-    var SERVICE_ID = 'service_xxxxxxx';        // ← GANTI dengan Service ID Anda
-    var TEMPLATE_ID = 'template_yyyyyyy';      // ← GANTI dengan Template ID BARU untuk terjemahan
-    var PUBLIC_KEY = 'xxxxxxxxxxxxxxxxx';      // ← GANTI dengan Public Key Anda
+    var SERVICE_ID = 'service_siec';        // ← GANTI dengan Service ID Anda
+    var TEMPLATE_ID = 'template_6covnc6';      // ← GANTI dengan Template ID BARU untuk terjemahan
+    var PUBLIC_KEY = 'khzQQWWoH8FvYAW9Z';      // ← GANTI dengan Public Key Anda
 
     console.log('📧 Sending translation registration email...');
 
