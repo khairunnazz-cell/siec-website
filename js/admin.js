@@ -2567,7 +2567,9 @@ async function loadSignatures() {
         tb.innerHTML = r.data.map(function(s) {
             var badge = s.is_valid
                 ? '<span class="status-badge status-published">✓ Valid</span>'
-                : '<span class="status-badge status-draft">⛔ Dinonaktifkan</span>';
+                : '<span class="status-badge status-draft">⛔ Nonaktif</span>';
+
+            var docNameSafe = (s.document_name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
 
             return '<tr>' +
                 '<td data-label="ID"><strong style="color:var(--primary);font-size:0.8rem">' + s.signature_id + '</strong></td>' +
@@ -2576,7 +2578,8 @@ async function loadSignatures() {
                 '<td data-label="Tanggal">' + formatDate(s.signed_date) + '</td>' +
                 '<td data-label="Status">' + badge + '</td>' +
                 '<td data-label=""><div class="action-buttons">' +
-                '<button class="btn btn-sm btn-primary" onclick="showSignatureQr(\'' + s.signature_id + '\',\'' + s.document_name.replace(/'/g, "\\'") + '\')" title="Lihat QR"><i class="fas fa-qrcode"></i></button> ' +
+                '<button class="btn btn-sm btn-primary" onclick="showSignatureQr(\'' + s.signature_id + '\',\'' + docNameSafe + '\')" title="Lihat QR"><i class="fas fa-qrcode"></i></button> ' +
+                '<button class="btn btn-sm" style="background:#8b5cf6;color:white" onclick="embedSigToPdf(\'' + s.signature_id + '\')" title="Tempel ke PDF"><i class="fas fa-file-pdf"></i> PDF</button> ' +
                 '<a href="signature-info.html?id=' + s.signature_id + '" target="_blank" class="btn btn-sm btn-info" title="Preview"><i class="fas fa-eye"></i></a> ' +
                 (s.is_valid
                     ? '<button class="btn btn-sm btn-warning" onclick="toggleSigValid(\'' + s.id + '\', false)" title="Nonaktifkan"><i class="fas fa-ban"></i></button>'
@@ -2599,4 +2602,223 @@ async function deleteSignature(id) {
     await db.from('digital_signatures').delete().eq('id', id);
     showNotification('Dihapus!');
     loadSignatures();
+}
+// ============================================
+// EMBED QR TTD KE PDF
+// ============================================
+var sigPdfFile = null;
+var currentSigId = null;
+
+function embedSigToPdf(sigId) {
+    currentSigId = sigId;
+    sigPdfFile = null;
+
+    var modal = document.createElement('div');
+    modal.className = 'review-modal';
+    modal.id = 'embedSigModal';
+    modal.innerHTML =
+        '<div class="review-modal-content" style="max-width:850px">' +
+        '<div class="review-modal-header">' +
+        '<h3><i class="fas fa-file-signature"></i> Tempel QR TTD ke PDF</h3>' +
+        '<button onclick="closeEmbedSigModal()" class="btn-close">&times;</button>' +
+        '</div>' +
+        '<div class="review-modal-body">' +
+        '<div style="background:#dbeafe;padding:12px;border-radius:8px;margin-bottom:16px">' +
+        '<p style="margin:0"><b>ID TTD:</b> ' + sigId + '</p>' +
+        '<p style="margin:0;color:#1e40af;font-size:0.85rem"><i class="fas fa-info-circle"></i> Upload PDF → drag QR ke posisi → simpan</p>' +
+        '</div>' +
+
+        '<div class="upload-box">' +
+        '<h5><i class="fas fa-cloud-upload-alt"></i> Upload File PDF</h5>' +
+        '<div class="file-upload-area">' +
+        '<input type="file" id="sigPdfFile" accept=".pdf" onchange="handleSigPdfFile(this)">' +
+        '<label for="sigPdfFile" class="file-upload-label">' +
+        '<i class="fas fa-file-pdf"></i><span>Pilih file PDF</span>' +
+        '<span class="file-hint">PDF max 10MB</span>' +
+        '</label>' +
+        '</div>' +
+        '<div id="sigPdfFileInfo" class="file-info" style="display:none">' +
+        '<i class="fas fa-file-pdf"></i><span id="sigPdfFileName">-</span>' +
+        '<button type="button" onclick="removeSigPdf()" class="btn-remove-file"><i class="fas fa-times"></i></button>' +
+        '</div>' +
+        '</div>' +
+
+        '<div id="sigLivePreview" class="live-preview-container" style="display:none">' +
+        '<div class="live-preview-header"><h6><i class="fas fa-hand-pointer"></i> Drag QR TTD ke posisi yang diinginkan</h6></div>' +
+        '<div class="live-preview-doc"><div class="live-preview-page" id="sigPreviewPage">' +
+        '<iframe id="sigPreviewFrame" style="display:none;width:100%;border:none"></iframe>' +
+        '<div id="sigQrDrag" class="qr-doc-overlay" style="left:80%;top:85%;position:absolute">' +
+        '<div id="sigQrPreview" style="display:inline-block"></div>' +
+        '<div class="qr-doc-id">' + sigId + '</div>' +
+        '</div>' +
+        '</div></div>' +
+        '<div class="position-indicator">' +
+        '<span>X:<strong id="sigEmbedPosX">80%</strong> Y:<strong id="sigEmbedPosY">85%</strong></span>' +
+        '<span>|</span>' +
+        '<button type="button" onclick="sigQrSizeDown()" class="btn-size">−</button>' +
+        '<input type="range" id="sigQrSize" min="40" max="200" value="100" style="width:80px" oninput="sigResizeQr()">' +
+        '<button type="button" onclick="sigQrSizeUp()" class="btn-size">+</button>' +
+        '<strong id="sigQrSizeVal">100px</strong>' +
+        '</div>' +
+        '</div>' +
+
+        '<div class="review-actions">' +
+        '<button class="btn btn-primary" onclick="saveSigPdf()" id="saveSigPdfBtn"><i class="fas fa-save"></i> Simpan PDF dengan QR TTD</button>' +
+        '<button class="btn btn-outline" onclick="closeEmbedSigModal()">Batal</button>' +
+        '</div>' +
+        '</div>' +
+        '</div>';
+    document.body.appendChild(modal);
+}
+
+function closeEmbedSigModal() {
+    var m = document.getElementById('embedSigModal');
+    if (m) m.remove();
+    sigPdfFile = null;
+    currentSigId = null;
+}
+
+function handleSigPdfFile(input) {
+    var f = input.files[0];
+    if (!f) return;
+    if (f.size > 10485760) { showNotification('Max 10MB!', 'error'); input.value = ''; return; }
+    if (f.type !== 'application/pdf') { showNotification('Harus PDF!', 'error'); input.value = ''; return; }
+
+    sigPdfFile = f;
+    document.getElementById('sigPdfFileInfo').style.display = 'flex';
+    document.getElementById('sigPdfFileName').textContent = f.name;
+    document.getElementById('sigLivePreview').style.display = 'block';
+
+    var page = document.getElementById('sigPreviewPage');
+    var fr = document.getElementById('sigPreviewFrame');
+
+    var reader = new FileReader();
+    reader.onload = async function(e) {
+        try {
+            var pdfDoc = await PDFLib.PDFDocument.load(e.target.result);
+            var pg = pdfDoc.getPages()[0];
+            var pw = pg.getWidth(), ph = pg.getHeight();
+            var cw = page.parentElement.offsetWidth || 600;
+            var ch = Math.round(cw * (ph / pw));
+            page.style.width = cw + 'px';
+            page.style.height = ch + 'px';
+            if (fr) { fr.src = URL.createObjectURL(f); fr.style.display = 'block'; fr.style.height = ch + 'px'; }
+
+            var sigUrl = location.origin + '/signature-info.html?id=' + currentSigId;
+            setTimeout(function() {
+                generateQr('sigQrPreview', sigUrl, 100);
+            }, 600);
+            setTimeout(function() { initSigDrag(); }, 1500);
+        } catch (err) {
+            console.error(err);
+            page.style.height = '700px';
+            if (fr) { fr.src = URL.createObjectURL(f); fr.style.display = 'block'; fr.style.height = '700px'; }
+            var sigUrl2 = location.origin + '/signature-info.html?id=' + currentSigId;
+            setTimeout(function() { generateQr('sigQrPreview', sigUrl2, 100); }, 600);
+            setTimeout(function() { initSigDrag(); }, 1500);
+        }
+    };
+    reader.readAsArrayBuffer(f);
+}
+
+function removeSigPdf() {
+    sigPdfFile = null;
+    var f = document.getElementById('sigPdfFile'); if (f) f.value = '';
+    document.getElementById('sigPdfFileInfo').style.display = 'none';
+    document.getElementById('sigLivePreview').style.display = 'none';
+}
+
+function initSigDrag() {
+    var el = document.getElementById('sigQrDrag');
+    var co = document.getElementById('sigPreviewPage');
+    if (!el || !co) return;
+    if (co.offsetWidth === 0) { setTimeout(initSigDrag, 500); return; }
+
+    var d = false, sx = 0, sy = 0, ol = 0, ot = 0;
+    function st(x, y) { d = true; el.classList.add('dragging'); sx = x; sy = y; ol = el.offsetLeft; ot = el.offsetTop; }
+    function mv(x, y) {
+        if (!d) return;
+        var cw = co.offsetWidth, ch = co.offsetHeight;
+        var nl = Math.max(0, Math.min(ol + (x - sx), cw - el.offsetWidth));
+        var nt = Math.max(0, Math.min(ot + (y - sy), ch - el.offsetHeight));
+        el.style.left = nl + 'px'; el.style.top = nt + 'px';
+        var cx = nl + el.offsetWidth / 2, cy = nt + el.offsetHeight / 2;
+        var px = Math.max(5, Math.min(95, Math.round(cx / cw * 100)));
+        var py = Math.max(5, Math.min(95, Math.round(cy / ch * 100)));
+        document.getElementById('sigEmbedPosX').textContent = px + '%';
+        document.getElementById('sigEmbedPosY').textContent = py + '%';
+    }
+    function en() { if (!d) return; d = false; el.classList.remove('dragging'); }
+    el.onmousedown = function(e) { st(e.clientX, e.clientY); e.preventDefault(); };
+    document.addEventListener('mousemove', function(e) { mv(e.clientX, e.clientY); });
+    document.addEventListener('mouseup', en);
+    el.ontouchstart = function(e) { var t = e.touches[0]; st(t.clientX, t.clientY); e.preventDefault(); };
+    document.addEventListener('touchmove', function(e) { if (!d) return; var t = e.touches[0]; mv(t.clientX, t.clientY); e.preventDefault(); }, { passive: false });
+    document.addEventListener('touchend', en);
+}
+
+function sigResizeQr() {
+    var s = document.getElementById('sigQrSize');
+    var v = parseInt(s.value);
+    document.getElementById('sigQrSizeVal').textContent = v + 'px';
+    if (currentSigId) {
+        var sigUrl = location.origin + '/signature-info.html?id=' + currentSigId;
+        generateQr('sigQrPreview', sigUrl, v);
+    }
+}
+
+function sigQrSizeUp() { var s = document.getElementById('sigQrSize'); s.value = Math.min(parseInt(s.value) + 10, 200); sigResizeQr(); }
+function sigQrSizeDown() { var s = document.getElementById('sigQrSize'); s.value = Math.max(parseInt(s.value) - 10, 40); sigResizeQr(); }
+
+async function saveSigPdf() {
+    if (!sigPdfFile) { showNotification('Upload PDF dulu!', 'error'); return; }
+    if (!currentSigId) return;
+
+    var btn = document.getElementById('saveSigPdfBtn');
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Memproses...';
+    btn.disabled = true;
+
+    try {
+        var el = document.getElementById('sigQrDrag');
+        var co = document.getElementById('sigPreviewPage');
+        var cx = el.offsetLeft + el.offsetWidth / 2;
+        var cy = el.offsetTop + el.offsetHeight / 2;
+        var posX = Math.max(5, Math.min(95, Math.round(cx / co.offsetWidth * 100)));
+        var posY = Math.max(5, Math.min(95, Math.round(cy / co.offsetHeight * 100)));
+        var qrSize = parseInt(document.getElementById('sigQrSize').value) || 100;
+
+        var sigUrl = location.origin + '/signature-info.html?id=' + currentSigId;
+        var modifiedPdf = await embedQrInPdf(sigPdfFile, sigUrl, currentSigId, posX, posY, qrSize);
+
+        // Download langsung
+        var downloadUrl = URL.createObjectURL(modifiedPdf);
+        var a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = 'TTD-' + currentSigId + '-' + sigPdfFile.name;
+        a.click();
+
+        // Juga upload ke storage untuk reference
+        var nm = 'signatures/' + Date.now() + '-' + Math.random().toString(36).substr(2, 9) + '.pdf';
+        var r = await db.storage.from('uploads').upload(nm, modifiedPdf, { cacheControl: '3600', upsert: false });
+        var fileUrl = '';
+        if (!r.error) {
+            fileUrl = db.storage.from('uploads').getPublicUrl(nm).data.publicUrl;
+        }
+
+        // Update signature record dengan URL dokumen
+        if (fileUrl) {
+            await db.from('digital_signatures').update({
+                document_url: fileUrl,
+                updated_at: new Date().toISOString()
+            }).eq('signature_id', currentSigId);
+        }
+
+        showNotification('✅ PDF dengan QR TTD berhasil! File didownload.');
+        closeEmbedSigModal();
+        loadSignatures();
+    } catch (e) {
+        showNotification('Error: ' + e.message, 'error');
+        btn.innerHTML = '<i class="fas fa-save"></i> Simpan PDF dengan QR TTD';
+        btn.disabled = false;
+    }
 }
