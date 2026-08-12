@@ -2672,7 +2672,21 @@ function embedSigToPdf(sigId) {
         '</div>' +
         '</div>' +
         '</div>';
-    document.body.appendChild(modal);
+        // Load saved position
+    setTimeout(function() {
+        var saved = localStorage.getItem('siec_sig_qr_pos');
+        if (saved) {
+            try {
+                var pos = JSON.parse(saved);
+                var sz = document.getElementById('sigQrSize');
+                if (sz && pos.size) { sz.value = pos.size; document.getElementById('sigQrSizeVal').textContent = pos.size + 'px'; }
+                if (pos.showId === false) { document.getElementById('sigShowId').checked = false; }
+                if (pos.showScan === false) { document.getElementById('sigShowScan').checked = false; }
+                toggleSigLabels();
+            } catch (e) {}
+        }
+    }, 200);
+        document.body.appendChild(modal);
 }
 
 function toggleSigLabels() {
@@ -2722,6 +2736,27 @@ function handleSigPdfFile(input) {
                 generateQr('sigQrPreview', sigUrl, 100);
             }, 600);
             setTimeout(function() { initSigDrag(); }, 1500);
+                            // Restore saved position after drag init
+                setTimeout(function() {
+                    var saved = localStorage.getItem('siec_sig_qr_pos');
+                    if (saved) {
+                        try {
+                            var pos = JSON.parse(saved);
+                            var drag = document.getElementById('sigQrDrag');
+                            var cont = document.getElementById('sigPreviewPage');
+                            if (drag && cont && cont.offsetWidth > 0) {
+                                var nl = (pos.x / 100) * cont.offsetWidth - drag.offsetWidth / 2;
+                                var nt = (pos.y / 100) * cont.offsetHeight - drag.offsetHeight / 2;
+                                nl = Math.max(0, Math.min(nl, cont.offsetWidth - drag.offsetWidth));
+                                nt = Math.max(0, Math.min(nt, cont.offsetHeight - drag.offsetHeight));
+                                drag.style.left = nl + 'px';
+                                drag.style.top = nt + 'px';
+                                document.getElementById('sigEmbedPosX').textContent = pos.x + '%';
+                                document.getElementById('sigEmbedPosY').textContent = pos.y + '%';
+                            }
+                        } catch (e) {}
+                    }
+                }, 2000);
         } catch (err) {
             console.error(err);
             page.style.height = '700px';
@@ -2801,6 +2836,14 @@ async function saveSigPdf() {
         var qrSize = parseInt(document.getElementById('sigQrSize').value) || 100;
         var showId = document.getElementById('sigShowId').checked;
         var showScan = document.getElementById('sigShowScan').checked;
+                // Save position untuk next time
+        localStorage.setItem('siec_sig_qr_pos', JSON.stringify({
+            x: posX,
+            y: posY,
+            size: qrSize,
+            showId: showId,
+            showScan: showScan
+        }));
 
         var sigUrl = location.origin + '/signature-info.html?id=' + currentSigId;
 
