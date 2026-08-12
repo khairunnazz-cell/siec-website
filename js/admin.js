@@ -2649,7 +2649,8 @@ function embedSigToPdf(sigId) {
         '<iframe id="sigPreviewFrame" style="display:none;width:100%;border:none"></iframe>' +
         '<div id="sigQrDrag" class="qr-doc-overlay" style="left:80%;top:85%;position:absolute">' +
         '<div id="sigQrPreview" style="display:inline-block"></div>' +
-        '<div class="qr-doc-id">' + sigId + '</div>' +
+        '<div id="sigQrIdLabel" class="qr-doc-id">' + sigId + '</div>' +
+        '<div id="sigQrScanLabel" style="font-size:5px;color:#666;text-align:center;margin-top:1px">Scan untuk verifikasi TTD</div>' +
         '</div>' +
         '</div></div>' +
         '<div class="position-indicator">' +
@@ -2659,6 +2660,9 @@ function embedSigToPdf(sigId) {
         '<input type="range" id="sigQrSize" min="40" max="200" value="100" style="width:80px" oninput="sigResizeQr()">' +
         '<button type="button" onclick="sigQrSizeUp()" class="btn-size">+</button>' +
         '<strong id="sigQrSizeVal">100px</strong>' +
+        '<span>|</span>' +
+        '<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="sigShowId" checked onchange="toggleSigLabels()"><span>ID</span></label>' +
+        '<label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="checkbox" id="sigShowScan" checked onchange="toggleSigLabels()"><span>Scan</span></label>' +
         '</div>' +
         '</div>' +
 
@@ -2669,6 +2673,15 @@ function embedSigToPdf(sigId) {
         '</div>' +
         '</div>';
     document.body.appendChild(modal);
+}
+
+function toggleSigLabels() {
+    var showId = document.getElementById('sigShowId').checked;
+    var showScan = document.getElementById('sigShowScan').checked;
+    var idLabel = document.getElementById('sigQrIdLabel');
+    var scanLabel = document.getElementById('sigQrScanLabel');
+    if (idLabel) idLabel.style.display = showId ? 'block' : 'none';
+    if (scanLabel) scanLabel.style.display = showScan ? 'block' : 'none';
 }
 
 function closeEmbedSigModal() {
@@ -2786,9 +2799,97 @@ async function saveSigPdf() {
         var posX = Math.max(5, Math.min(95, Math.round(cx / co.offsetWidth * 100)));
         var posY = Math.max(5, Math.min(95, Math.round(cy / co.offsetHeight * 100)));
         var qrSize = parseInt(document.getElementById('sigQrSize').value) || 100;
+        var showId = document.getElementById('sigShowId').checked;
+        var showScan = document.getElementById('sigShowScan').checked;
 
         var sigUrl = location.origin + '/signature-info.html?id=' + currentSigId;
-        var modifiedPdf = await embedQrInPdf(sigPdfFile, sigUrl, currentSigId, posX, posY, qrSize);
+
+        // Embed QR ke PDF
+        var ab = await sigPdfFile.arrayBuffer();
+        var doc = await PDFLib.PDFDocument.load(ab);
+        var pg = doc.getPages()[0];
+        var pw = pg.getWidth(), ph = pg.getHeight();
+
+        // Download QR image
+        var qrImgUrl = getQrUrl(sigUrl, 300);
+        var resp = await fetch(qrImgUrl);
+        if (!resp.ok) throw new Error('QR fetch fail');
+        var qrBuf = await resp.arrayBuffer();
+        var qrImg = await doc.embedPng(qrBuf);
+
+        var sz = qrSize;
+        var adjustedY = (posY - 5) / 90 * 100;
+        if (adjustedY < 0) adjustedY = 0;
+        if (adjustedY > 100) adjustedY = 100;
+        var pdfX = (posX / 100) * pw - (sz / 2);
+        var pdfY = ph - ((adjustedY / 100) * ph) - (sz / 2);
+        if (pdfX < 5) pdfX = 5;
+        if (pdfX > pw - sz - 5) pdfX = pw - sz - 5;
+
+        // Hitung tinggi total (QR + text di bawah)
+        var extraHeight = 0;
+        if (showId) extraHeight += 12;
+        if (showScan) extraHeight += 10;
+
+        if (pdfY < (5 + extraHeight)) pdfY = 5 + extraHeight;
+        if (pdfY > ph - sz - 5) pdfY = ph - sz - 5;
+
+        // Background putih
+        pg.drawRectangle({
+            x: pdfX - 4,
+            y: pdfY - 4 - extraHeight,
+            width: sz + 8,
+            height: sz + 8 + extraHeight,
+            color: PDFLib.rgb(1, 1, 1)
+        });
+
+        // QR Code
+        pg.drawImage(qrImg, { x: pdfX, y: pdfY, width: sz, height: sz });
+
+        // Font untuk text
+        var font = await doc.embedFont(PDFLib.StandardFonts.Helvetica);
+
+        // ID text
+        if (showId) {
+            var idText = currentSigId;
+            var idWidth = font.widthOfTextAtSize(idText, 7);
+            pg.drawText(idText, {
+                x: pdfX + (sz - idWidth) / 2,
+                y: pdfY - 10,
+                size: 7,
+                font: font,
+                color: PDFLib.rgb(0, 0, 0)
+            });
+        }
+
+        // Scan text
+        if (showScan) {
+            var scanText = 'Scan untuk verifikasi TTD';
+            var scanWidth = font.widthOfTextAtSize(scanText, 5);
+            var scanY = showId ? pdfY - 20 : pdfY - 10;
+            pg.drawText(scanText, {
+                x: pdfX + (sz - scanWidth) / 2,
+                y: scanY,
+                size: 5,
+                font: font,
+                color: PDFLib.rgb(0.5, 0.5, 0.5)
+            });
+        }
+
+        // Logo di tengah QR
+        try {
+            var lr = await fetch(LOGO_URL);
+            if (lr.ok) {
+                var lb = await lr.arrayBuffer();
+                var li = await doc.embedPng(lb);
+                var ls = sz * 0.22;
+                pg.drawCircle({ x: pdfX + sz / 2, y: pdfY + sz / 2, size: ls / 2 + 2, color: PDFLib.rgb(1, 1, 1) });
+                pg.drawImage(li, { x: pdfX + (sz - ls) / 2, y: pdfY + (sz - ls) / 2, width: ls, height: ls });
+            }
+        } catch (e) {}
+
+        var pdfBytes = await doc.save();
+        var modifiedPdf = new Blob([pdfBytes], { type: 'application/pdf' });
 
         // Download langsung
         var downloadUrl = URL.createObjectURL(modifiedPdf);
@@ -2797,23 +2898,18 @@ async function saveSigPdf() {
         a.download = 'TTD-' + currentSigId + '-' + sigPdfFile.name;
         a.click();
 
-        // Juga upload ke storage untuk reference
+        // Upload ke storage
         var nm = 'signatures/' + Date.now() + '-' + Math.random().toString(36).substr(2, 9) + '.pdf';
         var r = await db.storage.from('uploads').upload(nm, modifiedPdf, { cacheControl: '3600', upsert: false });
-        var fileUrl = '';
         if (!r.error) {
-            fileUrl = db.storage.from('uploads').getPublicUrl(nm).data.publicUrl;
-        }
-
-        // Update signature record dengan URL dokumen
-        if (fileUrl) {
+            var fileUrl = db.storage.from('uploads').getPublicUrl(nm).data.publicUrl;
             await db.from('digital_signatures').update({
                 document_url: fileUrl,
                 updated_at: new Date().toISOString()
             }).eq('signature_id', currentSigId);
         }
 
-        showNotification('✅ PDF dengan QR TTD berhasil! File didownload.');
+        showNotification('✅ PDF dengan QR TTD berhasil didownload!');
         closeEmbedSigModal();
         loadSignatures();
     } catch (e) {
