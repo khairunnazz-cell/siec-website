@@ -27,6 +27,7 @@
             <a href="#" class="sidebar-link" data-section="penerjemah"><i class="fas fa-user-tie"></i> Penerjemah</a>
             <a href="#" class="sidebar-link" data-section="qr-pages"><i class="fas fa-qrcode"></i> QR Halaman</a>
             <a href="#" class="sidebar-link" data-section="test-reg"><i class="fas fa-clipboard-check"></i> Pendaftaran Tes</a>
+            <a href="#" class="sidebar-link" data-section="signatures"><i class="fas fa-file-signature"></i> Tanda Tangan Digital</a>
             <a href="#" class="sidebar-link" data-section="testimonials"><i class="fas fa-star"></i> Testimoni</a>
             <a href="#" class="sidebar-link" data-section="toefl"><i class="fas fa-certificate"></i> TOEFL</a>
             <div class="sidebar-divider"></div>
@@ -352,6 +353,118 @@
             <div class="print-modal-header"><h4><i class="fas fa-key"></i> Generate Info Tes</h4><button onclick="closePrintPreview('testInfoModal')" class="btn-close">&times;</button></div>
             <div id="testInfoContent"></div>
         </div>
+    </div>
+</section>
+<!-- TANDA TANGAN DIGITAL -->
+<section class="admin-section" id="section-signatures">
+    <div class="section-toolbar">
+        <h3>Tanda Tangan Digital</h3>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn btn-outline" onclick="showSignerProfileForm()"><i class="fas fa-user-cog"></i> Profil Penandatangan</button>
+            <button class="btn btn-primary" onclick="showSignatureForm()"><i class="fas fa-plus"></i> Buat TTD Baru</button>
+        </div>
+    </div>
+
+    <!-- Info Cards -->
+    <div style="background:#dbeafe;padding:16px;border-radius:12px;margin-bottom:16px">
+        <p style="margin:0;color:#1e40af"><i class="fas fa-info-circle"></i> <strong>Cara Kerja:</strong> Buat TTD → Dapatkan QR Code → Tempel QR di dokumen → Orang scan QR → Muncul info lengkap tanda tangan Anda</p>
+    </div>
+
+    <!-- Form Signer Profile -->
+    <div id="signerProfileForm" class="admin-form" style="display:none">
+        <div class="form-card">
+            <h4><i class="fas fa-user-cog"></i> Profil Penandatangan</h4>
+            <input type="hidden" id="spId">
+            <div class="form-row">
+                <div class="form-group"><label>Nama Lengkap *</label><input type="text" id="spName" required></div>
+                <div class="form-group"><label>Jabatan/Gelar</label><input type="text" id="spTitle" placeholder="Direktur, M.Pd."></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Role</label><input type="text" id="spRole" placeholder="Direktur SIEC"></div>
+                <div class="form-group"><label>Institusi</label><input type="text" id="spInst" value="SIEC - Syaf Intensive English Course"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Email</label><input type="email" id="spEmail"></div>
+                <div class="form-group"><label>No. WhatsApp</label><input type="text" id="spPhone"></div>
+            </div>
+            <div class="form-group"><label class="checkbox-label"><input type="checkbox" id="spDefault"><span>Jadikan default</span></label></div>
+            <div class="form-actions">
+                <button class="btn btn-primary" onclick="saveSignerProfile()"><i class="fas fa-save"></i> Simpan</button>
+                <button class="btn btn-outline" onclick="hideSignerProfileForm()">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- List Profiles -->
+    <div id="signerProfilesList" style="margin-bottom:20px"></div>
+
+    <!-- Form Signature -->
+    <div id="signatureForm" class="admin-form" style="display:none">
+        <div class="form-card">
+            <h4 id="sigFormTitle">Buat Tanda Tangan Digital Baru</h4>
+            <input type="hidden" id="sigId">
+            <div class="form-group">
+                <label>Pilih Penandatangan *</label>
+                <select id="sigSignerId" required>
+                    <option value="">-- Pilih Penandatangan --</option>
+                </select>
+                <p class="hint" style="font-size:0.75rem;color:#666;margin-top:4px">Jika belum ada, klik tombol "Profil Penandatangan" di atas</p>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Nama Dokumen *</label>
+                    <input type="text" id="sigDocName" required placeholder="Sertifikat TOEFL a.n. Ahmad">
+                </div>
+                <div class="form-group">
+                    <label>Jenis Dokumen</label>
+                    <select id="sigDocType">
+                        <option value="Sertifikat TOEFL">Sertifikat TOEFL</option>
+                        <option value="Sertifikat Terjemahan">Sertifikat Terjemahan</option>
+                        <option value="Ijazah Kursus">Ijazah Kursus</option>
+                        <option value="Surat Keterangan">Surat Keterangan</option>
+                        <option value="Surat Rekomendasi">Surat Rekomendasi</option>
+                        <option value="Perjanjian">Perjanjian</option>
+                        <option value="Lainnya">Lainnya</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Deskripsi Dokumen</label>
+                <textarea id="sigDocDesc" rows="3" placeholder="Detail singkat tentang dokumen ini"></textarea>
+            </div>
+            <div class="form-group">
+                <label>URL Dokumen (Opsional)</label>
+                <input type="text" id="sigDocUrl" placeholder="https://... (link ke PDF dokumen)">
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Tanggal TTD</label><input type="date" id="sigDate"></div>
+                <div class="form-group"><label>Waktu</label><input type="text" id="sigTime" placeholder="10:30 WIB"></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Lokasi</label><input type="text" id="sigLocation" placeholder="Pekanbaru"></div>
+                <div class="form-group"><label>Catatan</label><input type="text" id="sigNotes"></div>
+            </div>
+            <div class="form-actions">
+                <button class="btn btn-primary" onclick="saveSignature()"><i class="fas fa-save"></i> Buat & Generate QR</button>
+                <button class="btn btn-outline" onclick="hideSignatureForm()">Batal</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal QR Result -->
+    <div id="sigQrModal" class="print-preview-modal" style="display:none">
+        <div class="print-modal-content" style="max-width:500px">
+            <div class="print-modal-header"><h4>✅ QR Code TTD</h4><button onclick="closePrintPreview('sigQrModal')" class="btn-close">&times;</button></div>
+            <div id="sigQrContent"></div>
+        </div>
+    </div>
+
+    <!-- List Signatures -->
+    <div class="data-table-container">
+        <table class="data-table">
+            <thead><tr><th>ID TTD</th><th>Penandatangan</th><th>Dokumen</th><th>Tanggal</th><th>Status</th><th>Aksi</th></tr></thead>
+            <tbody id="signaturesTableBody"><tr><td colspan="6" class="loading-cell"><div class="spinner"></div></td></tr></tbody>
+        </table>
     </div>
 </section>
 

@@ -136,7 +136,12 @@ function switchSection(s) {
     document.querySelectorAll('.sidebar-link').forEach(function(x) { x.classList.remove('active'); });
     var e = document.getElementById('section-' + s); if (e) e.classList.add('active');
     var l = document.querySelector('[data-section="' + s + '"]'); if (l) l.classList.add('active');
-    var m = { 'dashboard': 'Dashboard', 'articles': 'Artikel', 'programs': 'Program', 'terjemahan': 'Terjemahan', 'toefl': 'TOEFL', 'testimonials': 'Testimoni', 'online-reg': 'Pendaftaran Online', 'penerjemah': 'Penerjemah', 'qr-pages': 'QR Halaman', 'test-reg': 'Pendaftaran Tes' };
+    var m = { 'dashboard': 'Dashboard', 'articles': 'Artikel', 'programs': 'Program', 'terjemahan': 'Terjemahan', 'toefl': 'TOEFL', 'testimonials': 'Testimoni', 'online-reg': 'Pendaftaran Online', 'penerjemah': 'Penerjemah', 'qr-pages': 'QR Halaman', 'test-reg': 'Pendaftaran Tes', 'signatures': 'Tanda Tangan Digital' };
+    if (s === 'signatures') {
+        m['signatures'] = 'Tanda Tangan Digital';
+        loadSignerProfiles();
+        loadSignatures();
+    }
     var t = document.getElementById('pageTitle'); if (t) t.textContent = m[s] || 'Dashboard';
     document.getElementById('adminSidebar').classList.remove('active');
     if (s === 'dashboard') loadAnalytics();
@@ -1548,7 +1553,8 @@ function loadQrPages() {
         { title: 'Cek Status', url: location.origin + '/translation-status.html', icon: 'fas fa-search' },
         { title: 'Pendaftaran Online', url: location.origin + '/register.html', icon: 'fas fa-file-alt' },
         { title: 'WhatsApp SIEC', url: 'https://wa.me/' + WA_NUMBER, icon: 'fab fa-whatsapp' },
-        { title: 'Lokasi (Maps)', url: 'https://maps.app.goo.gl/ew5MKzkz6bvbgb1j6', icon: 'fas fa-map-marker-alt' }
+        { title: 'Lokasi (Maps)', url: 'https://maps.app.goo.gl/ew5MKzkz6bvbgb1j6', icon: 'fas fa-map-marker-alt' },
+        { title: 'Info Tanda Tangan', url: location.origin + '/signature-info.html', icon: 'fas fa-file-signature' }
     ];
 
     var hiddenPages = JSON.parse(localStorage.getItem('siec_hidden_qr_pages') || '[]');
@@ -2350,4 +2356,247 @@ async function deleteTestReg(id) {
     await db.from('test_registrations').delete().eq('id', id);
     showNotification('Dihapus!');
     loadTestRegs();
+}
+// ============================================
+// SIGNER PROFILES
+// ============================================
+function showSignerProfileForm(profile) {
+    var f = document.getElementById('signerProfileForm');
+    f.style.display = 'block';
+    f.scrollIntoView({ behavior: 'smooth' });
+    if (profile) {
+        document.getElementById('spId').value = profile.id;
+        document.getElementById('spName').value = profile.full_name;
+        document.getElementById('spTitle').value = profile.title || '';
+        document.getElementById('spRole').value = profile.role || '';
+        document.getElementById('spInst').value = profile.institution || 'SIEC - Syaf Intensive English Course';
+        document.getElementById('spEmail').value = profile.email || '';
+        document.getElementById('spPhone').value = profile.phone || '';
+        document.getElementById('spDefault').checked = profile.is_default;
+    } else {
+        ['spId', 'spName', 'spTitle', 'spRole', 'spEmail', 'spPhone'].forEach(function(id) {
+            var e = document.getElementById(id); if (e) e.value = '';
+        });
+        document.getElementById('spInst').value = 'SIEC - Syaf Intensive English Course';
+        document.getElementById('spDefault').checked = false;
+    }
+}
+
+function hideSignerProfileForm() { document.getElementById('signerProfileForm').style.display = 'none'; }
+
+async function saveSignerProfile() {
+    var name = document.getElementById('spName').value.trim();
+    if (!name) { showNotification('Nama wajib!', 'error'); return; }
+
+    var id = document.getElementById('spId').value;
+    var isDefault = document.getElementById('spDefault').checked;
+
+    // Kalau set default, unset default lainnya
+    if (isDefault) {
+        await db.from('signer_profiles').update({ is_default: false }).neq('id', id || '00000000-0000-0000-0000-000000000000');
+    }
+
+    var data = {
+        full_name: name,
+        title: document.getElementById('spTitle').value.trim() || null,
+        role: document.getElementById('spRole').value.trim() || null,
+        institution: document.getElementById('spInst').value.trim() || null,
+        email: document.getElementById('spEmail').value.trim() || null,
+        phone: document.getElementById('spPhone').value.trim() || null,
+        is_default: isDefault
+    };
+
+    try {
+        var r = id ? await db.from('signer_profiles').update(data).eq('id', id) : await db.from('signer_profiles').insert(data);
+        if (r.error) throw r.error;
+        showNotification(id ? '✅ Diperbarui!' : '✅ Profil ditambahkan!');
+        hideSignerProfileForm();
+        loadSignerProfiles();
+    } catch (e) { showNotification('Error: ' + e.message, 'error'); }
+}
+
+async function loadSignerProfiles() {
+    var container = document.getElementById('signerProfilesList');
+    var select = document.getElementById('sigSignerId');
+    if (!container) return;
+
+    try {
+        var r = await db.from('signer_profiles').select('*').order('is_default', { ascending: false });
+        if (!r.data || !r.data.length) {
+            container.innerHTML = '<div style="padding:16px;background:#fef3c7;border:2px solid #f59e0b;border-radius:12px;text-align:center"><p style="color:#78350f;margin:0"><i class="fas fa-exclamation-triangle"></i> Belum ada profil penandatangan. Klik <strong>"Profil Penandatangan"</strong> untuk membuat.</p></div>';
+            if (select) select.innerHTML = '<option value="">-- Buat profil dulu --</option>';
+            return;
+        }
+
+        container.innerHTML = '<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px">' +
+            r.data.map(function(p) {
+                var initials = p.full_name.split(' ').map(function(w){return w[0];}).slice(0,2).join('').toUpperCase();
+                return '<div style="background:white;border:2px solid ' + (p.is_default ? '#10b981' : '#e2e8f0') + ';border-radius:12px;padding:16px;text-align:center;position:relative">' +
+                    (p.is_default ? '<span style="position:absolute;top:8px;right:8px;background:#10b981;color:white;font-size:0.65rem;padding:3px 8px;border-radius:10px;font-weight:700">DEFAULT</span>' : '') +
+                    '<div style="width:60px;height:60px;background:linear-gradient(135deg,#2563eb,#7c3aed);color:white;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:1.5rem;margin:0 auto 8px">' + initials + '</div>' +
+                    '<div style="font-weight:700;color:#0f172a">' + p.full_name + '</div>' +
+                    (p.title ? '<div style="font-size:0.8rem;color:#64748b">' + p.title + '</div>' : '') +
+                    (p.role ? '<div style="font-size:0.75rem;color:#2563eb;margin-top:4px">' + p.role + '</div>' : '') +
+                    '<div style="display:flex;gap:6px;margin-top:12px;justify-content:center">' +
+                    '<button class="btn btn-sm btn-primary" onclick=\'showSignerProfileForm(' + JSON.stringify(p) + ')\'>Edit</button>' +
+                    '<button class="btn btn-sm btn-danger" onclick="deleteSignerProfile(\'' + p.id + '\')">Hapus</button>' +
+                    '</div>' +
+                    '</div>';
+            }).join('') + '</div>';
+
+        // Update dropdown di signature form
+        if (select) {
+            select.innerHTML = '<option value="">-- Pilih --</option>' +
+                r.data.map(function(p) {
+                    return '<option value="' + p.id + '"' + (p.is_default ? ' selected' : '') + '>' + p.full_name + (p.title ? ' (' + p.title + ')' : '') + '</option>';
+                }).join('');
+        }
+    } catch (e) { console.error(e); }
+}
+
+async function deleteSignerProfile(id) {
+    if (!confirm('Hapus profil ini? Data TTD yang sudah dibuat tetap ada.')) return;
+    await db.from('signer_profiles').delete().eq('id', id);
+    showNotification('Dihapus!');
+    loadSignerProfiles();
+}
+
+// ============================================
+// SIGNATURES
+// ============================================
+function showSignatureForm() {
+    var f = document.getElementById('signatureForm');
+    f.style.display = 'block';
+    f.scrollIntoView({ behavior: 'smooth' });
+    ['sigId', 'sigDocName', 'sigDocDesc', 'sigDocUrl', 'sigTime', 'sigLocation', 'sigNotes'].forEach(function(id) {
+        var e = document.getElementById(id); if (e) e.value = '';
+    });
+    document.getElementById('sigDate').value = new Date().toISOString().split('T')[0];
+    document.getElementById('sigLocation').value = 'Pekanbaru, Riau';
+}
+
+function hideSignatureForm() { document.getElementById('signatureForm').style.display = 'none'; }
+
+async function saveSignature() {
+    var signerId = document.getElementById('sigSignerId').value;
+    var docName = document.getElementById('sigDocName').value.trim();
+
+    if (!signerId) { showNotification('Pilih penandatangan!', 'error'); return; }
+    if (!docName) { showNotification('Nama dokumen wajib!', 'error'); return; }
+
+    try {
+        // Get signer info
+        var signer = (await db.from('signer_profiles').select('*').eq('id', signerId).single()).data;
+        if (!signer) { showNotification('Penandatangan tidak ditemukan!', 'error'); return; }
+
+        var sigId = 'SIG-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substr(2, 4).toUpperCase();
+
+        var data = {
+            signature_id: sigId,
+            signer_name: signer.full_name,
+            signer_title: signer.title,
+            signer_role: signer.role,
+            signer_email: signer.email,
+            signer_phone: signer.phone,
+            document_name: docName,
+            document_type: document.getElementById('sigDocType').value,
+            document_url: document.getElementById('sigDocUrl').value.trim() || null,
+            document_description: document.getElementById('sigDocDesc').value.trim() || null,
+            signed_date: document.getElementById('sigDate').value || new Date().toISOString().split('T')[0],
+            signed_time: document.getElementById('sigTime').value.trim() || null,
+            location: document.getElementById('sigLocation').value.trim() || null,
+            notes: document.getElementById('sigNotes').value.trim() || null,
+            is_valid: true
+        };
+
+        var r = await db.from('digital_signatures').insert(data);
+        if (r.error) throw r.error;
+
+        showNotification('✅ TTD dibuat! QR Code akan muncul.');
+        hideSignatureForm();
+        loadSignatures();
+        showSignatureQr(sigId, docName);
+    } catch (e) { showNotification('Error: ' + e.message, 'error'); }
+}
+
+function showSignatureQr(sigId, docName) {
+    var url = location.origin + '/signature-info.html?id=' + sigId;
+    var qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(url) + '&ecc=H&margin=4';
+    var logoSize = 66;
+
+    document.getElementById('sigQrContent').innerHTML =
+        '<div style="padding:24px;text-align:center">' +
+        '<h3 style="margin-bottom:8px;color:#0f172a">' + docName + '</h3>' +
+        '<p style="color:#64748b;font-size:0.85rem;margin-bottom:16px">ID: <strong>' + sigId + '</strong></p>' +
+
+        '<div style="display:inline-block;position:relative;background:white;padding:16px;border-radius:16px;box-shadow:0 4px 20px rgba(0,0,0,0.1)">' +
+        '<img src="' + qrUrl + '" width="280" height="280" style="display:block">' +
+        '<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:' + logoSize + 'px;height:' + logoSize + 'px;border-radius:50%;overflow:hidden;background:white;border:3px solid white;box-shadow:0 0 0 2px #2563eb">' +
+        '<img src="assets/logo.png" style="width:100%;height:100%;object-fit:contain" onerror="this.parentElement.innerHTML=\'<div style=width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:white><span style=font-weight:800;color:#2563eb;font-size:14px>SIEC</span></div>\'">' +
+        '</div>' +
+        '</div>' +
+
+        '<div style="margin-top:16px;padding:12px;background:#f0fdf4;border-radius:10px;border-left:4px solid #10b981">' +
+        '<p style="margin:0;font-size:0.85rem;color:#065f46">💡 <strong>Cara Pakai:</strong> Print QR ini, atau embed ke PDF dokumen. Scan → tampil info TTD.</p>' +
+        '</div>' +
+
+        '<div style="display:flex;gap:8px;justify-content:center;margin-top:16px;flex-wrap:wrap">' +
+        '<a href="' + qrUrl + '" download="TTD-' + sigId + '.png" class="btn btn-success"><i class="fas fa-download"></i> Download QR</a>' +
+        '<button class="btn btn-primary" onclick="copyToClipboard(\'' + url + '\')"><i class="fas fa-copy"></i> Copy Link</button>' +
+        '<a href="' + url + '" target="_blank" class="btn btn-outline"><i class="fas fa-external-link-alt"></i> Preview</a>' +
+        '</div>' +
+        '</div>';
+
+    document.getElementById('sigQrModal').style.display = 'flex';
+}
+
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text);
+    showNotification('✅ Link disalin!');
+}
+
+async function loadSignatures() {
+    var tb = document.getElementById('signaturesTableBody');
+    if (!tb) return;
+    try {
+        var r = await db.from('digital_signatures').select('*').order('created_at', { ascending: false });
+        if (!r.data || !r.data.length) {
+            tb.innerHTML = '<tr><td colspan="6" class="loading-cell">Belum ada tanda tangan</td></tr>';
+            return;
+        }
+        tb.innerHTML = r.data.map(function(s) {
+            var badge = s.is_valid
+                ? '<span class="status-badge status-published">✓ Valid</span>'
+                : '<span class="status-badge status-draft">⛔ Dinonaktifkan</span>';
+
+            return '<tr>' +
+                '<td data-label="ID"><strong style="color:var(--primary);font-size:0.8rem">' + s.signature_id + '</strong></td>' +
+                '<td data-label="Penandatangan">' + escapeHtml(s.signer_name) + (s.signer_title ? '<br><small style="color:#666">' + s.signer_title + '</small>' : '') + '</td>' +
+                '<td data-label="Dokumen">' + escapeHtml(s.document_name) + '<br><small style="color:#666">' + (s.document_type || '') + '</small></td>' +
+                '<td data-label="Tanggal">' + formatDate(s.signed_date) + '</td>' +
+                '<td data-label="Status">' + badge + '</td>' +
+                '<td data-label=""><div class="action-buttons">' +
+                '<button class="btn btn-sm btn-primary" onclick="showSignatureQr(\'' + s.signature_id + '\',\'' + s.document_name.replace(/'/g, "\\'") + '\')" title="Lihat QR"><i class="fas fa-qrcode"></i></button> ' +
+                '<a href="signature-info.html?id=' + s.signature_id + '" target="_blank" class="btn btn-sm btn-info" title="Preview"><i class="fas fa-eye"></i></a> ' +
+                (s.is_valid
+                    ? '<button class="btn btn-sm btn-warning" onclick="toggleSigValid(\'' + s.id + '\', false)" title="Nonaktifkan"><i class="fas fa-ban"></i></button>'
+                    : '<button class="btn btn-sm btn-success" onclick="toggleSigValid(\'' + s.id + '\', true)" title="Aktifkan"><i class="fas fa-check"></i></button>'
+                ) +
+                ' <button class="btn btn-sm btn-danger" onclick="deleteSignature(\'' + s.id + '\')" title="Hapus"><i class="fas fa-trash"></i></button>' +
+                '</div></td></tr>';
+        }).join('');
+    } catch (e) { console.error(e); }
+}
+
+async function toggleSigValid(id, valid) {
+    await db.from('digital_signatures').update({ is_valid: valid, updated_at: new Date().toISOString() }).eq('id', id);
+    showNotification(valid ? '✅ TTD diaktifkan!' : '⛔ TTD dinonaktifkan!');
+    loadSignatures();
+}
+
+async function deleteSignature(id) {
+    if (!confirm('Hapus tanda tangan ini permanen?')) return;
+    await db.from('digital_signatures').delete().eq('id', id);
+    showNotification('Dihapus!');
+    loadSignatures();
 }

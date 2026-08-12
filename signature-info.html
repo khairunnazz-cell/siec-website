@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Informasi Tanda Tangan Digital - SIEC</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <style>
+    .sig-page { min-height: 100vh; background: linear-gradient(135deg, #f0f9ff, #eff6ff); padding: 40px 20px; }
+    .sig-container { max-width: 700px; margin: 0 auto; background: white; border-radius: 24px; overflow: hidden; box-shadow: 0 20px 60px rgba(0,0,0,0.1); }
+    .sig-header { background: linear-gradient(135deg, #2563eb, #7c3aed); color: white; padding: 32px; text-align: center; }
+    .sig-header img { width: 70px; height: 70px; margin-bottom: 12px; }
+    .sig-header h1 { font-size: 1.5rem; margin: 8px 0; }
+    .sig-header p { opacity: 0.9; font-size: 0.9rem; }
+    .sig-badge { display: inline-flex; align-items: center; gap: 8px; background: rgba(16,185,129,0.2); color: #ecfdf5; padding: 8px 16px; border-radius: 30px; font-weight: 700; margin-top: 12px; font-size: 0.9rem; }
+    .sig-body { padding: 32px; }
+    .sig-signer { text-align: center; padding: 24px; background: #f8fafc; border-radius: 16px; margin-bottom: 24px; }
+    .signer-photo { width: 100px; height: 100px; border-radius: 50%; margin: 0 auto 12px; background: linear-gradient(135deg, #2563eb, #7c3aed); display: flex; align-items: center; justify-content: center; color: white; font-size: 2.5rem; font-weight: 800; overflow: hidden; }
+    .signer-photo img { width: 100%; height: 100%; object-fit: cover; }
+    .signer-name { font-size: 1.4rem; font-weight: 800; color: #0f172a; margin: 8px 0 4px; }
+    .signer-title { color: #64748b; font-size: 0.9rem; margin: 0; }
+    .signer-role { display: inline-block; background: #dbeafe; color: #1e40af; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; margin-top: 8px; }
+    .sig-details { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; }
+    .sig-detail-item { background: #f8fafc; padding: 14px; border-radius: 10px; border-left: 4px solid #2563eb; }
+    .sig-detail-item label { font-size: 0.7rem; color: #64748b; text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 4px; }
+    .sig-detail-item p { color: #0f172a; font-weight: 600; margin: 0; word-break: break-word; }
+    .sig-doc-section { background: #ecfdf5; border: 2px solid #10b981; padding: 20px; border-radius: 16px; margin-top: 20px; }
+    .sig-doc-section h3 { color: #065f46; font-size: 1rem; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .sig-doc-title { font-size: 1.1rem; font-weight: 700; color: #0f172a; margin-bottom: 8px; }
+    .sig-doc-desc { color: #475569; font-size: 0.9rem; line-height: 1.6; }
+    .sig-footer { background: #f8fafc; padding: 20px 32px; text-align: center; border-top: 1px solid #e2e8f0; }
+    .sig-footer p { color: #64748b; font-size: 0.8rem; margin: 4px 0; }
+    .verify-badge { display: inline-flex; align-items: center; gap: 6px; background: #10b981; color: white; padding: 8px 16px; border-radius: 30px; font-weight: 700; font-size: 0.85rem; margin-top: 8px; }
+    .invalid-alert { background: #fef2f2; border: 2px solid #ef4444; padding: 32px; text-align: center; border-radius: 16px; }
+    .invalid-alert h2 { color: #991b1b; margin-bottom: 12px; }
+    .invalid-alert p { color: #7f1d1d; }
+    @media (max-width: 600px) {
+        .sig-details { grid-template-columns: 1fr; }
+        .sig-body { padding: 20px; }
+        .sig-header { padding: 24px 20px; }
+        .signer-photo { width: 80px; height: 80px; font-size: 2rem; }
+        .signer-name { font-size: 1.2rem; }
+    }
+    </style>
+</head>
+<body>
+    <div class="sig-page">
+        <div class="sig-container" id="sigContainer">
+            <div class="sig-body">
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                    <p>Memverifikasi tanda tangan...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="js/app.js"></script>
+    <script>
+    document.addEventListener('DOMContentLoaded', async function() {
+        var params = new URLSearchParams(window.location.search);
+        var sigId = params.get('id');
+        var container = document.getElementById('sigContainer');
+
+        if (!sigId) {
+            container.innerHTML = '<div class="sig-body"><div class="invalid-alert"><h2>❌ ID Tanda Tangan Tidak Ditemukan</h2><p>Silakan scan ulang QR Code atau hubungi SIEC.</p></div></div>';
+            return;
+        }
+
+        try {
+            var r = await db.from('digital_signatures').select('*').eq('signature_id', sigId).single();
+
+            if (!r.data || !r.data.is_valid) {
+                container.innerHTML = '<div class="sig-body"><div class="invalid-alert"><h2>❌ Tanda Tangan Tidak Valid</h2><p>ID <strong>' + sigId + '</strong> tidak ditemukan atau sudah dinonaktifkan.</p><p style="margin-top:12px;font-size:0.85rem"><a href="https://wa.me/6281234567890" style="color:#2563eb;font-weight:700">Hubungi SIEC via WhatsApp</a></p></div></div>';
+                return;
+            }
+
+            var sig = r.data;
+            var initials = sig.signer_name.split(' ').map(function(w){return w[0];}).slice(0,2).join('').toUpperCase();
+
+            container.innerHTML =
+                '<div class="sig-header">' +
+                '<img src="assets/logo.png" alt="SIEC" onerror="this.style.display=\'none\'">' +
+                '<h1>Tanda Tangan Digital</h1>' +
+                '<p>SIEC - Syaf Intensive English Course</p>' +
+                '<div class="sig-badge"><i class="fas fa-check-circle"></i> TERVERIFIKASI</div>' +
+                '</div>' +
+
+                '<div class="sig-body">' +
+                '<div class="sig-signer">' +
+                '<div class="signer-photo">' + initials + '</div>' +
+                '<div class="signer-name">' + sig.signer_name + '</div>' +
+                (sig.signer_title ? '<p class="signer-title">' + sig.signer_title + '</p>' : '') +
+                (sig.signer_role ? '<div class="signer-role">' + sig.signer_role + '</div>' : '') +
+                '</div>' +
+
+                '<div class="sig-details">' +
+                '<div class="sig-detail-item"><label>ID Tanda Tangan</label><p>' + sig.signature_id + '</p></div>' +
+                '<div class="sig-detail-item"><label>Tanggal TTD</label><p>' + formatDate(sig.signed_date) + '</p></div>' +
+                (sig.signed_time ? '<div class="sig-detail-item"><label>Waktu</label><p>' + sig.signed_time + '</p></div>' : '') +
+                (sig.location ? '<div class="sig-detail-item"><label>Lokasi</label><p>' + sig.location + '</p></div>' : '') +
+                (sig.document_type ? '<div class="sig-detail-item"><label>Jenis Dokumen</label><p>' + sig.document_type + '</p></div>' : '') +
+                (sig.signer_email ? '<div class="sig-detail-item"><label>Email</label><p>' + sig.signer_email + '</p></div>' : '') +
+                '</div>' +
+
+                '<div class="sig-doc-section">' +
+                '<h3><i class="fas fa-file-signature"></i> Dokumen yang Ditandatangani</h3>' +
+                '<div class="sig-doc-title">' + sig.document_name + '</div>' +
+                (sig.document_description ? '<p class="sig-doc-desc">' + sig.document_description + '</p>' : '') +
+                (sig.document_url ? '<a href="' + sig.document_url + '" target="_blank" class="btn btn-success" style="display:inline-flex;gap:8px;margin-top:12px"><i class="fas fa-download"></i> Download Dokumen</a>' : '') +
+                '</div>' +
+
+                (sig.notes ? '<div style="margin-top:16px;padding:12px;background:#fef3c7;border-radius:10px;border-left:4px solid #f59e0b"><label style="font-size:0.7rem;color:#78350f;font-weight:700">CATATAN</label><p style="color:#78350f;margin-top:4px">' + sig.notes + '</p></div>' : '') +
+
+                '</div>' +
+
+                '<div class="sig-footer">' +
+                '<div class="verify-badge"><i class="fas fa-shield-alt"></i> Tanda Tangan Sah</div>' +
+                '<p style="margin-top:12px">Dokumen ini telah ditandatangani secara digital oleh SIEC</p>' +
+                '<p>Terakhir diperbarui: ' + formatDate(sig.updated_at) + '</p>' +
+                '<p><a href="index.html" style="color:#2563eb;font-weight:600">← Kembali ke SIEC</a></p>' +
+                '</div>';
+        } catch (e) {
+            container.innerHTML = '<div class="sig-body"><div class="invalid-alert"><h2>❌ Error</h2><p>' + e.message + '</p></div></div>';
+        }
+    });
+    </script>
+</body>
+</html>
