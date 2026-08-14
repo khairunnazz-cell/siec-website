@@ -1,0 +1,60 @@
+{
+  "name": "SIEC - Syaf Intensive English Course",
+  "short_name": "SIEC",
+  "description": "Kursus Bahasa Inggris, Jasa Terjemahan Dokumen, dan TOEFL Official Test di Pekanbaru, Riau.",
+  "lang": "id",
+  "dir": "ltr",
+  "start_url": "/index.html",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "categories": ["education", "business"],
+  "icons": [
+    {
+      "src": "assets/logo-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/logo-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "assets/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "assets/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Daftar Terjemahan",
+      "short_name": "Terjemahan",
+      "url": "/register.html",
+      "icons": [{ "src": "assets/logo-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Cek Status Terjemahan",
+      "short_name": "Cek Status",
+      "url": "/translation-status.html",
+      "icons": [{ "src": "assets/logo-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Verifikasi Dokumen",
+      "short_name": "Verifikasi",
+      "url": "/verify.html",
+      "icons": [{ "src": "assets/logo-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

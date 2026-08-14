@@ -37,23 +37,31 @@
     <!-- Favicon -->
     <link rel="icon" type="image/png" href="assets/logo.png">
     <link rel="apple-touch-icon" href="assets/logo.png">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#2563eb">
     
     <!-- Canonical URL -->
     <link rel="canonical" href="https://siec-website.vercel.app/">
     
-    <!-- Schema.org Structured Data -->
+    <!-- Schema.org Structured Data (Lengkap) -->
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
-        "@type": "EducationalOrganization",
+        "@type": ["EducationalOrganization", "LocalBusiness"],
+        "@id": "https://siec-website.vercel.app/#organization",
         "name": "SIEC - Syaf Intensive English Course",
-        "alternateName": "SIEC",
+        "alternateName": "SIEC Les Bahasa Inggris Pekanbaru",
         "url": "https://siec-website.vercel.app",
         "logo": "https://siec-website.vercel.app/assets/logo.png",
-        "description": "Lembaga kursus Bahasa Inggris, jasa penerjemahan dokumen professional, dan TOEFL Official Test di Pekanbaru, Riau.",
+        "image": "https://siec-website.vercel.app/assets/logo.png",
+        "description": "Lembaga kursus Bahasa Inggris, jasa penerjemahan dokumen profesional, dan TOEFL Official Test terpercaya di Pekanbaru, Riau.",
+        "telephone": "+6285264686148",
+        "email": "siec.pekanbaru@gmail.com",
+        "priceRange": "Rp 150.000 - Rp 3.300.000",
+        "currenciesAccepted": "IDR, USD",
         "address": {
             "@type": "PostalAddress",
-            "streetAddress": "Jl. Yuda Karya",
+            "streetAddress": "Jl. Yuda Karya, Tuah Madani, Tampan",
             "addressLocality": "Pekanbaru",
             "addressRegion": "Riau",
             "addressCountry": "ID"
@@ -64,49 +72,35 @@
             "longitude": "101.3636536"
         },
         "hasMap": "https://share.google/3Cz539lEJ4nGqu9oJ",
-        "telephone": "+6285264686148",
+        "openingHoursSpecification": [
+            {
+                "@type": "OpeningHoursSpecification",
+                "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+                "opens": "08:00",
+                "closes": "17:00"
+            }
+        ],
         "sameAs": [
-            "https://wa.me/6285264686148"
+            "https://wa.me/6285264686148",
+            "https://share.google/3Cz539lEJ4nGqu9oJ"
         ],
         "hasOfferCatalog": {
             "@type": "OfferCatalog",
             "name": "Layanan SIEC",
             "itemListElement": [
-                {
-                    "@type": "Offer",
-                    "itemOffered": {
-                        "@type": "Service",
-                        "name": "Kursus Bahasa Inggris Private"
-                    }
-                },
-                {
-                    "@type": "Offer",
-                    "itemOffered": {
-                        "@type": "Service",
-                        "name": "Kursus Bahasa Inggris Grup"
-                    }
-                },
-                {
-                    "@type": "Offer",
-                    "itemOffered": {
-                        "@type": "Service",
-                        "name": "Jasa Terjemahan Dokumen"
-                    }
-                },
-                {
-                    "@type": "Offer",
-                    "itemOffered": {
-                        "@type": "Service",
-                        "name": "Terjemahan Abstrak Skripsi"
-                    }
-                },
-                {
-                    "@type": "Offer",
-                    "itemOffered": {
-                        "@type": "Service",
-                        "name": "TOEFL Official Test"
-                    }
-                }
+                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Kursus Bahasa Inggris Private", "description": "Les privat Bahasa Inggris dengan pengajar berpengalaman di Pekanbaru." } },
+                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Kursus Bahasa Inggris Grup", "description": "Kelas grup Bahasa Inggris untuk semua level di SIEC Pekanbaru." } },
+                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Jasa Terjemahan Dokumen", "description": "Terjemahan ijazah, transkrip nilai, dan dokumen resmi lainnya." } },
+                { "@type": "Offer", "itemOffered": { "@type": "Service", "name": "Terjemahan Abstrak Skripsi", "description": "Terjemahan abstrak skripsi termasuk untuk UIN Sultan Syarif Kasim Riau." } },
+                { "@type": "Offer", "price": "625000", "priceCurrency": "IDR", "itemOffered": { "@type": "Service", "name": "TOEFL ITP Online", "description": "Tes TOEFL ITP online jadwal pagi/siang, sertifikat resmi ETS, skor keluar 7 hari." } },
+                { "@type": "Offer", "price": "675000", "priceCurrency": "IDR", "itemOffered": { "@type": "Service", "name": "TOEFL ITP Online (Sore/Malam)", "description": "Tes TOEFL ITP online jadwal sore/malam untuk pekerja dan mahasiswa." } },
+                { "@type": "Offer", "price": "660000", "priceCurrency": "IDR", "itemOffered": { "@type": "Service", "name": "TOEFL ITP Offline", "description": "Tes TOEFL ITP tatap muka langsung di lokasi SIEC Pekanbaru." } },
+                { "@type": "Offer", "price": "150000", "priceCurrency": "IDR", "itemOffered": { "@type": "Service", "name": "TOEFL Prediction / EPT", "description": "Simulasi tes TOEFL 3 jam untuk mengukur kemampuan sebelum tes resmi." } },
+                { "@type": "Offer", "price": "150000", "priceCurrency": "IDR", "itemOffered": { "@type": "Service", "name": "TOAFL Prediction / APT", "description": "Simulasi tes TOAFL untuk persiapan tes bahasa Arab." } },
+                { "@type": "Offer", "price": "210", "priceCurrency": "USD", "itemOffered": { "@type": "Service", "name": "TOEFL iBT", "description": "Tes TOEFL iBT resmi berbasis internet, durasi 4 jam." } },
+                { "@type": "Offer", "price": "70", "priceCurrency": "USD", "itemOffered": { "@type": "Service", "name": "Duolingo English Test", "description": "Tes Bahasa Inggris online Duolingo, durasi 1 jam." } },
+                { "@type": "Offer", "price": "3300000", "priceCurrency": "IDR", "itemOffered": { "@type": "Service", "name": "IELTS", "description": "Tes IELTS resmi, durasi 2 hari." } },
+                { "@type": "Offer", "price": "175000", "priceCurrency": "IDR", "itemOffered": { "@type": "Service", "name": "IELTS Simulation", "description": "Simulasi tes IELTS 3 jam sebelum mengikuti tes resmi." } }
             ]
         }
     }
@@ -332,6 +326,13 @@
                     </div>
                     <div class="lokasi-item">
                         <i class="fas fa-clock"></i>
+                        <div>
+                            <h5>Jam Operasional</h5>
+                            <p>Senin – Sabtu, 08.00 – 17.00 WIB</p>
+                        </div>
+                    </div>
+                    <div class="lokasi-item">
+                        <i class="fas fa-file-alt"></i>
                         <div>
                             <h5>Pengambilan Hardcopy Dokumen</h5>
                             <p>Senin – Jumat, 08.00 – 11.00 WIB</p>
