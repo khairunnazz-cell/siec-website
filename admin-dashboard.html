@@ -513,14 +513,14 @@
                     <div class="form-group"><label>Catatan</label><textarea id="toeflNotes" rows="2"></textarea></div>
                     <div class="form-actions"><button class="btn btn-primary" onclick="saveToefl()"><i class="fas fa-save"></i> Upload & Tempel QR</button><button class="btn btn-outline" onclick="hideToeflForm()">Batal</button></div>
                 </div></div>
-                <div id="certPrintModal" class="print-preview-modal" style="display:none"><div class="print-modal-content"><div class="print-modal-header"><h4>✅ Preview</h4><button onclick="closePrintPreview('certPrintModal')" class="btn-close">&times;</button></div><div id="certPrintContent"></div><div class="print-actions"><a id="certDownloadLink" class="btn btn-success" style="display:none" target="_blank"><i class="fas fa-download"></i> Download</a><button class="btn btn-outline" onclick="closePrintPreview('certPrintModal')">Tutup</button></div></div></div>
+                <div id="certPrintModal" class="print-preview-modal" style="display:none"><div class="print-modal-content"><div class="print-modal-header"><h4>✅ Preview</h4><button onclick="closePrintPreview('certPrintModal')" class="btn-close">&times;</button></div><div id="certPrintContent"></div><div class="print-actions"><a id="certDownloadLink" class="btn btn-success" style="display:none" target="_blank" rel="noopener noreferrer"><i class="fas fa-download"></i> Download</a><button class="btn btn-outline" onclick="closePrintPreview('certPrintModal')">Tutup</button></div></div></div>
                 <div class="data-table-container"><table class="data-table"><thead><tr><th>ID</th><th>Nama</th><th>Tanggal</th><th>L/S/R</th><th>Total</th><th>File</th><th>Aksi</th></tr></thead><tbody id="toeflTableBody"><tr><td colspan="7" class="loading-cell"><div class="spinner"></div></td></tr></tbody></table></div>
             </section>
         </div>
     </main>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
+<script src="js/vendor/pdf-lib.min.js"></script>
 <script src="js/app.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/admin.js"></script>

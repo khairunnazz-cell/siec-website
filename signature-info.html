@@ -74,7 +74,7 @@
             var r = await db.from('digital_signatures').select('*').eq('signature_id', sigId).single();
 
             if (!r.data || !r.data.is_valid) {
-                container.innerHTML = '<div class="sig-body"><div class="invalid-alert"><h2>❌ Tanda Tangan Tidak Valid</h2><p>ID <strong>' + sigId + '</strong> tidak ditemukan atau sudah dinonaktifkan.</p><p style="margin-top:12px;font-size:0.85rem"><a href="https://wa.me/6281234567890" style="color:#2563eb;font-weight:700">Hubungi SIEC via WhatsApp</a></p></div></div>';
+                container.innerHTML = '<div class="sig-body"><div class="invalid-alert"><h2>❌ Tanda Tangan Tidak Valid</h2><p>ID <strong>' + sigId + '</strong> tidak ditemukan atau sudah dinonaktifkan.</p><p style="margin-top:12px;font-size:0.85rem"><a href="https://wa.me/6285264686148" style="color:#2563eb;font-weight:700">Hubungi SIEC via WhatsApp</a></p></div></div>';
                 return;
             }
 
@@ -110,7 +110,7 @@
                 '<h3><i class="fas fa-file-signature"></i> Dokumen yang Ditandatangani</h3>' +
                 '<div class="sig-doc-title">' + sig.document_name + '</div>' +
                 (sig.document_description ? '<p class="sig-doc-desc">' + sig.document_description + '</p>' : '') +
-                (sig.document_url ? '<a href="' + sig.document_url + '" target="_blank" class="btn btn-success" style="display:inline-flex;gap:8px;margin-top:12px"><i class="fas fa-download"></i> Download Dokumen</a>' : '') +
+                (sig.document_url ? '<a href="' + sig.document_url + '" target="_blank" rel="noopener noreferrer" class="btn btn-success" style="display:inline-flex;gap:8px;margin-top:12px"><i class="fas fa-download"></i> Download Dokumen</a>' : '') +
                 '</div>' +
 
                 (sig.notes ? '<div style="margin-top:16px;padding:12px;background:#fef3c7;border-radius:10px;border-left:4px solid #f59e0b"><label style="font-size:0.7rem;color:#78350f;font-weight:700">CATATAN</label><p style="color:#78350f;margin-top:4px">' + sig.notes + '</p></div>' : '') +
