@@ -561,7 +561,7 @@ function sendWhatsApp(clientId) {
         msg += '━━━━━━━━━━━━━━━━━━\n📍 *PENGAMBILAN HARD COPY*\n━━━━━━━━━━━━━━━━━━\n\n';
         msg += 'Silakan ambil *abstrak yang sudah dicap* beserta *kwitansinya* di kantor kami:\n\n';
         msg += '🏢 *Syaf Intensive English Course (SIEC)*\nLembaga Kursus Bahasa Inggris\n\n';
-        msg += '📌 *Lokasi Maps:*\nhttps://share.google/3Cz539lEJ4nGqu9oJ\n\n';
+        msg += '📌 *Lokasi Maps:*\nhttps://maps.app.goo.gl/ew5MKzkz6bvbgb1j6\n\n';
         msg += '🗺️ *Petunjuk Arah:*\nMasuk Jl. Yuda Karya, lalu di simpang 4 teruskan masuk ke jalan tanah. Sekitar 30 meter dari simpang, ada gang di sebelah kanan yang sudah disemenisasi. Masuk gang tersebut hingga menemukan rumah seperti pada foto.\n\n';
         msg += '🏠 *Foto Rumah Tempat Pengambilan:*\n' + fotoRumahUrl + '\n\n';
         msg += '🕗 *Jadwal Pengambilan:*\n📅 Senin – Jum\'at\n⏰ 08.00 – 11.00 WIB\n\n';
