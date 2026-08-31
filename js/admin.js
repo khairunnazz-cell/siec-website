@@ -281,6 +281,35 @@ function removeMaterial() {
     document.getElementById('materialRemove').style.display = 'none';
 }
 
+// ============ COVER UPLOAD (Artikel) ============
+function updateCoverPreview() {
+    var url = document.getElementById('articleCover').value.trim();
+    var img = document.getElementById('coverPreview');
+    if (!img) return;
+    if (url) { img.src = url; img.style.display = 'block'; img.onerror = function() { img.style.display = 'none'; }; }
+    else { img.style.display = 'none'; }
+}
+async function handleCoverUpload(e) {
+    var f = e.target.files[0];
+    if (!f) return;
+    if (!f.type.startsWith('image/')) { showNotification('File harus gambar!', 'error'); e.target.value = ''; return; }
+    if (f.size > 5 * 1024 * 1024) { showNotification('Cover maks 5MB!', 'error'); e.target.value = ''; return; }
+    var st = document.getElementById('coverUploadStatus');
+    try {
+        if (st) st.textContent = 'Mengupload...';
+        showNotification('Uploading cover...', 'info');
+        var up = await uploadFile(f, 'covers');
+        document.getElementById('articleCover').value = up.url;
+        updateCoverPreview();
+        if (st) st.textContent = '\u2705 ' + f.name;
+        showNotification('Cover terupload! Jangan lupa Simpan.');
+    } catch (err) {
+        if (st) st.textContent = 'Gagal upload';
+        showNotification('Error: ' + err.message, 'error');
+    }
+    e.target.value = '';
+}
+
 function insertTag(t) { var e = document.getElementById('articleContent'), s = e.selectionStart, n = e.selectionEnd, x = e.value.substring(s, n); e.value = e.value.substring(0, s) + '<' + t + '>' + x + '</' + t + '>' + e.value.substring(n); e.focus(); }
 function togglePreview() { var p = document.getElementById('articlePreview'); if (p.style.display === 'none') { p.innerHTML = document.getElementById('articleContent').value; p.style.display = 'block'; } else p.style.display = 'none'; }
 function closePrintPreview(id) { document.getElementById(id).style.display = 'none'; }
@@ -1002,13 +1031,14 @@ async function saveEditedQr() {
 // ============================================
 // ARTICLES
 // ============================================
-async function showArticleForm(a) { var f = document.getElementById('articleForm'); f.style.display = 'block'; f.scrollIntoView({ behavior: 'smooth' }); if (a) { document.getElementById('articleFormTitle').textContent = 'Edit'; document.getElementById('articleId').value = a.id; document.getElementById('articleTitle').value = a.title; document.getElementById('articleCategory').value = a.category; document.getElementById('articleCover').value = a.cover_image || ''; document.getElementById('articleExcerpt').value = a.excerpt || ''; document.getElementById('articleContent').value = a.content; document.getElementById('articlePublished').checked = a.is_published; var r = document.querySelector('input[name="articleLayout"][value="' + a.layout_type + '"]'); if (r) r.checked = true; } else { document.getElementById('articleFormTitle').textContent = 'Tambah'; ['articleId', 'articleTitle', 'articleCover', 'articleExcerpt', 'articleContent'].forEach(function(id) { var e = document.getElementById(id); if (e) e.value = ''; }); document.getElementById('articlePublished').checked = false; var d = document.querySelector('input[name="articleLayout"][value="standard"]'); if (d) d.checked = true; }
+async function showArticleForm(a) { var f = document.getElementById('articleForm'); f.style.display = 'block'; f.scrollIntoView({ behavior: 'smooth' }); if (a) { document.getElementById('articleFormTitle').textContent = 'Edit'; document.getElementById('articleId').value = a.id; document.getElementById('articleTitle').value = a.title; document.getElementById('articleSlug').value = a.slug || ''; document.getElementById('articleCategory').value = a.category; document.getElementById('articleCover').value = a.cover_image || ''; document.getElementById('articleExcerpt').value = a.excerpt || ''; document.getElementById('articleContent').value = a.content; document.getElementById('articlePublished').checked = a.is_published; var r = document.querySelector('input[name="articleLayout"][value="' + a.layout_type + '"]'); if (r) r.checked = true; } else { document.getElementById('articleFormTitle').textContent = 'Tambah'; ['articleId', 'articleSlug', 'articleTitle', 'articleCover', 'articleExcerpt', 'articleContent'].forEach(function(id) { var e = document.getElementById(id); if (e) e.value = ''; }); document.getElementById('articlePublished').checked = false; var d = document.querySelector('input[name="articleLayout"][value="standard"]'); if (d) d.checked = true; }
     if (a && a.id) {
         try {
             var m = await db.from('articles').select('material_html').eq('id', a.id).single();
             currentMaterialHtml = (m.data && m.data.material_html) || null;
         } catch (e) { currentMaterialHtml = null; }
     } else { currentMaterialHtml = null; }
+    updateCoverPreview(); var cs = document.getElementById('coverUploadStatus'); if (cs) cs.textContent = ''; var cf = document.getElementById('articleCoverFile'); if (cf) cf.value = '';
     var st = document.getElementById('materialStatus'), rm = document.getElementById('materialRemove'), mf = document.getElementById('articleMaterialFile');
     if (mf) mf.value = '';
     if (st) {
@@ -1016,7 +1046,7 @@ async function showArticleForm(a) { var f = document.getElementById('articleForm
         else { st.textContent = 'Belum ada materi'; if (rm) rm.style.display = 'none'; }
     } }
 function hideArticleForm() { document.getElementById('articleForm').style.display = 'none'; }
-async function saveArticle() { var t = document.getElementById('articleTitle').value.trim(); if (!t) { showNotification('Judul wajib!', 'error'); return; } var l = document.querySelector('input[name="articleLayout"]:checked'), id = document.getElementById('articleId').value, p = document.getElementById('articlePublished').checked, d = { title: t, slug: generateSlug(t) + '-' + Date.now(), material_html: currentMaterialHtml, content: document.getElementById('articleContent').value, excerpt: document.getElementById('articleExcerpt').value, cover_image: document.getElementById('articleCover').value, layout_type: l ? l.value : 'standard', category: document.getElementById('articleCategory').value, is_published: p, published_at: p ? new Date().toISOString() : null, updated_at: new Date().toISOString() }; try { var r = id ? await db.from('articles').update(d).eq('id', id) : await db.from('articles').insert(d); if (r.error) throw r.error; showNotification(id ? 'Updated!' : 'Added!'); hideArticleForm(); loadAdminArticles(); loadDashboardStats(); } catch (e) { showNotification('Error: ' + e.message, 'error'); } }
+async function saveArticle() { var t = document.getElementById('articleTitle').value.trim(); if (!t) { showNotification('Judul wajib!', 'error'); return; } var l = document.querySelector('input[name="articleLayout"]:checked'), id = document.getElementById('articleId').value, p = document.getElementById('articlePublished').checked, d = { title: t, slug: id ? (document.getElementById('articleSlug').value || generateSlug(t) + '-' + Date.now()) : generateSlug(t) + '-' + Date.now(), material_html: currentMaterialHtml, content: document.getElementById('articleContent').value, excerpt: document.getElementById('articleExcerpt').value, cover_image: document.getElementById('articleCover').value, layout_type: l ? l.value : 'standard', category: document.getElementById('articleCategory').value, is_published: p, published_at: p ? new Date().toISOString() : null, updated_at: new Date().toISOString() }; try { var r = id ? await db.from('articles').update(d).eq('id', id) : await db.from('articles').insert(d); if (r.error) throw r.error; showNotification(id ? 'Updated!' : 'Added!'); hideArticleForm(); loadAdminArticles(); loadDashboardStats(); } catch (e) { showNotification('Error: ' + e.message, 'error'); } }
 
 async function loadAdminArticles() {
     var tb = document.getElementById('articlesTableBody');
