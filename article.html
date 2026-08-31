@@ -117,7 +117,7 @@
                             <h2><i class="fas fa-chalkboard-teacher"></i> Materi / Slide Pembelajaran</h2>
                             <div class="material-actions">
                                 <button class="btn-material primary" onclick="openMaterialNewTab()"><i class="fas fa-expand"></i> Layar Penuh</button>
-                                <a class="btn-material ghost" id="materialDownload" download="materi-siec.html"><i class="fas fa-download"></i> Unduh</a>
+                                <button class="btn-material ghost" onclick="shareArticle()"><i class="fas fa-share-alt"></i> Bagikan</button>
                             </div>
                         </div>
                         <div class="material-frame-wrap" id="materialWrap">
@@ -135,9 +135,7 @@
                 const blob = new Blob([data.material_html], { type: 'text/html' });
                 const url = URL.createObjectURL(blob);
                 const frame = document.querySelector('#materialWrap iframe');
-                const dl = document.getElementById('materialDownload');
                 if (frame) frame.src = url;
-                if (dl) dl.href = url;
                 window._materialBlobUrl = url;
             }
         });
@@ -145,6 +143,18 @@
         function openMaterialNewTab() {
             if (window._materialBlobUrl) window.open(window._materialBlobUrl, '_blank');
         }
+
+        async function shareArticle() {
+            const url = location.href;
+            const title = document.title.replace(' - SIEC', '');
+            const text = 'Materi TOEFL dari SIEC: ' + title;
+            if (navigator.share) {
+                try { await navigator.share({ title: title, text: text, url: url }); } catch (e) { }
+            } else {
+                window.open('https://wa.me/?text=' + encodeURIComponent(text + '\n' + url), '_blank');
+            }
+        }
     </script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a33d5d25faad81cb',t:'MTc4ODE5MzIzOQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a33daf504843ff8d',t:'MTc4ODE5NjYwNQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v3d52b47920f24c319d37e2661827c42b1787588026925" integrity="sha512-d9sL6GJLXn6fInD1+TVXhTcQOsmxeHfmHAvwGDIxp5TO+uo1fiWW7mHomMj4MLRlCsJDTqXzWLHJFFlPCEIj/A==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f"}' crossorigin="anonymous"></script>
+</body>
 </html>
