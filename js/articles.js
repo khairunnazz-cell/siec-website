@@ -13,7 +13,7 @@ async function loadPublicArticles() {
     try {
         const { data, error } = await db
             .from('articles')
-            .select('*')
+            .select('slug,title,category,cover_image,excerpt,layout_type,published_at,created_at')
             .eq('is_published', true)
             .order('published_at', { ascending: false })
             .limit(6);
