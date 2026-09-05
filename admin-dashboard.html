@@ -97,6 +97,7 @@
                     <h3>Terjemahan</h3>
                     <div style="display:flex;gap:8px;flex-wrap:wrap">
                         <button class="btn btn-danger" onclick="bulkDelete()"><i class="fas fa-trash"></i> Hapus (<span id="selectedCount">0</span>)</button>
+                        <select id="exportMonth" title="Pilih bulan yang diunduh" style="padding:8px 10px;border:1px solid var(--gray-300);border-radius:8px;font-family:var(--font);font-size:0.85rem;max-width:160px"></select>
                         <button class="btn btn-success" onclick="exportTerjemahan()"><i class="fas fa-download"></i> CSV</button>
                         <button class="btn btn-primary" onclick="showRegisterForm()"><i class="fas fa-user-plus"></i> Daftar Klien</button>
                     </div>
@@ -122,9 +123,12 @@
                         <option value="Abstrak Skripsi">Abstrak Skripsi</option>
                         <option value="Lainnya">Lainnya</option>
                     </select>
+                    <select id="filterPeriod" onchange="onPeriodChange()" title="Periode 3 bulan (triwulan)">
+                        <option value="">📅 Periode</option>
+                    </select>
+                    <span id="periodInfo" style="margin-left:auto;align-self:center;font-size:0.8rem;color:#64748b"></span>
                 </div>
-
-                <!-- Form Pendaftaran -->
+<!-- Form Pendaftaran -->
                 <div id="registerForm" class="admin-form" style="display:none"><div class="form-card">
                     <h4><i class="fas fa-user-plus"></i> Pendaftaran Klien Baru</h4>
                     <input type="hidden" id="regId">
@@ -529,6 +533,6 @@
 <script src="js/app.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/admin.js"></script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a33dc8161a89ce5f',t:'MTc4ODE5NzYyMA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v3d52b47920f24c319d37e2661827c42b1787588026925" integrity="sha512-d9sL6GJLXn6fInD1+TVXhTcQOsmxeHfmHAvwGDIxp5TO+uo1fiWW7mHomMj4MLRlCsJDTqXzWLHJFFlPCEIj/A==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f"}' crossorigin="anonymous"></script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3667726281025dd',t:'MTc4ODYyNDIyMQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","spa":2}' crossorigin="anonymous"></script>
 </body>
 </html>

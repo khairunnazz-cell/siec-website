@@ -336,6 +336,9 @@ function applyFilter() {
     var search = document.getElementById('filterSearch').value.toLowerCase();
     var status = document.getElementById('filterStatus').value;
     var docType = document.getElementById('filterDocType').value;
+    var period = getPeriodRange();
+    // Jika sedang mencari (search diisi), abaikan periode → cari di SEMUA data
+    if (search) period = null;
 
     var filtered = allTerjemahan.filter(function(c) {
         var matchSearch = !search || (
@@ -348,8 +351,20 @@ function applyFilter() {
         );
         var matchStatus = !status || c.status === status;
         var matchDocType = !docType || c.document_type === docType;
-        return matchSearch && matchStatus && matchDocType;
+        var matchPeriod = !period || (c.created_at >= period.start && c.created_at < period.end);
+        return matchSearch && matchStatus && matchDocType && matchPeriod;
     });
+
+    var info = document.getElementById('periodInfo');
+    if (info) {
+        if (search) {
+            info.textContent = filtered.length + ' hasil • pencarian di semua periode';
+        } else {
+            var sel = document.getElementById('filterPeriod');
+            var label = (sel && sel.selectedIndex >= 0 && sel.options.length) ? sel.options[sel.selectedIndex].text : 'Semua periode';
+            info.textContent = filtered.length + ' data • ' + label;
+        }
+    }
 
     renderTerjemahanTable(filtered);
 }
@@ -548,8 +563,95 @@ async function loadTerjemahan() {
         var r = await db.from('translation_clients').select('*').order('created_at', { ascending: false });
         if (!r.data) { allTerjemahan = []; renderTerjemahanTable([]); return; }
         allTerjemahan = r.data;
+        populatePeriodFilter();
+        populateExportMonths();
         applyFilter();
     } catch (e) { console.error(e); }
+}
+
+// ============================================
+// PERIODE 3 BULAN + BULAN EXPORT CSV
+// ============================================
+var MONTHS_ID = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+var MONTHS_ID_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+
+function getPeriodRange() {
+    var sel = document.getElementById('filterPeriod');
+    if (!sel || !sel.value) return null;
+    var p = sel.value.split('|');
+    return { start: p[0], end: p[1] };
+}
+
+function onPeriodChange() {
+    var sel = document.getElementById('filterPeriod');
+    if (!sel || sel.value !== '__custom__') { applyFilter(); return; }
+    var input = prompt('Tampilkan data berapa bulan terakhir? (1 = bulan ini; contoh: 4, 5, 7, 18)', '4');
+    var n = parseInt(input, 10);
+    if (!input || isNaN(n) || n < 1 || n > 120) {
+        sel.selectedIndex = 0; // batal/tidak valid → balik ke triwulan berjalan
+        applyFilter();
+        return;
+    }
+    var now = new Date();
+    var start = new Date(now.getFullYear(), now.getMonth() - (n - 1), 1).toISOString();
+    var end = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString();
+    var opt = sel.options[sel.selectedIndex];
+    opt.value = start + '|' + end;
+    opt.text = n + ' bulan terakhir (kustom)';
+    applyFilter();
+}
+
+function populatePeriodFilter() {
+    var sel = document.getElementById('filterPeriod');
+    if (!sel) return;
+    var now = new Date();
+    var minDate = null;
+    allTerjemahan.forEach(function(c) {
+        if (!c.created_at) return;
+        var d = new Date(c.created_at);
+        if (!minDate || d < minDate) minDate = d;
+    });
+    if (!minDate) minDate = now;
+    var curY = now.getFullYear(), curQ = Math.floor(now.getMonth() / 3);
+    var minY = minDate.getFullYear(), minQ = Math.floor(minDate.getMonth() / 3);
+    // Default terpilih = opsi pertama = triwulan yang sedang berjalan
+    var html = '<optgroup label="Per Triwulan">';
+    for (var y = curY, q = curQ; y > minY || (y === minY && q >= minQ);) {
+        var sM = q * 3, eM = sM + 3;
+        var val = new Date(y, sM, 1).toISOString() + '|' + new Date(y, eM, 1).toISOString();
+        html += '<option value="' + val + '">Triwulan ' + (q + 1) + ' • ' + MONTHS_ID_SHORT[sM] + '–' + MONTHS_ID_SHORT[eM - 1] + ' ' + y + '</option>';
+        q--; if (q < 0) { q = 3; y--; }
+    }
+    html += '</optgroup><optgroup label="Rentang Kustom">';
+    var nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString();
+    function monthStart(offset) { return new Date(now.getFullYear(), now.getMonth() - offset, 1).toISOString(); }
+    html += '<option value="' + monthStart(0) + '|' + nextMonth + '">Bulan ini</option>';
+    html += '<option value="' + monthStart(1) + '|' + nextMonth + '">2 bulan terakhir</option>';
+    html += '<option value="' + monthStart(2) + '|' + nextMonth + '">3 bulan terakhir</option>';
+    html += '<option value="' + monthStart(5) + '|' + nextMonth + '">6 bulan terakhir</option>';
+    html += '<option value="' + monthStart(11) + '|' + nextMonth + '">12 bulan terakhir</option>';
+    html += '<option value="">Semua periode</option>';
+    html += '<option value="__custom__">✏️ Kustom: N bulan terakhir…</option>';
+    html += '</optgroup>';
+    sel.innerHTML = html;
+}
+
+function populateExportMonths() {
+    var sel = document.getElementById('exportMonth');
+    if (!sel) return;
+    var keys = {};
+    allTerjemahan.forEach(function(c) {
+        if (!c.created_at) return;
+        var d = new Date(c.created_at);
+        keys[d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2)] = true;
+    });
+    var sorted = Object.keys(keys).sort().reverse();
+    var html = sorted.map(function(k) {
+        var y = +k.slice(0, 4), m = +k.slice(5) - 1;
+        return '<option value="' + k + '">📅 ' + MONTHS_ID[m] + ' ' + y + '</option>';
+    }).join('');
+    html += '<option value="">📦 Semua periode</option>';
+    sel.innerHTML = html;
 }
 
 async function deleteClient(id) {
@@ -562,22 +664,36 @@ async function deleteClient(id) {
 
 async function exportTerjemahan() {
     var checks = document.querySelectorAll('.row-check:checked');
-    var data;
+    var data, label;
     if (checks.length > 0) {
         var ids = Array.from(checks).map(function(cb) { return cb.value; });
         data = allTerjemahan.filter(function(c) { return ids.indexOf(c.id) > -1; });
-    } else { data = allTerjemahan; }
-    if (!data.length) { showNotification('Tidak ada data!', 'error'); return; }
+        label = 'terpilih';
+    } else {
+        var sel = document.getElementById('exportMonth');
+        var m = sel ? sel.value : '';
+        if (m) {
+            var y = +m.slice(0, 4), mo = +m.slice(5) - 1;
+            var start = new Date(y, mo, 1).toISOString();
+            var end = new Date(y, mo + 1, 1).toISOString();
+            data = allTerjemahan.filter(function(c) { return c.created_at >= start && c.created_at < end; });
+            label = m;
+        } else {
+            data = allTerjemahan;
+            label = 'semua';
+        }
+    }
+    if (!data.length) { showNotification('Tidak ada data pada bulan yang dipilih!', 'error'); return; }
     var h = ['ID', 'Nama', 'HP', 'Email', 'Dokumen', 'NIM', 'Semester', 'Judul Skripsi', 'Universitas', 'Fakultas', 'Jurusan', 'Sumber', 'Target', 'Status', 'Durasi', 'Daftar', 'Selesai'];
     var rows = data.map(function(c) {
         var dur = c.completed_at ? calculateDuration(c.created_at, c.completed_at) : '-';
         return [c.document_id || '-', c.client_name, c.client_phone, c.client_email || '', c.document_type, c.nim || '-', c.semester || '-', c.judul_skripsi || '-', c.universitas || '-', c.fakultas || '-', c.jurusan || '-', c.source_language, c.target_language, c.status, dur, formatDate(c.created_at), c.completed_at ? formatDate(c.completed_at) : '-'];
     });
-    var csv = [h].concat(rows).map(function(r) { return r.map(function(v) { return '"' + (v || '').toString().replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
-    var b = new Blob([csv], { type: 'text/csv' });
+    var csv = [h].concat(rows).map(function(r) { return r.map(function(v) { return '"' + (v || '').toString().replace(/"/g, '""') + '"'; }).join(';'); }).join('\n');
+    var b = new Blob(['﻿' + csv], { type: 'text/csv;charset=utf-8;' });
     var a = document.createElement('a');
     a.href = URL.createObjectURL(b);
-    a.download = 'terjemahan-' + Date.now() + '.csv';
+    a.download = 'terjemahan-' + label + '.csv';
     a.click();
     showNotification('✅ Downloaded ' + data.length + ' data!');
 }
