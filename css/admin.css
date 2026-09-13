@@ -478,6 +478,24 @@
 
 .btn-size:hover { background: #2563eb; color: #fff; border-color: #2563eb; }
 
+/* --- Navigator halaman PDF (multi-halaman) --- */
+.page-nav {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    color: #cbd5e1;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.18);
+    border-radius: 8px;
+    padding: 4px 8px;
+    flex-shrink: 0;
+}
+.page-nav strong { color: #93c5fd; }
+.page-nav .btn-size { width: 24px; height: 24px; font-size: 0.95rem; border-width: 1px; }
+.btn-size-wide { width: auto !important; padding: 0 8px; font-size: 0.7rem !important; }
+.live-preview-header { flex-wrap: wrap; gap: 8px; }
+
 .remember-position {
     display: flex;
     align-items: center;

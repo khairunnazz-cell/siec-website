@@ -219,7 +219,14 @@
                         </div>
                     </div>
                     <div id="uploadLivePreview" class="live-preview-container" style="display:none">
-                        <div class="live-preview-header"><h6><i class="fas fa-hand-pointer"></i> Drag QR ke posisi</h6></div>
+                        <div class="live-preview-header"><h6><i class="fas fa-hand-pointer"></i> Drag QR ke posisi</h6>
+                            <div id="uploadPageNav" class="page-nav" style="display:none">
+                                <button type="button" onclick="uploadPagePrev()" class="btn-size" title="Halaman sebelumnya">‹</button>
+                                <span>Hal <strong id="uploadPageNum">1</strong>/<strong id="uploadPageTotal">1</strong></span>
+                                <button type="button" onclick="uploadPageNext()" class="btn-size" title="Halaman berikutnya">›</button>
+                                <button type="button" onclick="uploadPageLast()" class="btn-size btn-size-wide" title="Lompat ke halaman terakhir">Akhir</button>
+                            </div>
+                        </div>
                         <div class="live-preview-doc"><div class="live-preview-page" id="uploadPreviewPage">
                             <iframe id="uploadPreviewFrame" style="display:none;width:100%;border:none"></iframe>
                             <div id="uploadWordFallback" class="word-preview-fallback" style="display:none"><i class="fas fa-file-word"></i><h4>Word</h4><p id="uploadWordName">-</p></div>
@@ -533,6 +540,6 @@
 <script src="js/app.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/admin.js"></script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3667726281025dd',t:'MTc4ODYyNDIyMQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","spa":2}' crossorigin="anonymous"></script>
-</body>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","spa":2}' crossorigin="anonymous"></script>
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3a754ad8908fd70',t:'MTc4OTMwNDM4Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
 </html>

@@ -60,10 +60,15 @@ function onFakultasChange() {
 function getQrUrl(t,s){return'https://api.qrserver.com/v1/create-qr-code/?size='+(s||150)+'x'+(s||150)+'&data='+encodeURIComponent(t||location.origin)+'&ecc=H&margin=4&format=png'}
 function generateQr(id,t,s){var e=document.getElementById(id);if(!e)return;var z=parseInt(s)||100,l=Math.round(z*.22);e.innerHTML='<div style="position:relative;display:inline-block;width:'+z+'px;height:'+z+'px"><img src="'+getQrUrl(t,z)+'" width="'+z+'" height="'+z+'" style="display:block;border-radius:4px"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:'+l+'px;height:'+l+'px;border-radius:50%;overflow:hidden;background:#fff;border:2px solid #fff;box-shadow:0 0 0 1px #2563eb"><img src="'+LOGO_URL+'" style="width:100%;height:100%;object-fit:contain" onerror="this.parentElement.innerHTML=\'<div style=width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#fff><span style=font-weight:800;color:#2563eb;font-size:'+Math.round(l*.35)+'px>SIEC</span></div>\'"></div></div>'}
 
-async function embedQrInPdf(file, qrText, idText, posXPct, posYPct, qrSizePx) {
+async function embedQrInPdf(file, qrText, idText, posXPct, posYPct, qrSizePx, pageIndex) {
     var ab = await file.arrayBuffer();
     var doc = await PDFLib.PDFDocument.load(ab);
-    var pg = doc.getPages()[0];
+    var pages = doc.getPages();
+    // --- PERBAIKAN MULTI-HALAMAN: pakai halaman yang dipilih, bukan selalu halaman 1 ---
+    var pi = parseInt(pageIndex, 10);
+    if (isNaN(pi) || pi < 0) pi = 0;
+    if (pi > pages.length - 1) pi = pages.length - 1;
+    var pg = pages[pi];
     var pw = pg.getWidth(), ph = pg.getHeight();
     var resp = await fetch(getQrUrl(qrText, 300));
     if (!resp.ok) throw new Error('QR fetch fail');
@@ -777,6 +782,10 @@ function showUploadDocForm(client) {
 
 function hideUploadDocForm() { document.getElementById('uploadDocForm').style.display = 'none'; }
 
+// ===== Metadata halaman PDF (preview upload dokumen terjemahan) =====
+var uploadPdfMeta = { pages: 0, sizes: [], page: 0, blobUrl: null };
+var uploadQrPos = { x: 80, y: 85 };
+
 function handleUploadFilePreview(input) {
     var f = input.files[0]; if (!f) return;
     if (f.size > 10485760) { showNotification('Max 10MB!', 'error'); input.value = ''; return; }
@@ -788,48 +797,105 @@ function handleUploadFilePreview(input) {
     var page = document.getElementById('uploadPreviewPage');
     var fr = document.getElementById('uploadPreviewFrame');
     var wd = document.getElementById('uploadWordFallback');
-    if (f.type === 'application/pdf') {
+    var sz = parseInt(document.getElementById('uploadQrSize').value) || 80;
+    var isPdf = f.type === 'application/pdf' || /\.pdf$/i.test(f.name);
+    if (isPdf) {
         var reader = new FileReader();
         reader.onload = async function(e) {
             try {
                 var pdfDoc = await PDFLib.PDFDocument.load(e.target.result);
-                var pg = pdfDoc.getPages()[0];
-                var pw = pg.getWidth(), ph = pg.getHeight();
-                var cw = page.parentElement.offsetWidth || 600;
-                var ch = Math.round(cw * (ph / pw));
-                page.style.width = cw + 'px';
-                page.style.height = ch + 'px';
-                if (fr) { fr.src = URL.createObjectURL(f); fr.style.display = 'block'; fr.style.height = ch + 'px'; }
-                if (wd) wd.style.display = 'none';
-                setTimeout(function() { generateQr('uploadQrCanvas', location.origin + '/verify.html?id=SIEC-TR-PREVIEW', 80); }, 600);
-                setTimeout(function() { initDragU(); }, 1500);
+                var pages = pdfDoc.getPages();
+                uploadPdfMeta.pages = pages.length;
+                uploadPdfMeta.sizes = pages.map(function(p) { return { w: p.getWidth(), h: p.getHeight() }; });
             } catch (err) {
-                page.style.height = '700px';
-                if (fr) { fr.src = URL.createObjectURL(f); fr.style.display = 'block'; fr.style.height = '700px'; }
-                setTimeout(function() { generateQr('uploadQrCanvas', location.origin + '/verify.html?id=SIEC-TR-PREVIEW', 80); }, 600);
-                setTimeout(function() { initDragU(); }, 1500);
+                console.error(err);
+                uploadPdfMeta.pages = 0; uploadPdfMeta.sizes = [];
             }
+            uploadPdfMeta.page = 0;
+            var nav = document.getElementById('uploadPageNav');
+            if (nav) nav.style.display = uploadPdfMeta.pages > 1 ? 'inline-flex' : 'none';
+            if (wd) wd.style.display = 'none';
+            if (fr) fr.style.display = 'block';
+            renderUploadPage();
+            setTimeout(function() { generateQr('uploadQrCanvas', location.origin + '/verify.html?id=SIEC-TR-PREVIEW', sz); }, 300);
         };
         reader.readAsArrayBuffer(f);
     } else {
+        uploadPdfMeta.pages = 0; uploadPdfMeta.sizes = []; uploadPdfMeta.page = 0;
+        var nav2 = document.getElementById('uploadPageNav'); if (nav2) nav2.style.display = 'none';
         page.style.height = '400px';
         if (fr) fr.style.display = 'none';
         if (wd) { wd.style.display = 'flex'; var n = document.getElementById('uploadWordName'); if (n) n.textContent = f.name; }
+        setTimeout(function() { generateQr('uploadQrCanvas', location.origin + '/verify.html?id=SIEC-TR-PREVIEW', sz); }, 300);
+        setTimeout(function() { initDragU(); }, 800);
     }
 }
 
+// Render 1 halaman terpilih + jaga posisi QR (persen) tetap konsisten
+function renderUploadPage() {
+    if (!uploadFileData || !uploadPdfMeta.pages) return;
+    var page = document.getElementById('uploadPreviewPage');
+    var fr = document.getElementById('uploadPreviewFrame');
+    if (!page || !fr) return;
+    if (uploadPdfMeta.page < 0) uploadPdfMeta.page = 0;
+    if (uploadPdfMeta.page > uploadPdfMeta.pages - 1) uploadPdfMeta.page = uploadPdfMeta.pages - 1;
+    var d = uploadPdfMeta.sizes[uploadPdfMeta.page] || { w: 595, h: 842 };
+    var cw = page.parentElement.offsetWidth || 600;
+    var ch = Math.round(cw * (d.h / d.w));
+    page.style.width = cw + 'px';
+    page.style.height = ch + 'px';
+    fr.style.height = ch + 'px';
+    // paksa reload iframe supaya viewer benar-benar pindah halaman
+    fr.src = 'about:blank';
+    if (uploadPdfMeta.blobUrl) URL.revokeObjectURL(uploadPdfMeta.blobUrl);
+    uploadPdfMeta.blobUrl = URL.createObjectURL(uploadFileData);
+    setTimeout(function() {
+        fr.src = uploadPdfMeta.blobUrl + '#page=' + (uploadPdfMeta.page + 1) + '&toolbar=0&navpanes=0&statusbar=0&view=FitH';
+    }, 60);
+    var pn = document.getElementById('uploadPageNum'); if (pn) pn.textContent = uploadPdfMeta.page + 1;
+    var pt = document.getElementById('uploadPageTotal'); if (pt) pt.textContent = uploadPdfMeta.pages;
+    placeUploadQrOverlay(cw, ch);
+    setTimeout(function() { initDragU(); }, 500);
+}
+
+function placeUploadQrOverlay(cw, ch) {
+    var drag = document.getElementById('uploadQrDrag');
+    if (!drag) return;
+    var nl = (uploadQrPos.x / 100) * cw - drag.offsetWidth / 2;
+    var nt = (uploadQrPos.y / 100) * ch - drag.offsetHeight / 2;
+    drag.style.left = Math.max(0, Math.min(nl, cw - drag.offsetWidth)) + 'px';
+    drag.style.top = Math.max(0, Math.min(nt, ch - drag.offsetHeight)) + 'px';
+    updateUploadPosLabel();
+}
+
+function updateUploadPosLabel() {
+    var px = document.getElementById('uploadPosX'), py = document.getElementById('uploadPosY');
+    if (px) px.textContent = Math.round(uploadQrPos.x) + '%';
+    if (py) py.textContent = Math.round(uploadQrPos.y) + '%';
+}
+
+function uploadPagePrev() { if (uploadPdfMeta.page > 0) { uploadPdfMeta.page--; renderUploadPage(); } }
+function uploadPageNext() { if (uploadPdfMeta.page < uploadPdfMeta.pages - 1) { uploadPdfMeta.page++; renderUploadPage(); } }
+function uploadPageLast() { if (uploadPdfMeta.pages) { uploadPdfMeta.page = uploadPdfMeta.pages - 1; renderUploadPage(); } }
+
 function removeUploadFile() {
     uploadFileData = null;
+    uploadPdfMeta = { pages: 0, sizes: [], page: 0, blobUrl: null };
+    uploadQrPos = { x: 80, y: 85 };
     var f = document.getElementById('uploadFile'); if (f) f.value = '';
     var fi = document.getElementById('uploadFileInfo'); if (fi) fi.style.display = 'none';
     var lv = document.getElementById('uploadLivePreview'); if (lv) lv.style.display = 'none';
-    var fr = document.getElementById('uploadPreviewFrame'); if (fr) fr.src = '';
+    var nav = document.getElementById('uploadPageNav'); if (nav) nav.style.display = 'none';
+    var fr = document.getElementById('uploadPreviewFrame'); if (fr) { if (uploadPdfMeta.blobUrl) URL.revokeObjectURL(uploadPdfMeta.blobUrl); fr.src = ''; }
+    var dg = document.getElementById('uploadQrDrag'); if (dg) { dg._siecDragBound = false; dg.style.left = '80%'; dg.style.top = '85%'; }
 }
 
 function initDragU() {
     var el = document.getElementById('uploadQrDrag'), co = document.getElementById('uploadPreviewPage');
     if (!el || !co) return;
     if (co.offsetWidth === 0 || co.offsetHeight === 0) { setTimeout(initDragU, 500); return; }
+    if (el._siecDragBound) return;  // cegah listener dobel saat ganti halaman
+    el._siecDragBound = true;
     var d = false, sx = 0, sy = 0, ol = 0, ot = 0;
     function st(x, y) { d = true; el.classList.add('dragging'); sx = x; sy = y; ol = el.offsetLeft; ot = el.offsetTop; }
     function mv(x, y) {
@@ -839,10 +905,9 @@ function initDragU() {
         var nt = Math.max(0, Math.min(ot + (y - sy), ch - el.offsetHeight));
         el.style.left = nl + 'px'; el.style.top = nt + 'px';
         var cx = nl + el.offsetWidth / 2, cy = nt + el.offsetHeight / 2;
-        var px = Math.max(5, Math.min(95, Math.round(cx / cw * 100)));
-        var py = Math.max(5, Math.min(95, Math.round(cy / ch * 100)));
-        document.getElementById('uploadPosX').textContent = px + '%';
-        document.getElementById('uploadPosY').textContent = py + '%';
+        uploadQrPos.x = Math.max(5, Math.min(95, cx / cw * 100));
+        uploadQrPos.y = Math.max(5, Math.min(95, cy / ch * 100));
+        updateUploadPosLabel();
     }
     function en() { if (!d) return; d = false; el.classList.remove('dragging'); }
     el.onmousedown = function(e) { st(e.clientX, e.clientY); e.preventDefault(); };
@@ -857,9 +922,17 @@ function getUploadQrPosition() {
     var el = document.getElementById('uploadQrDrag'), co = document.getElementById('uploadPreviewPage');
     if (el && co && co.offsetWidth > 0) {
         var cx = el.offsetLeft + el.offsetWidth / 2, cy = el.offsetTop + el.offsetHeight / 2;
-        return { x: Math.max(5, Math.min(95, Math.round(cx / co.offsetWidth * 100))), y: Math.max(5, Math.min(95, Math.round(cy / co.offsetHeight * 100))), size: parseInt(document.getElementById('uploadQrSize').value) || 80, showId: document.getElementById('uploadShowId').checked };
+        uploadQrPos.x = Math.max(5, Math.min(95, cx / co.offsetWidth * 100));
+        uploadQrPos.y = Math.max(5, Math.min(95, cy / co.offsetHeight * 100));
     }
-    return { x: 80, y: 85, size: 80, showId: true };
+    return {
+        x: Math.round(uploadQrPos.x),
+        y: Math.round(uploadQrPos.y),
+        page: uploadPdfMeta.pages ? uploadPdfMeta.page : 0,
+        totalPages: uploadPdfMeta.pages || 0,
+        size: parseInt(document.getElementById('uploadQrSize').value) || 80,
+        showId: document.getElementById('uploadShowId').checked
+    };
 }
 
 function resizeQrU() { var s = document.getElementById('uploadQrSize'); var v = parseInt(s.value); document.getElementById('uploadQrSizeVal').textContent = v + 'px'; generateQr('uploadQrCanvas', location.origin + '/verify.html?id=SIEC-TR-PREVIEW', v); }
@@ -887,7 +960,7 @@ async function saveUploadDoc() {
     try {
         showNotification('Memproses file...', 'info');
         if (uploadFileData.type === 'application/pdf') {
-            var mp = await embedQrInPdf(uploadFileData, url, docId, pos.x, pos.y, pos.size);
+            var mp = await embedQrInPdf(uploadFileData, url, docId, pos.x, pos.y, pos.size, pos.page);
             var ext = uploadFileData.name.split('.').pop();
             var nm = 'translations/' + Date.now() + '-' + Math.random().toString(36).substr(2, 9) + '.' + ext;
             var r = await db.storage.from('uploads').upload(nm, mp, { cacheControl: '3600', upsert: false });
@@ -990,7 +1063,13 @@ function editQrPosition(clientId) {
         '</div>' +
         '</div>' +
         '<div id="editQrLivePreview" class="live-preview-container" style="display:none">' +
-        '<div class="live-preview-header"><h6><i class="fas fa-hand-pointer"></i> Drag QR ke posisi baru</h6></div>' +
+        '<div class="live-preview-header"><h6><i class="fas fa-hand-pointer"></i> Drag QR ke posisi baru</h6>' +
+        '<div id="editPageNav" class="page-nav" style="display:none">' +
+        '<button type="button" onclick="editQrPagePrev()" class="btn-size" title="Halaman sebelumnya">‹</button>' +
+        '<span>Hal <strong id="editPageNum">1</strong>/<strong id="editPageTotal">1</strong></span>' +
+        '<button type="button" onclick="editQrPageNext()" class="btn-size" title="Halaman berikutnya">›</button>' +
+        '<button type="button" onclick="editQrPageLast()" class="btn-size btn-size-wide" title="Lompat ke halaman terakhir">Akhir</button>' +
+        '</div></div>' +
         '<div class="live-preview-doc"><div class="live-preview-page" id="editQrPreviewPage">' +
         '<iframe id="editQrPreviewFrame" style="display:none;width:100%;border:none"></iframe>' +
         '<div id="editQrDrag" class="qr-doc-overlay" style="left:80%;top:85%;position:absolute"><div id="editQrCanvas" style="display:inline-block"></div><div id="editQrIdText" class="qr-doc-id">' + c.document_id + '</div></div>' +
@@ -1016,63 +1095,108 @@ function editQrPosition(clientId) {
 function closeEditQrModal() {
     var m = document.getElementById('editQrModal');
     if (m) m.remove();
+    if (editPdfMeta.blobUrl) URL.revokeObjectURL(editPdfMeta.blobUrl);
+    editPdfMeta = { pages: 0, sizes: [], page: 0, blobUrl: null };
+    editQrPos = { x: 80, y: 85 };
     editQrClient = null;
     editQrFileData = null;
 }
+
+// ===== Metadata halaman PDF (modal edit posisi QR) =====
+var editPdfMeta = { pages: 0, sizes: [], page: 0, blobUrl: null };
+var editQrPos = { x: 80, y: 85 };
 
 function handleEditQrFileSelect(input) {
     var f = input.files[0];
     if (!f) return;
     if (f.size > 10485760) { showNotification('Max 10MB!', 'error'); return; }
-    if (f.type !== 'application/pdf') { showNotification('Harus PDF!', 'error'); return; }
+    if (f.type !== 'application/pdf' && !/\.pdf$/i.test(f.name)) { showNotification('Harus PDF!', 'error'); return; }
     editQrFileData = f;
     document.getElementById('editQrLivePreview').style.display = 'block';
-    var page = document.getElementById('editQrPreviewPage');
-    var fr = document.getElementById('editQrPreviewFrame');
+    var szEl = document.getElementById('editQrSize');
+
+    // default: halaman 1 (dokumen lama QR-nya memang di halaman 1)
+    var savedPage = 0;
+    editQrPos = { x: 80, y: 85 };
+    if (editQrClient && editQrClient.qr_position) {
+        try {
+            var p = JSON.parse(editQrClient.qr_position);
+            if (typeof p.x === 'number') editQrPos.x = p.x;
+            if (typeof p.y === 'number') editQrPos.y = p.y;
+            if (typeof p.page === 'number') savedPage = p.page;
+            if (szEl && p.size) { szEl.value = p.size; document.getElementById('editQrSizeVal').textContent = p.size + 'px'; }
+        } catch (e) {}
+    }
 
     var reader = new FileReader();
     reader.onload = async function(e) {
         try {
             var pdfDoc = await PDFLib.PDFDocument.load(e.target.result);
-            var pg = pdfDoc.getPages()[0];
-            var pw = pg.getWidth(), ph = pg.getHeight();
-            var cw = page.parentElement.offsetWidth || 600;
-            var ch = Math.round(cw * (ph / pw));
-            page.style.width = cw + 'px';
-            page.style.height = ch + 'px';
-            if (fr) { fr.src = URL.createObjectURL(f); fr.style.display = 'block'; fr.style.height = ch + 'px'; }
-            if (editQrClient.qr_position) {
-                try {
-                    var pos = JSON.parse(editQrClient.qr_position);
-                    setTimeout(function() {
-                        var drag = document.getElementById('editQrDrag');
-                        if (drag) {
-                            var nl = (pos.x / 100) * cw - 50;
-                            var nt = (pos.y / 100) * ch - 50;
-                            drag.style.left = nl + 'px';
-                            drag.style.top = nt + 'px';
-                            document.getElementById('editPosX').textContent = pos.x + '%';
-                            document.getElementById('editPosY').textContent = pos.y + '%';
-                        }
-                        var sz = document.getElementById('editQrSize');
-                        if (sz && pos.size) { sz.value = pos.size; document.getElementById('editQrSizeVal').textContent = pos.size + 'px'; }
-                    }, 800);
-                } catch (e) {}
-            }
-            setTimeout(function() {
-                generateQr('editQrCanvas', editQrClient.verify_url || (location.origin + '/verify.html?id=' + editQrClient.document_id), 80);
-            }, 600);
-            setTimeout(function() { initEditDrag(); }, 1500);
-        } catch (err) { console.error(err); }
+            var pages = pdfDoc.getPages();
+            editPdfMeta.pages = pages.length;
+            editPdfMeta.sizes = pages.map(function(pg) { return { w: pg.getWidth(), h: pg.getHeight() }; });
+        } catch (err) { console.error(err); editPdfMeta.pages = 0; editPdfMeta.sizes = []; }
+        editPdfMeta.page = Math.max(0, Math.min(savedPage, Math.max(0, editPdfMeta.pages - 1)));
+        var nav = document.getElementById('editPageNav');
+        if (nav) nav.style.display = editPdfMeta.pages > 1 ? 'inline-flex' : 'none';
+        renderEditQrPage();
+        setTimeout(function() {
+            generateQr('editQrCanvas', editQrClient.verify_url || (location.origin + '/verify.html?id=' + editQrClient.document_id), parseInt(szEl && szEl.value) || 80);
+        }, 300);
     };
     reader.readAsArrayBuffer(f);
 }
+
+function renderEditQrPage() {
+    if (!editQrFileData || !editPdfMeta.pages) return;
+    var page = document.getElementById('editQrPreviewPage');
+    var fr = document.getElementById('editQrPreviewFrame');
+    if (!page || !fr) return;
+    if (editPdfMeta.page < 0) editPdfMeta.page = 0;
+    if (editPdfMeta.page > editPdfMeta.pages - 1) editPdfMeta.page = editPdfMeta.pages - 1;
+    var d = editPdfMeta.sizes[editPdfMeta.page] || { w: 595, h: 842 };
+    var cw = page.parentElement.offsetWidth || 600;
+    var ch = Math.round(cw * (d.h / d.w));
+    page.style.width = cw + 'px';
+    page.style.height = ch + 'px';
+    fr.style.display = 'block';
+    fr.style.height = ch + 'px';
+    fr.src = 'about:blank';
+    if (editPdfMeta.blobUrl) URL.revokeObjectURL(editPdfMeta.blobUrl);
+    editPdfMeta.blobUrl = URL.createObjectURL(editQrFileData);
+    setTimeout(function() {
+        fr.src = editPdfMeta.blobUrl + '#page=' + (editPdfMeta.page + 1) + '&toolbar=0&navpanes=0&statusbar=0&view=FitH';
+    }, 60);
+    var pn = document.getElementById('editPageNum'); if (pn) pn.textContent = editPdfMeta.page + 1;
+    var pt = document.getElementById('editPageTotal'); if (pt) pt.textContent = editPdfMeta.pages;
+    var drag = document.getElementById('editQrDrag');
+    if (drag) {
+        var nl = (editQrPos.x / 100) * cw - drag.offsetWidth / 2;
+        var nt = (editQrPos.y / 100) * ch - drag.offsetHeight / 2;
+        drag.style.left = Math.max(0, Math.min(nl, cw - drag.offsetWidth)) + 'px';
+        drag.style.top = Math.max(0, Math.min(nt, ch - drag.offsetHeight)) + 'px';
+    }
+    updateEditPosLabel();
+    setTimeout(function() { initEditDrag(); }, 500);
+}
+
+function updateEditPosLabel() {
+    var px = document.getElementById('editPosX'), py = document.getElementById('editPosY');
+    if (px) px.textContent = Math.round(editQrPos.x) + '%';
+    if (py) py.textContent = Math.round(editQrPos.y) + '%';
+}
+
+function editQrPagePrev() { if (editPdfMeta.page > 0) { editPdfMeta.page--; renderEditQrPage(); } }
+function editQrPageNext() { if (editPdfMeta.page < editPdfMeta.pages - 1) { editPdfMeta.page++; renderEditQrPage(); } }
+function editQrPageLast() { if (editPdfMeta.pages) { editPdfMeta.page = editPdfMeta.pages - 1; renderEditQrPage(); } }
 
 function initEditDrag() {
     var el = document.getElementById('editQrDrag');
     var co = document.getElementById('editQrPreviewPage');
     if (!el || !co) return;
     if (co.offsetWidth === 0) { setTimeout(initEditDrag, 500); return; }
+    if (el._siecDragBound) return;
+    el._siecDragBound = true;
     var d = false, sx = 0, sy = 0, ol = 0, ot = 0;
     function st(x, y) { d = true; el.classList.add('dragging'); sx = x; sy = y; ol = el.offsetLeft; ot = el.offsetTop; }
     function mv(x, y) {
@@ -1082,10 +1206,9 @@ function initEditDrag() {
         var nt = Math.max(0, Math.min(ot + (y - sy), ch - el.offsetHeight));
         el.style.left = nl + 'px'; el.style.top = nt + 'px';
         var cx = nl + el.offsetWidth / 2, cy = nt + el.offsetHeight / 2;
-        var px = Math.max(5, Math.min(95, Math.round(cx / cw * 100)));
-        var py = Math.max(5, Math.min(95, Math.round(cy / ch * 100)));
-        document.getElementById('editPosX').textContent = px + '%';
-        document.getElementById('editPosY').textContent = py + '%';
+        editQrPos.x = Math.max(5, Math.min(95, cx / cw * 100));
+        editQrPos.y = Math.max(5, Math.min(95, cy / ch * 100));
+        updateEditPosLabel();
     }
     function en() { if (!d) return; d = false; el.classList.remove('dragging'); }
     el.onmousedown = function(e) { st(e.clientX, e.clientY); e.preventDefault(); };
@@ -1115,16 +1238,22 @@ async function saveEditedQr() {
     try {
         var el = document.getElementById('editQrDrag');
         var co = document.getElementById('editQrPreviewPage');
-        var cx = el.offsetLeft + el.offsetWidth / 2;
-        var cy = el.offsetTop + el.offsetHeight / 2;
+        if (el && co && co.offsetWidth > 0) {
+            var cx = el.offsetLeft + el.offsetWidth / 2;
+            var cy = el.offsetTop + el.offsetHeight / 2;
+            editQrPos.x = Math.max(5, Math.min(95, cx / co.offsetWidth * 100));
+            editQrPos.y = Math.max(5, Math.min(95, cy / co.offsetHeight * 100));
+        }
         var pos = {
-            x: Math.max(5, Math.min(95, Math.round(cx / co.offsetWidth * 100))),
-            y: Math.max(5, Math.min(95, Math.round(cy / co.offsetHeight * 100))),
+            x: Math.round(editQrPos.x),
+            y: Math.round(editQrPos.y),
+            page: editPdfMeta.pages ? editPdfMeta.page : 0,
+            totalPages: editPdfMeta.pages || 0,
             size: parseInt(document.getElementById('editQrSize').value) || 80,
             showId: true
         };
         var url = editQrClient.verify_url || (location.origin + '/verify.html?id=' + editQrClient.document_id + '&type=translation');
-        var mp = await embedQrInPdf(editQrFileData, url, editQrClient.document_id, pos.x, pos.y, pos.size);
+        var mp = await embedQrInPdf(editQrFileData, url, editQrClient.document_id, pos.x, pos.y, pos.size, pos.page);
         var nm = 'translations/' + Date.now() + '-' + Math.random().toString(36).substr(2, 9) + '.pdf';
         var r = await db.storage.from('uploads').upload(nm, mp, { cacheControl: '3600', upsert: false });
         if (r.error) throw r.error;
