@@ -327,7 +327,7 @@ async function submitReview() {
     btn.disabled = true;
 
     try {
-        await db.from('testimonials').insert({
+        var ins = await db.from('testimonials').insert({
             client_id: currentDoc.id,
             document_id: currentDoc.document_id,
             client_name: currentDoc.client_name,
@@ -335,12 +335,14 @@ async function submitReview() {
             universitas: currentDoc.universitas || null,
             rating: selectedRating,
             review_text: reviewText,
-            is_approved: true
+            is_approved: false // wajib false: testimoni menunggu moderasi admin (syarat kebijakan keamanan RLS)
         });
+        if (ins.error) throw new Error(ins.error.message || 'Gagal mengirim testimoni');
 
-        await db.from('translation_clients').update({ has_reviewed: true }).eq('id', currentDoc.id);
+        var upd = await db.from('translation_clients').update({ has_reviewed: true }).eq('id', currentDoc.id);
+        if (upd.error) console.warn('has_reviewed gagal diupdate:', upd.error);
 
-        showNotification('🎉 Terima kasih atas review Anda!');
+        showNotification('🎉 Terima kasih! Testimoni Anda akan tampil setelah diverifikasi tim kami 🙏');
         closeReviewModal();
 
         currentDoc.has_reviewed = true;
