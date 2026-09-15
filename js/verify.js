@@ -327,15 +327,16 @@ async function submitReview() {
     btn.disabled = true;
 
     try {
-        var ins = await db.from('testimonials').insert({
-            client_id: currentDoc.id,
-            document_id: currentDoc.document_id,
-            client_name: currentDoc.client_name,
-            document_type: currentDoc.document_type,
-            universitas: currentDoc.universitas || null,
-            rating: selectedRating,
-            review_text: reviewText,
-            is_approved: false // wajib false: testimoni menunggu moderasi admin (syarat kebijakan keamanan RLS)
+        // Kirim via fungsi server (RPC): jalur resmi & aman — server memaksa status pending,
+        // kebal dari trigger/policy misterius di tabel.
+        var ins = await db.rpc('submit_testimonial', {
+            p_client_id: currentDoc.id,
+            p_document_id: currentDoc.document_id,
+            p_client_name: currentDoc.client_name,
+            p_document_type: currentDoc.document_type,
+            p_universitas: currentDoc.universitas || null,
+            p_rating: selectedRating,
+            p_review_text: reviewText
         });
         if (ins.error) throw new Error(ins.error.message || 'Gagal mengirim testimoni');
 
