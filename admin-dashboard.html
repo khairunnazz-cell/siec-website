@@ -243,6 +243,13 @@
                             <label style="display:flex;align-items:center;gap:4px"><input type="checkbox" id="uploadShowId" checked onchange="toggleQrIdU()">ID</label>
                         </div>
                     </div>
+                    <div id="wordQrBox" style="margin:10px 0;padding:10px 12px;border:1px dashed var(--gray-300);border-radius:8px;background:#f8fafc">
+                        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+                            <button type="button" class="btn btn-outline" id="copyQrBtn" onclick="copyQrToClipboard()"><i class="fas fa-copy"></i> Salin QR untuk Word</button>
+                            <span id="qrManualStatus" style="display:none;font-size:0.78rem;color:#16a34a;font-weight:600"></span>
+                        </div>
+                        <small style="color:#64748b;font-size:0.72rem;line-height:1.5;display:block;margin-top:6px">File <b>Word/DOCX</b>? Klik tombol di atas untuk menyalin gambar QR (tanpa download) → tempel (Ctrl+V) langsung di Word &amp; atur posisi sesukamu → lalu upload. File akan diupload apa adanya tanpa QR ditempel sistem lagi.</small>
+                    </div>
                     <div class="form-actions">
                         <button class="btn btn-primary" onclick="saveUploadDoc()"><i class="fas fa-save"></i> Upload & Selesaikan</button>
                         <button class="btn btn-outline" onclick="hideUploadDocForm()">Batal</button>
@@ -540,6 +547,7 @@
 <script src="js/app.js"></script>
 <script src="js/auth.js"></script>
 <script src="js/admin.js"></script>
-<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","spa":2}' crossorigin="anonymous"></script>
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3a754ad8908fd70',t:'MTc4OTMwNDM4Mw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+
+<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3b899c4dd73f936',t:'MTc4OTQ4NTQ3MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","spa":2}' crossorigin="anonymous"></script>
+</body>
 </html>

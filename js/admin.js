@@ -776,6 +776,9 @@ function showUploadDocForm(client) {
         defaultTitle = 'Abstract: ' + client.judul_skripsi.substring(0, 50);
     }
     document.getElementById('uploadDocTitle').value = defaultTitle;
+    uploadQrManual = { active: false, docId: null, url: null };
+    var _nst = document.getElementById('qrManualStatus'); if (_nst) { _nst.style.display = 'none'; _nst.textContent = ''; }
+    var _nid = document.getElementById('uploadQrIdText'); if (_nid) _nid.textContent = 'SIEC-TR-XXXX';
     uploadFileData = null;
     removeUploadFile();
 }
@@ -785,6 +788,72 @@ function hideUploadDocForm() { document.getElementById('uploadDocForm').style.di
 // ===== Metadata halaman PDF (preview upload dokumen terjemahan) =====
 var uploadPdfMeta = { pages: 0, sizes: [], page: 0, blobUrl: null };
 var uploadQrPos = { x: 80, y: 85 };
+
+// ===== Mode Word/DOCX: salin QR ke clipboard, tempel manual di Word =====
+var uploadQrManual = { active: false, docId: null, url: null };
+
+function loadImgSafe(src) { return new Promise(function(res){ var i = new Image(); i.onload = function(){ res(i); }; i.onerror = function(){ res(null); }; i.src = src; }); }
+
+async function buildQrStampBlob(url, idText) {
+    var qrResp = await fetch(getQrUrl(url, 300));
+    if (!qrResp.ok) throw new Error('Server QR tidak merespons');
+    var qrBlobUrl = URL.createObjectURL(await qrResp.blob());
+    var pad = 24, size = 360, textH = 64;
+    var cv = document.createElement('canvas');
+    cv.width = size + pad * 2; cv.height = size + pad * 2 + textH;
+    var ctx = cv.getContext('2d');
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, cv.width, cv.height);
+    var qi = await loadImgSafe(qrBlobUrl);
+    URL.revokeObjectURL(qrBlobUrl);
+    if (!qi) throw new Error('Gambar QR gagal dimuat');
+    ctx.drawImage(qi, pad, pad, size, size);
+    try {
+        var lr = await fetch(LOGO_URL);
+        if (lr.ok) {
+            var lurl = URL.createObjectURL(await lr.blob());
+            var li = await loadImgSafe(lurl);
+            URL.revokeObjectURL(lurl);
+            if (li) {
+                var ls = size * 0.22, cx = pad + size / 2, cy = pad + size / 2;
+                ctx.fillStyle = '#fff'; ctx.beginPath(); ctx.arc(cx, cy, ls / 2 + 6, 0, Math.PI * 2); ctx.fill();
+                ctx.strokeStyle = '#2563eb'; ctx.lineWidth = 3; ctx.stroke();
+                ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, ls / 2, 0, Math.PI * 2); ctx.clip();
+                ctx.drawImage(li, cx - ls / 2, cy - ls / 2, ls, ls); ctx.restore();
+            }
+        }
+    } catch (e) {}
+    ctx.fillStyle = '#000'; ctx.textAlign = 'center';
+    ctx.font = 'bold 22px Arial, sans-serif';
+    ctx.fillText(idText, cv.width / 2, size + pad * 2 + 28);
+    ctx.fillStyle = '#6b7280'; ctx.font = '15px Arial, sans-serif';
+    ctx.fillText('Scan QR untuk verifikasi', cv.width / 2, size + pad * 2 + 52);
+    return await new Promise(function(res, rej){ cv.toBlob(function(b){ b ? res(b) : rej(new Error('toBlob gagal')); }, 'image/png'); });
+}
+
+async function copyQrToClipboard() {
+    try {
+        if (!navigator.clipboard || !window.ClipboardItem) {
+            showNotification('Browser tidak mendukung salin gambar — gunakan Chrome/Edge terbaru', 'error');
+            return;
+        }
+        if (!uploadQrManual.docId) {
+            uploadQrManual.docId = generateDocumentId('TR');
+            uploadQrManual.url = location.origin + '/verify.html?id=' + uploadQrManual.docId + '&type=translation';
+        }
+        showNotification('Membuat gambar QR...', 'info');
+        var blob = await buildQrStampBlob(uploadQrManual.url, uploadQrManual.docId);
+        await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]);
+        uploadQrManual.active = true;
+        // tampilkan QR aslinya di preview + tulis ID-nya
+        generateQr('uploadQrCanvas', uploadQrManual.url, parseInt(document.getElementById('uploadQrSize').value) || 80);
+        var idt = document.getElementById('uploadQrIdText'); if (idt) idt.textContent = uploadQrManual.docId;
+        var st = document.getElementById('qrManualStatus');
+        if (st) { st.style.display = 'inline'; st.textContent = '\u2705 QR tersalin! Tempel (Ctrl+V) di Word, atur posisinya, lalu upload \u2014 file tidak ditempel QR lagi oleh sistem. ID: ' + uploadQrManual.docId; }
+        showNotification('\U0001F4CB QR disalin! Tempel (Ctrl+V) di dokumen Word-mu');
+    } catch (e) {
+        showNotification('Gagal menyalin: ' + (e.message || e) + ' — klik tombolnya sekali lagi', 'error');
+    }
+}
 
 function handleUploadFilePreview(input) {
     var f = input.files[0]; if (!f) return;
@@ -953,13 +1022,18 @@ async function saveUploadDoc() {
     var docTitle = document.getElementById('uploadDocTitle').value.trim();
     if (!clientId || !docTitle) { showNotification('Judul dokumen wajib!', 'error'); return; }
     if (!uploadFileData) { showNotification('Upload file dulu!', 'error'); return; }
-    var docId = generateDocumentId('TR');
+    var docId = (uploadQrManual.active && uploadQrManual.docId) ? uploadQrManual.docId : generateDocumentId('TR');
     var url = location.origin + '/verify.html?id=' + docId + '&type=translation';
     var pos = getUploadQrPosition();
+    pos.manual = uploadQrManual.active;
     var fu = '', fn = '';
     try {
         showNotification('Memproses file...', 'info');
-        if (uploadFileData.type === 'application/pdf') {
+        if (uploadQrManual.active) {
+            // Mode Word/DOCX: QR sudah disalin & ditempel manual oleh admin → file diupload apa adanya
+            var up0 = await uploadFile(uploadFileData, 'translations');
+            fu = up0.url; fn = uploadFileData.name;
+        } else if (uploadFileData.type === 'application/pdf') {
             var mp = await embedQrInPdf(uploadFileData, url, docId, pos.x, pos.y, pos.size, pos.page);
             var ext = uploadFileData.name.split('.').pop();
             var nm = 'translations/' + Date.now() + '-' + Math.random().toString(36).substr(2, 9) + '.' + ext;
