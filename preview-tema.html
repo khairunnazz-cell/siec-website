@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Preview Tema — SIEC (Demo)</title>
+    <meta name="robots" content="noindex">
+    <script>try{document.documentElement.setAttribute('data-theme',localStorage.getItem('siec_theme')||'default')}catch(e){}</script>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/themes.css">
+    <style>
+        .theme-bar{position:fixed;bottom:16px;left:50%;transform:translateX(-50%);z-index:2000;display:flex;gap:8px;flex-wrap:wrap;justify-content:center;background:rgba(15,23,42,.85);backdrop-filter:blur(10px);padding:10px 14px;border-radius:999px;box-shadow:0 8px 30px rgba(0,0,0,.3)}
+        .theme-bar button{border:2px solid transparent;border-radius:999px;padding:8px 14px;font-weight:700;font-size:.78rem;cursor:pointer;color:#fff;font-family:inherit}
+        .theme-bar button.on{border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.35)}
+        .demo-wrap{max-width:1000px;margin:0 auto;padding:120px 20px 140px;display:flex;flex-direction:column;gap:22px}
+        .demo-note{background:#fef3c7;color:#92400e;border:1px solid #fde68a;border-radius:10px;padding:10px 14px;font-size:.8rem}
+        .sw-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container nav-container">
+            <a href="#" class="nav-logo"><img src="assets/logo.png" alt="SIEC" class="nav-logo-img"><div class="logo-text"><span class="logo-main">SIEC</span><span class="logo-sub">Syaf Intensive English Course</span></div></a>
+            <ul class="nav-menu" id="navMenu"><li><a class="nav-link" href="#">Beranda</a></li><li><a class="nav-link" href="#">Program</a></li><li><a class="nav-link" href="#">Verifikasi</a></li></ul>
+        </div>
+    </nav>
+
+    <div class="demo-wrap">
+        <div class="demo-note">⚠️ <b>Halaman DEMO</b> di perangkat ini saja — tidak mengubah situs asli. Ganti tema lewat tombol di bawah. Aktivasi resmi untuk semua pengunjung: dashboard admin → <b>Tampilan</b>.</div>
+
+        <!-- Hero sample -->
+        <section class="hero" style="min-height:auto;padding:40px 0">
+            <div class="hero-container container">
+                <div class="hero-content">
+                    <span class="hero-badge">✨ Contoh Komponen Hero</span>
+                    <h1>Belajar Bahasa Inggris &amp; TOEFL</h1>
+                    <p class="hero-desc">Ini contoh blok hero untuk melihat nuansa tiap tema: judul, deskripsi, tombol, dan statistik.</p>
+                    <div class="hero-buttons"><a class="btn btn-primary btn-lg" href="#">Daftar Sekarang</a><a class="btn btn-outline btn-lg" href="#">Lihat Program</a></div>
+                    <div class="hero-stats"><div><h3>500+</h3><p>Siswa</p></div><div><h3>4.9</h3><p>Rating</p></div></div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Tombol-tombol -->
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <button class="btn btn-primary">Primary</button>
+            <button class="btn btn-success">Success</button>
+            <button class="btn btn-warning">Warning</button>
+            <button class="btn btn-danger">Danger</button>
+            <button class="btn btn-outline">Outline</button>
+            <button class="btn btn-primary btn-sm">Small</button>
+        </div>
+
+        <!-- Service cards -->
+        <div class="sw-row">
+            <div class="service-card" style="padding:22px;border-radius:14px"><h3 style="margin:0 0 6px">📚 Kursus</h3><p style="margin:0;color:var(--gray-600);font-size:.85rem">Contoh kartu layanan dengan teks sekunder dan bayangan.</p></div>
+            <div class="service-card" style="padding:22px;border-radius:14px"><h3 style="margin:0 0 6px">📄 Terjemahan</h3><p style="margin:0;color:var(--gray-600);font-size:.85rem">Dokumen resmi disumpah, cepat dan terverifikasi QR.</p></div>
+            <div class="service-card" style="padding:22px;border-radius:14px"><h3 style="margin:0 0 6px">🎯 TOEFL</h3><p style="margin:0;color:var(--gray-600);font-size:.85rem">Tes prediksi &amp; resmi dengan sertifikat terpercaya.</p></div>
+        </div>
+
+        <!-- Program card headers (semua varian) -->
+        <div class="sw-row">
+            <div class="program-card" style="border-radius:14px;overflow:hidden"><div class="program-card-header private" style="padding:16px;color:#fff"><b>Private</b><br><small>gradient-1</small></div></div>
+            <div class="program-card" style="border-radius:14px;overflow:hidden"><div class="program-card-header group" style="padding:16px;color:#fff"><b>Grup</b><br><small>gradient-2</small></div></div>
+            <div class="program-card" style="border-radius:14px;overflow:hidden"><div class="program-card-header toefl" style="padding:16px;color:#fff"><b>TOEFL</b><br><small>gradient-3</small></div></div>
+            <div class="program-card" style="border-radius:14px;overflow:hidden"><div class="program-card-header translation" style="padding:16px;color:#fff"><b>Terjemahan</b><br><small>gradient-4</small></div></div>
+        </div>
+
+        <!-- Artikel + testimoni -->
+        <div class="sw-row" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">
+            <div class="article-card" style="border-radius:14px;overflow:hidden"><div style="padding:18px"><span class="hero-badge" style="font-size:.7rem">TOEFL</span><h3 style="margin:8px 0 6px">TOEFL Structure Skills 4</h3><p style="color:var(--gray-600);font-size:.85rem;margin:0">Contoh kartu artikel: judul, ringkasan, dan badge kategori.</p></div></div>
+            <div class="testimonial-card-large" style="border-radius:14px;padding:20px"><p style="margin:0 0 10px;font-style:italic">"Materinya mudah dipahami dan QR verifikasinya keren!"</p><b>Alvi Hidayat</b><br><small style="color:var(--gray-600)">⭐⭐⭐⭐⭐ · Abstrak Skripsi</small></div>
+        </div>
+
+        <!-- Filter + input -->
+        <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center">
+            <button class="filter-btn active" style="padding:8px 14px;border-radius:999px;border:1px solid var(--gray-300)">Semua</button>
+            <button class="filter-btn" style="padding:8px 14px;border-radius:999px;border:1px solid var(--gray-300)">TOEFL</button>
+            <input type="text" placeholder="Contoh kolom input..." style="padding:8px 12px;border-radius:8px;border:1px solid var(--gray-300)">
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container footer-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:20px">
+            <div><div class="footer-logo"><span class="logo-main" style="font-weight:800;font-size:1.2rem">SIEC</span></div><p style="font-size:.82rem;margin-top:8px">Contoh blok footer untuk melihat warna di tiap tema.</p></div>
+            <div><h4>Kontak</h4><p style="font-size:.82rem">Pekanbaru, Riau<br>0852-6468-6148</p></div>
+        </div>
+    </footer>
+
+    <div class="theme-bar" id="themeBar"></div>
+    <script>
+        var THEMES = [
+            ['default', '⚪ Default', 'linear-gradient(135deg,#2563eb,#7c3aed)'],
+            ['midnight', '🌙 Midnight', 'linear-gradient(135deg,#0b1220,#4338ca)'],
+            ['emerald', '🌿 Emerald', 'linear-gradient(135deg,#059669,#0d9488)'],
+            ['sunset', '🌅 Sunset', 'linear-gradient(135deg,#ea580c,#f59e0b)'],
+            ['royal', '👑 Royal', 'linear-gradient(135deg,#6d28d9,#d97706)']
+        ];
+        var bar = document.getElementById('themeBar');
+        function renderBar() {
+            var cur = document.documentElement.getAttribute('data-theme') || 'default';
+            bar.innerHTML = THEMES.map(function (t) {
+                return '<button class="' + (t[0] === cur ? 'on' : '') + '" style="background:' + t[2] + '" onclick="setT(\'' + t[0] + '\')">' + t[1] + '</button>';
+            }).join('');
+        }
+        function setT(id) {
+            document.documentElement.setAttribute('data-theme', id);
+            try { localStorage.setItem('siec_theme', id); } catch (e) {}
+            renderBar();
+        }
+        renderBar();
+    </script>
+</body>
+</html>

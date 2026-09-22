@@ -1,0 +1,168 @@
+/* ============================================================
+   SIEC — SISTEM TEMA PENGUNJUNG
+   Tema diaktifkan lewat atribut: <html data-theme="midnight">
+   Nilai valid: default | midnight | emerald | sunset | royal
+   "default" = tanpa override (tampilan asli style.css).
+   File murni CSS variabel + override selektif → nol beban JS.
+   ============================================================ */
+
+/* Transisi halus saat tema berganti (hanya properti warna) */
+html[data-theme] body,
+html[data-theme] .navbar,
+html[data-theme] .footer,
+html[data-theme] .btn,
+html[data-theme] .service-card,
+html[data-theme] .article-card,
+html[data-theme] .program-card,
+html[data-theme] .hero-card,
+html[data-theme] .verify-box,
+html[data-theme] .testimonial-card-large {
+    transition: background-color .25s ease, color .25s ease, border-color .25s ease;
+}
+
+/* ============================================================
+   🌙 MIDNIGHT — dark mode elegan, aksen biru-ungu neon
+   ============================================================ */
+html[data-theme="midnight"] {
+    --primary: #60a5fa;
+    --primary-dark: #3b82f6;
+    --primary-light: #172554;
+    --secondary: #a78bfa;
+    --accent: #22d3ee;
+    --success: #34d399;
+    --warning: #fbbf24;
+    --danger: #f87171;
+    /* ramp abu dibalik: teks jadi terang, latar jadi gelap */
+    --dark: #f1f5f9;
+    --gray-900: #e2e8f0;
+    --gray-800: #cbd5e1;
+    --gray-700: #94a3b8;
+    --gray-600: #8ea0b5;
+    --gray-500: #64748b;
+    --gray-400: #475569;
+    --gray-300: #334155;
+    --gray-200: #1e293b;
+    --gray-100: #0b1220;
+}
+html[data-theme="midnight"] body { background: #0b1220; }
+html[data-theme="midnight"] .navbar {
+    background: rgba(11, 18, 32, 0.88);
+    border-bottom-color: #1e293b;
+}
+html[data-theme="midnight"] .footer { background: #020617; color: #94a3b8; }
+html[data-theme="midnight"] .hero-card,
+html[data-theme="midnight"] .services,
+html[data-theme="midnight"] .service-card,
+html[data-theme="midnight"] .article-card,
+html[data-theme="midnight"] .article-body,
+html[data-theme="midnight"] .verify-box,
+html[data-theme="midnight"] .verify-tab,
+html[data-theme="midnight"] .filter-btn,
+html[data-theme="midnight"] .program-card,
+html[data-theme="midnight"] .testimonial-card-large,
+html[data-theme="midnight"] .carousel-arrow,
+html[data-theme="midnight"] .rating-stats-section,
+html[data-theme="midnight"] .review-modal-content,
+html[data-theme="midnight"] .rating-section,
+html[data-theme="midnight"] .admin-login-card {
+    background: #111c30;
+    border-color: #1e293b;
+    color: var(--gray-800);
+}
+html[data-theme="midnight"] input:not([type="submit"]):not([type="button"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+html[data-theme="midnight"] textarea,
+html[data-theme="midnight"] select {
+    background: #0f1a2e;
+    color: #e2e8f0;
+    border-color: #263449;
+}
+html[data-theme="midnight"] input::placeholder,
+html[data-theme="midnight"] textarea::placeholder { color: #64748b; }
+html[data-theme="midnight"] .gradient-1,
+html[data-theme="midnight"] .program-card-header.private { background: linear-gradient(135deg, #1d4ed8, #6d28d9); }
+html[data-theme="midnight"] .gradient-2,
+html[data-theme="midnight"] .program-card-header.group { background: linear-gradient(135deg, #6d28d9, #be185d); }
+html[data-theme="midnight"] .gradient-3,
+html[data-theme="midnight"] .program-card-header.toefl { background: linear-gradient(135deg, #0e7490, #1d4ed8); }
+html[data-theme="midnight"] .gradient-4,
+html[data-theme="midnight"] .program-card-header.translation { background: linear-gradient(135deg, #047857, #0e7490); }
+html[data-theme="midnight"] .btn-outline {
+    color: var(--primary);
+    border-color: var(--primary);
+}
+html[data-theme="midnight"] .btn-outline:hover { background: var(--primary); color: #0b1220; }
+html[data-theme="midnight"] .article-body h2 { color: #f1f5f9; }
+html[data-theme="midnight"] hr { border-color: #1e293b; }
+
+/* ============================================================
+   🌿 EMERALD FRESH — hijau-teal segar, tombol membulat (pil)
+   ============================================================ */
+html[data-theme="emerald"] {
+    --primary: #059669;
+    --primary-dark: #047857;
+    --primary-light: #d1fae5;
+    --secondary: #0d9488;
+    --accent: #f59e0b;
+}
+html[data-theme="emerald"] body { background: #f4fbf7; }
+html[data-theme="emerald"] .btn { border-radius: 999px; }
+html[data-theme="emerald"] .btn-sm { border-radius: 999px; }
+html[data-theme="emerald"] .navbar { border-bottom: 2px solid #d1fae5; }
+html[data-theme="emerald"] .gradient-1,
+html[data-theme="emerald"] .program-card-header.private { background: linear-gradient(135deg, #059669, #0d9488); }
+html[data-theme="emerald"] .gradient-2,
+html[data-theme="emerald"] .program-card-header.group { background: linear-gradient(135deg, #0d9488, #65a30d); }
+html[data-theme="emerald"] .gradient-3,
+html[data-theme="emerald"] .program-card-header.toefl { background: linear-gradient(135deg, #0891b2, #059669); }
+html[data-theme="emerald"] .gradient-4,
+html[data-theme="emerald"] .program-card-header.translation { background: linear-gradient(135deg, #047857, #34d399); }
+html[data-theme="emerald"] .footer { background: #052e22; color: #a7d7c5; }
+html[data-theme="emerald"] .hero-card { border: 1px solid #d1fae5; }
+
+/* ============================================================
+   🌅 SUNSET WARM — oranye-merah hangat, latar krem
+   ============================================================ */
+html[data-theme="sunset"] {
+    --primary: #ea580c;
+    --primary-dark: #c2410c;
+    --primary-light: #ffedd5;
+    --secondary: #e11d48;
+    --accent: #f59e0b;
+    --gray-100: #fff7ed;
+}
+html[data-theme="sunset"] body { background: #fff7ed; }
+html[data-theme="sunset"] .navbar { background: rgba(255, 251, 245, 0.95); }
+html[data-theme="sunset"] .gradient-1,
+html[data-theme="sunset"] .program-card-header.private { background: linear-gradient(135deg, #ea580c, #e11d48); }
+html[data-theme="sunset"] .gradient-2,
+html[data-theme="sunset"] .program-card-header.group { background: linear-gradient(135deg, #e11d48, #9333ea); }
+html[data-theme="sunset"] .gradient-3,
+html[data-theme="sunset"] .program-card-header.toefl { background: linear-gradient(135deg, #f59e0b, #ea580c); }
+html[data-theme="sunset"] .gradient-4,
+html[data-theme="sunset"] .program-card-header.translation { background: linear-gradient(135deg, #d97706, #dc2626); }
+html[data-theme="sunset"] .footer { background: #2b1207; color: #d8bfa8; }
+html[data-theme="sunset"] .hero-card { box-shadow: 0 10px 30px rgba(234, 88, 12, 0.12); }
+
+/* ============================================================
+   👑 ROYAL PURPLE — ungu premium + aksen emas akademis
+   ============================================================ */
+html[data-theme="royal"] {
+    --primary: #6d28d9;
+    --primary-dark: #5b21b6;
+    --primary-light: #ede9fe;
+    --secondary: #4c1d95;
+    --accent: #d97706;
+}
+html[data-theme="royal"] body { background: #faf8ff; }
+html[data-theme="royal"] .navbar { border-bottom: 2px solid var(--accent); }
+html[data-theme="royal"] .gradient-1,
+html[data-theme="royal"] .program-card-header.private { background: linear-gradient(135deg, #6d28d9, #4c1d95); }
+html[data-theme="royal"] .gradient-2,
+html[data-theme="royal"] .program-card-header.group { background: linear-gradient(135deg, #4c1d95, #be185d); }
+html[data-theme="royal"] .gradient-3,
+html[data-theme="royal"] .program-card-header.toefl { background: linear-gradient(135deg, #d97706, #b45309); }
+html[data-theme="royal"] .gradient-4,
+html[data-theme="royal"] .program-card-header.translation { background: linear-gradient(135deg, #7c3aed, #d97706); }
+html[data-theme="royal"] .footer { background: #1e1040; color: #c4b5e8; }
+html[data-theme="royal"] .section-badge,
+html[data-theme="royal"] .hero-badge { border: 1px solid #e9d5ff; }

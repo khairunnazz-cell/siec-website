@@ -155,6 +155,62 @@ function switchSection(s) {
     if (s === 'penerjemah') loadTranslators();
     if (s === 'qr-pages') loadQrPages();
     if (s === 'test-reg') loadTestRegs();
+    if (s === 'tampilan') loadThemeAdmin();
+}
+
+// ============================================
+// TEMA TAMPILAN WEBSITE (pengunjung)
+// ============================================
+var SITE_THEMES = [
+    { id: 'default',  name: 'Default',          desc: 'Biru & ungu khas SIEC (tampilan asli)', swatch: 'linear-gradient(135deg,#2563eb,#7c3aed)' },
+    { id: 'midnight', name: '\U0001F319 Midnight',     desc: 'Dark mode elegan, aksen biru-ungu neon', swatch: 'linear-gradient(135deg,#0b1220,#4338ca)' },
+    { id: 'emerald',  name: '\U0001F33F Emerald Fresh', desc: 'Hijau-teal segar & tenang, tombol membulat', swatch: 'linear-gradient(135deg,#059669,#0d9488)' },
+    { id: 'sunset',   name: '\U0001F305 Sunset Warm',  desc: 'Oranye-merah hangat dengan latar krem', swatch: 'linear-gradient(135deg,#ea580c,#f59e0b)' },
+    { id: 'royal',    name: '\U0001F451 Royal Purple', desc: 'Ungu premium + aksen emas akademis', swatch: 'linear-gradient(135deg,#6d28d9,#d97706)' }
+];
+var currentSiteTheme = 'default';
+
+async function loadThemeAdmin() {
+    var grid = document.getElementById('themeGrid');
+    if (!grid) return;
+    try {
+        var r = await db.from('site_settings').select('value').eq('key', 'theme').maybeSingle();
+        if (r.data && r.data.value) currentSiteTheme = r.data.value;
+        renderThemeCards();
+    } catch (e) {
+        grid.innerHTML = '<p style="color:#ef4444;font-size:0.85rem">Gagal memuat tema: ' + e.message + '<br><small>Pastikan SQL tabel site_settings sudah dijalankan di Supabase.</small></p>';
+    }
+}
+
+function renderThemeCards() {
+    var grid = document.getElementById('themeGrid');
+    if (!grid) return;
+    grid.innerHTML = SITE_THEMES.map(function(t) {
+        var active = t.id === currentSiteTheme;
+        return '<div style="border:2px solid ' + (active ? 'var(--primary)' : '#e2e8f0') + ';border-radius:12px;overflow:hidden;background:white;box-shadow:' + (active ? '0 4px 14px rgba(37,99,235,0.25)' : '0 1px 3px rgba(0,0,0,0.06)') + '">' +
+            '<div style="height:74px;background:' + t.swatch + '"></div>' +
+            '<div style="padding:10px 12px">' +
+            '<div style="font-weight:700;font-size:0.9rem">' + t.name + (active ? ' <span style="color:var(--primary);font-size:0.7rem">● AKTIF</span>' : '') + '</div>' +
+            '<div style="font-size:0.72rem;color:#64748b;margin:4px 0 10px;line-height:1.45">' + t.desc + '</div>' +
+            (active
+                ? '<button class="btn btn-sm" style="width:100%;background:#e2e8f0;color:#334155" disabled>Dipakai Sekarang</button>'
+                : '<button class="btn btn-sm btn-primary" style="width:100%" onclick="setSiteTheme(\'' + t.id + '\')">Aktifkan</button>') +
+            '</div></div>';
+    }).join('');
+}
+
+async function setSiteTheme(id) {
+    var nm = (SITE_THEMES.find(function(t) { return t.id === id; }) || {}).name || id;
+    if (!confirm('Aktifkan tema ' + nm + ' untuk SEMUA pengunjung?')) return;
+    try {
+        var r = await db.from('site_settings').update({ value: id, updated_at: new Date().toISOString() }).eq('key', 'theme');
+        if (r.error) throw r.error;
+        currentSiteTheme = id;
+        renderThemeCards();
+        showNotification('\U0001F389 Tema ' + nm + ' aktif untuk semua pengunjung!');
+    } catch (e) {
+        showNotification('Gagal ganti tema: ' + e.message, 'error');
+    }
 }
 
 // ============================================

@@ -27,6 +27,7 @@
             <a href="#" class="sidebar-link" data-section="articles"><i class="fas fa-newspaper"></i> Artikel</a>
             <a href="#" class="sidebar-link" data-section="programs"><i class="fas fa-book"></i> Program</a>
             <a href="#" class="sidebar-link" data-section="terjemahan"><i class="fas fa-language"></i> Terjemahan</a>
+            <a href="#" class="sidebar-link" data-section="tampilan"><i class="fas fa-palette"></i> Tampilan</a>
             <a href="#" class="sidebar-link" data-section="online-reg"><i class="fas fa-clipboard-list"></i> Pendaftaran Online</a>
             <a href="#" class="sidebar-link" data-section="penerjemah"><i class="fas fa-user-tie"></i> Penerjemah</a>
             <a href="#" class="sidebar-link" data-section="qr-pages"><i class="fas fa-qrcode"></i> QR Halaman</a>
@@ -92,7 +93,20 @@
                 <div class="data-table-container"><table class="data-table"><thead><tr><th>Program</th><th>Tipe</th><th>Layout</th><th>Harga</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="programsTableBody"><tr><td colspan="6" class="loading-cell"><div class="spinner"></div></td></tr></tbody></table></div>
             </section>
 
-            <section class="admin-section" id="section-terjemahan">
+                        <!-- TAMPILAN / TEMA PENGUNJUNG -->
+            <section class="admin-section" id="section-tampilan">
+                <div class="section-toolbar"><h3><i class="fas fa-palette"></i> Tampilan Website</h3></div>
+                <p style="color:#64748b;font-size:0.85rem;margin-bottom:16px;line-height:1.6">
+                    Pilih tema untuk halaman <b>pengunjung</b> (beranda, program, verifikasi, artikel, dll).
+                    Berlaku untuk <b>semua pengunjung</b> saat mereka memuat halaman. Panel admin tetap tampilan asli.
+                </p>
+                <div id="themeGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(170px,1fr));gap:14px">
+                    <p style="color:#64748b">Memuat...</p>
+                </div>
+                <p style="color:#94a3b8;font-size:0.75rem;margin-top:14px">Uji coba dulu semua tema di <a href="preview-tema.html" target="_blank" style="color:var(--primary)">preview-tema.html</a> (file demo, tidak mengubah situs).</p>
+            </section>
+
+<section class="admin-section" id="section-terjemahan">
                 <div class="section-toolbar">
                     <h3>Terjemahan</h3>
                     <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -548,6 +562,5 @@
 <script src="js/auth.js"></script>
 <script src="js/admin.js"></script>
 
-<script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a3b899c4dd73f936',t:'MTc4OTQ4NTQ3MQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"1954b47c125f43f8b4338b3c4f804e4f","spa":2}' crossorigin="anonymous"></script>
 </body>
 </html>
