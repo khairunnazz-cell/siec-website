@@ -38,6 +38,16 @@
         .btn-material.primary { background:linear-gradient(135deg,#2563eb,#7c3aed); color:#fff; }
         .btn-material.ghost { background:#f1f5f9; color:#334155; }
         .material-note { margin-top:10px; font-size:.8rem; color:#94a3b8; }
+        .articles-page { min-height: 70vh; padding-top: 120px; }
+        .article-tools { display:flex; gap:14px; align-items:center; justify-content:space-between; flex-wrap:wrap; margin-bottom:26px; }
+        .article-search { flex:1; min-width:240px; display:flex; align-items:center; gap:10px; background:#fff; border:1px solid #e2e8f0; border-radius:12px; padding:11px 16px; box-shadow:0 6px 16px rgba(2,6,23,.05); }
+        .article-search i { color:#94a3b8; }
+        .article-search input { border:0; outline:none; width:100%; font-family:inherit; font-size:.95rem; color:#0f172a; background:transparent; }
+        .article-chips { display:flex; gap:8px; flex-wrap:wrap; }
+        .article-chips .chip { border:1px solid #e2e8f0; background:#fff; color:#475569; padding:8px 16px; border-radius:999px; font-size:.82rem; font-weight:600; cursor:pointer; font-family:inherit; transition:all .2s; }
+        .article-chips .chip:hover { border-color:#2563eb; color:#2563eb; }
+        .article-chips .chip.active { background:linear-gradient(135deg,#2563eb,#7c3aed); color:#fff; border-color:transparent; }
+        .article-empty { text-align:center; color:#94a3b8; padding:30px 0; font-size:.95rem; }
     </style>
 </head>
 <body>
@@ -56,14 +66,38 @@
         <ul class="nav-menu" id="navMenu">
             <li><a href="index.html" class="nav-link"><i class="fas fa-home"></i> Beranda</a></li>
             <li><a href="programs.html" class="nav-link"><i class="fas fa-book"></i> Program</a></li>
-            <li><a href="index.html#articles" class="nav-link"><i class="fas fa-newspaper"></i> Artikel</a></li>
+            <li><a href="article.html" class="nav-link"><i class="fas fa-newspaper"></i> Artikel</a></li>
             <li><a href="verify.html" class="nav-link"><i class="fas fa-check-circle"></i> Verifikasi</a></li>
             <li><a href="translation-status.html" class="nav-link"><i class="fas fa-search"></i> Cek Status</a></li>
         </ul>
     </div>
 </nav>
 
-    <article class="article-detail" id="articleDetail">
+    <section class="articles articles-page" id="articlesPage" style="display:none">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-badge">Artikel & Tips</span>
+                <h2>Semua <span class="text-gradient">Artikel</span> SIEC</h2>
+                <p>Materi TOEFL, tips belajar, dan info terbaru dari SIEC Pekanbaru</p>
+            </div>
+            <div class="article-tools">
+                <div class="article-search">
+                    <i class="fas fa-search"></i>
+                    <input type="text" id="articleSearch" placeholder="Cari artikel...">
+                </div>
+                <div class="article-chips" id="articleChips"></div>
+            </div>
+            <div class="articles-grid" id="allArticlesGrid">
+                <div class="loading-spinner">
+                    <div class="spinner"></div>
+                    <p>Memuat artikel...</p>
+                </div>
+            </div>
+            <p class="article-empty" id="articleCountInfo" style="display:none"><i class="fas fa-search"></i> Tidak ada artikel yang cocok. Coba kata kunci lain ya!</p>
+        </div>
+    </section>
+
+    <article class="article-detail" id="articleDetail" style="display:none">
         <div class="container">
             <div class="loading-spinner">
                 <div class="spinner"></div>
@@ -89,17 +123,22 @@
     <script src="js/app.js"></script>
     <script src="js/theme.js"></script>
     <script>
-        document.addEventListener('DOMContentLoaded', async () => {
+        document.addEventListener('DOMContentLoaded', () => {
             const params = new URLSearchParams(window.location.search);
             const slug = params.get('slug');
-            const detail = document.getElementById('articleDetail');
-            if (!slug) {
-                detail.innerHTML = '<div class="container"><p>Artikel tidak ditemukan.</p></div>';
-                return;
+            if (slug) {
+                loadArticleDetail(slug);
+            } else {
+                loadArticleList();
             }
+        });
+
+        async function loadArticleDetail(slug) {
+            const detail = document.getElementById('articleDetail');
+            detail.style.display = '';
             const { data, error } = await db.from('articles').select('*').eq('slug', slug).eq('is_published', true).single();
             if (error || !data) {
-                detail.innerHTML = '<div class="container"><p>Artikel tidak ditemukan.</p></div>';
+                detail.innerHTML = '<div class="container"><p>Artikel tidak ditemukan. <a href="article.html" class="text-gradient">Lihat semua artikel</a></p></div>';
                 return;
             }
             document.title = data.title + ' - SIEC';
@@ -129,7 +168,7 @@
                         <p class="material-note"><i class="fas fa-info-circle"></i> Materi interaktif dari SIEC. Klik "Layar Penuh" untuk pengalaman presentasi terbaik.</p>
                     </section>` : ''}
                     <div class="article-footer">
-                        <a href="index.html#articles" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Kembali ke Artikel</a>
+                        <a href="article.html" class="btn btn-outline"><i class="fas fa-arrow-left"></i> Kembali ke Artikel</a>
                     </div>
                 </div>
             `;
@@ -141,7 +180,75 @@
                 if (frame) frame.src = url;
                 window._materialBlobUrl = url;
             }
-        });
+        }
+
+        // ========== HALAMAN DAFTAR SEMUA ARTIKEL (tanpa ?slug=) ==========
+        let allArticlesData = [];
+        let activeCat = 'Semua';
+        let searchQ = '';
+
+        async function loadArticleList() {
+            const page = document.getElementById('articlesPage');
+            page.style.display = 'block';
+            const grid = document.getElementById('allArticlesGrid');
+            const { data, error } = await db.from('articles')
+                .select('slug,title,category,cover_image,excerpt,content,layout_type,published_at,created_at')
+                .eq('is_published', true)
+                .order('published_at', { ascending: false });
+            if (error || !data || data.length === 0) {
+                grid.innerHTML = '<div class="loading-spinner"><i class="fas fa-newspaper" style="font-size:3rem;color:var(--gray-400);margin-bottom:16px;"></i><p>Belum ada artikel.</p></div>';
+                return;
+            }
+            allArticlesData = data;
+            buildCategoryChips();
+            renderArticleList();
+            document.getElementById('articleSearch').addEventListener('input', (e) => {
+                searchQ = e.target.value.toLowerCase();
+                renderArticleList();
+            });
+        }
+
+        function buildCategoryChips() {
+            const cats = [...new Set(allArticlesData.map(a => a.category || 'Umum'))];
+            const chipBox = document.getElementById('articleChips');
+            chipBox.innerHTML = ['Semua'].concat(cats).map(c =>
+                `<button class="chip${c === activeCat ? ' active' : ''}" onclick="setCat(this, '${String(c).replace(/'/g, "\\'")}')">${c}</button>`
+            ).join('');
+        }
+
+        function setCat(btn, c) {
+            activeCat = c;
+            document.querySelectorAll('#articleChips .chip').forEach(b => b.classList.toggle('active', b === btn));
+            renderArticleList();
+        }
+
+        function renderArticleList() {
+            const grid = document.getElementById('allArticlesGrid');
+            const info = document.getElementById('articleCountInfo');
+            const list = allArticlesData.filter(a => {
+                const matchCat = activeCat === 'Semua' || (a.category || 'Umum') === activeCat;
+                const matchQ = !searchQ || (a.title + ' ' + (a.excerpt || '')).toLowerCase().includes(searchQ);
+                return matchCat && matchQ;
+            });
+            if (list.length === 0) {
+                grid.innerHTML = '';
+                info.style.display = '';
+                return;
+            }
+            info.style.display = 'none';
+            grid.innerHTML = list.map(a => `
+            <a href="article.html?slug=${a.slug}" class="article-card ${a.layout_type === 'featured' ? 'featured' : ''} ${a.layout_type === 'compact' ? 'compact' : ''}">
+                <div class="article-card-image">
+                    ${a.cover_image ? `<img src="${a.cover_image}" alt="${a.title}">` : `<i class="fas fa-newspaper"></i>`}
+                </div>
+                <div class="article-card-body">
+                    <span class="article-category">${a.category || 'Umum'}</span>
+                    <h3>${a.title}</h3>
+                    <p>${a.excerpt || (a.content || '').replace(/<[^>]*>/g, '').substring(0, 120) + '...'}</p>
+                    <span class="article-date"><i class="fas fa-calendar"></i> ${new Date(a.published_at || a.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
+                </div>
+            </a>`).join('');
+        }
 
         function openMaterialNewTab() {
             if (window._materialBlobUrl) window.open(window._materialBlobUrl, '_blank');
