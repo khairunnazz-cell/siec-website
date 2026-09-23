@@ -1453,6 +1453,7 @@ async function deleteArticle(id) { if (!confirm('Hapus?')) return; await db.from
 // PROGRAMS
 // ============================================
 function showProgramForm(p) { var f = document.getElementById('programForm'); f.style.display = 'block'; f.scrollIntoView({ behavior: 'smooth' }); if (p) { document.getElementById('programFormTitle').textContent = 'Edit'; document.getElementById('programId').value = p.id; document.getElementById('programTitle').value = p.title; document.getElementById('programType').value = p.program_type; document.getElementById('programLevel').value = p.level; document.getElementById('programDuration').value = p.duration || ''; document.getElementById('programSchedule').value = p.schedule || ''; document.getElementById('programPrice').value = p.price || ''; document.getElementById('programCover').value = p.cover_image || ''; document.getElementById('programDesc').value = p.description; document.getElementById('programContent').value = p.content || ''; document.getElementById('programFeatures').value = (p.features || []).join(', '); document.getElementById('programActive').checked = p.is_active; var r = document.querySelector('input[name="programLayout"][value="' + p.layout_type + '"]'); if (r) r.checked = true; } else { document.getElementById('programFormTitle').textContent = 'Tambah'; ['programId', 'programTitle', 'programDuration', 'programSchedule', 'programPrice', 'programCover', 'programDesc', 'programContent', 'programFeatures'].forEach(function(id) { var e = document.getElementById(id); if (e) e.value = ''; }); document.getElementById('programActive').checked = true; var d = document.querySelector('input[name="programLayout"][value="card"]'); if (d) d.checked = true; } }
+async function editProgramById(id) { try { var r = await db.from('learning_programs').select('*').eq('id', id).single(); if (r.error) throw r.error; showProgramForm(r.data); } catch (e) { showNotification('Gagal memuat program: ' + e.message, 'error'); } }
 function hideProgramForm() { document.getElementById('programForm').style.display = 'none'; }
 async function saveProgram() { var t = document.getElementById('programTitle').value.trim(); if (!t) { showNotification('Nama wajib!', 'error'); return; } var id = document.getElementById('programId').value, l = document.querySelector('input[name="programLayout"]:checked'), fs = document.getElementById('programFeatures').value, ft = fs ? fs.split(',').map(function(f) { return f.trim(); }).filter(function(f) { return f; }) : [], d = { title: t, slug: generateSlug(t) + '-' + Date.now(), description: document.getElementById('programDesc').value, content: document.getElementById('programContent').value, program_type: document.getElementById('programType').value, level: document.getElementById('programLevel').value, duration: document.getElementById('programDuration').value, schedule: document.getElementById('programSchedule').value, price: document.getElementById('programPrice').value, cover_image: document.getElementById('programCover').value, layout_type: l ? l.value : 'card', features: ft, is_active: document.getElementById('programActive').checked, updated_at: new Date().toISOString() }; try { var r = id ? await db.from('learning_programs').update(d).eq('id', id) : await db.from('learning_programs').insert(d); if (r.error) throw r.error; showNotification(id ? 'Updated!' : 'Added!'); hideProgramForm(); loadAdminPrograms(); loadDashboardStats(); } catch (e) { showNotification('Error: ' + e.message, 'error'); } }
 
@@ -1596,6 +1597,8 @@ async function saveToefl() {
 
 function showCertPrint(cert) { var m = document.getElementById('certPrintModal'), c = document.getElementById('certPrintContent'), dl = document.getElementById('certDownloadLink'); if (dl) { if (cert.file_url) { dl.href = cert.file_url; dl.style.display = 'inline-flex'; } else dl.style.display = 'none'; } c.innerHTML = '<div style="padding:20px;text-align:center"><p style="font-size:1.2rem;font-weight:700;color:#10b981;margin-bottom:12px">✅ QR tertempel!</p><p style="font-size:1.3rem;font-weight:700">' + cert.participant_name + '</p><p>L:' + cert.listening_score + ' S:' + cert.structure_score + ' R:' + cert.reading_score + ' = <strong style="font-size:1.5rem;color:#2563eb">' + cert.total_score + '</strong></p><p><b>ID:</b> ' + cert.certificate_id + '</p>' + (cert.file_url ? '<iframe src="' + cert.file_url + '" style="width:100%;height:500px;border:2px solid #ddd;border-radius:8px;margin-top:12px"></iframe>' : '') + '</div>'; m.style.display = 'flex'; }
 
+async function viewCertById(id) { try { var r = await db.from('toefl_certificates').select('*').eq('id', id).single(); if (r.error) throw r.error; showCertPrint(r.data); } catch (e) { showNotification('Gagal memuat: ' + e.message, 'error'); } }
+async function editToeflById(id) { try { var r = await db.from('toefl_certificates').select('*').eq('id', id).single(); if (r.error) throw r.error; showToeflForm(r.data); } catch (e) { showNotification('Gagal memuat: ' + e.message, 'error'); } }
 async function loadAdminToefl() {
     var tb = document.getElementById('toeflTableBody');
     if (!tb) return;
@@ -1613,9 +1616,9 @@ async function loadAdminToefl() {
                 '<td data-label="Total"><strong style="color:var(--primary);font-size:1.1rem">' + c.total_score + '</strong></td>' +
                 '<td data-label="File">' + fb + '</td>' +
                 '<td data-label=""><div class="action-buttons">' +
-                '<button class="btn btn-sm btn-success" onclick=\'showCertPrint(' + JSON.stringify(c) + ')\'>View</button> ' +
+                '<button class="btn btn-sm btn-success" onclick="viewCertById(\'' + c.id + '\')">View</button> ' +
                 dl + ' ' +
-                '<button class="btn btn-sm btn-warning" onclick=\'showToeflForm(' + JSON.stringify(c) + ')\'>Edit</button> ' +
+                '<button class="btn btn-sm btn-warning" onclick="editToeflById(\'' + c.id + '\')">Edit</button> ' +
                 '<button class="btn btn-sm btn-danger" onclick="deleteToefl(\'' + c.id + '\')">Hapus</button>' +
                 '</div></td></tr>';
         }).join('');
@@ -1953,6 +1956,7 @@ async function saveTranslator() {
     } catch (e) { showNotification('Error: ' + e.message, 'error'); }
 }
 
+async function editTranslatorById(id) { try { var r = await db.from('translators').select('*').eq('id', id).single(); if (r.error) throw r.error; showTranslatorForm(r.data); } catch (e) { showNotification('Gagal memuat: ' + e.message, 'error'); } }
 async function loadTranslators() {
     var tb = document.getElementById('translatorTableBody');
     if (!tb) return;
@@ -1967,7 +1971,7 @@ async function loadTranslators() {
                 '<td data-label="Total">' + (t.total_translated || 0) + '</td>' +
                 '<td data-label="Status"><span class="status-badge ' + (t.is_active ? 'status-published' : 'status-draft') + '">' + (t.is_active ? 'Aktif' : 'Off') + '</span></td>' +
                 '<td data-label=""><div class="action-buttons">' +
-                '<button class="btn btn-sm btn-primary" onclick=\'showTranslatorForm(' + JSON.stringify(t) + ')\'>Edit</button> ' +
+                '<button class="btn btn-sm btn-primary" onclick="editTranslatorById(\'' + t.id + '\')">Edit</button> ' +
                 '<button class="btn btn-sm btn-danger" onclick="deleteTranslator(\'' + t.id + '\')">Hapus</button>' +
                 '</div></td></tr>';
         }).join('');
@@ -2825,6 +2829,7 @@ function showSignerProfileForm(profile) {
     }
 }
 
+async function editSignerById(id) { try { var r = await db.from('signer_profiles').select('*').eq('id', id).single(); if (r.error) throw r.error; showSignerProfileForm(r.data); } catch (e) { showNotification('Gagal memuat: ' + e.message, 'error'); } }
 function hideSignerProfileForm() { document.getElementById('signerProfileForm').style.display = 'none'; }
 
 async function saveSignerProfile() {
@@ -2881,7 +2886,7 @@ async function loadSignerProfiles() {
                     (p.title ? '<div style="font-size:0.8rem;color:#64748b">' + p.title + '</div>' : '') +
                     (p.role ? '<div style="font-size:0.75rem;color:#2563eb;margin-top:4px">' + p.role + '</div>' : '') +
                     '<div style="display:flex;gap:6px;margin-top:12px;justify-content:center">' +
-                    '<button class="btn btn-sm btn-primary" onclick=\'showSignerProfileForm(' + JSON.stringify(p) + ')\'>Edit</button>' +
+                    '<button class="btn btn-sm btn-primary" onclick="editSignerById(\'' + p.id + '\')">Edit</button>' +
                     '<button class="btn btn-sm btn-danger" onclick="deleteSignerProfile(\'' + p.id + '\')">Hapus</button>' +
                     '</div>' +
                     '</div>';
