@@ -120,7 +120,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (t) t.addEventListener('click', function() { s.classList.toggle('active'); });
     if (c) c.addEventListener('click', function() { s.classList.remove('active'); });
 
-    var savedTheme = localStorage.getItem('siec_theme');
+    var savedTheme = localStorage.getItem('siec_admin_dark');
     if (savedTheme === 'dark') document.body.classList.add('dark-mode');
     var darkBtn = document.getElementById('darkModeToggle');
     if (darkBtn) darkBtn.addEventListener('click', toggleDarkMode);
@@ -133,7 +133,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 function toggleDarkMode() {
     document.body.classList.toggle('dark-mode');
-    localStorage.setItem('siec_theme', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
+    localStorage.setItem('siec_admin_dark', document.body.classList.contains('dark-mode') ? 'dark' : 'light');
 }
 
 function switchSection(s) {
@@ -1420,8 +1420,12 @@ async function showArticleForm(a) { var f = document.getElementById('articleForm
         if (currentMaterialHtml) { st.textContent = '\u2705 Materi tersimpan (' + Math.round(currentMaterialHtml.length / 1024) + ' KB)'; if (rm) rm.style.display = 'inline-flex'; }
         else { st.textContent = 'Belum ada materi'; if (rm) rm.style.display = 'none'; }
     } }
+async function editArticleById(id) { try { var r = await db.from('articles').select('*').eq('id', id).single(); if (r.error) throw r.error; showArticleForm(r.data); } catch (e) { showNotification('Gagal memuat artikel: ' + e.message, 'error'); } }
 function hideArticleForm() { document.getElementById('articleForm').style.display = 'none'; }
-async function saveArticle() { var t = document.getElementById('articleTitle').value.trim(); if (!t) { showNotification('Judul wajib!', 'error'); return; } var l = document.querySelector('input[name="articleLayout"]:checked'), id = document.getElementById('articleId').value, p = document.getElementById('articlePublished').checked, d = { title: t, slug: id ? (document.getElementById('articleSlug').value || generateSlug(t) + '-' + Date.now()) : generateSlug(t) + '-' + Date.now(), material_html: currentMaterialHtml, content: document.getElementById('articleContent').value, excerpt: document.getElementById('articleExcerpt').value, cover_image: document.getElementById('articleCover').value, layout_type: l ? l.value : 'standard', category: document.getElementById('articleCategory').value, is_published: p, published_at: p ? new Date().toISOString() : null, updated_at: new Date().toISOString() }; try { var r = id ? await db.from('articles').update(d).eq('id', id) : await db.from('articles').insert(d); if (r.error) throw r.error; showNotification(id ? 'Updated!' : 'Added!'); hideArticleForm(); loadAdminArticles(); loadDashboardStats(); } catch (e) { showNotification('Error: ' + e.message, 'error'); } }
+async function saveArticle() { var t = document.getElementById('articleTitle').value.trim(); if (!t) { showNotification('Judul wajib!', 'error'); return; } var l = document.querySelector('input[name="articleLayout"]:checked'), id = document.getElementById('articleId').value, p = document.getElementById('articlePublished').checked, d = { title: t, slug: id ? (document.getElementById('articleSlug').value || generateSlug(t) + '-' + Date.now()) : generateSlug(t) + '-' + Date.now(), material_html: currentMaterialHtml, content: document.getElementById('articleContent').value, excerpt: document.getElementById('articleExcerpt').value, cover_image: document.getElementById('articleCover').value, layout_type: l ? l.value : 'standard', category: document.getElementById('articleCategory').value, is_published: p, published_at: p ? new Date().toISOString() : null, updated_at: new Date().toISOString() };
+    // ===== PENJAGA ANTI-HAPUS: cegah kolom berisi ketimpa string kosong =====
+    if (id) { try { var cur = await db.from('articles').select('excerpt,content,cover_image').eq('id', id).single(); if (cur.data) { var blank = []; if (cur.data.content && !d.content.trim()) blank.push('konten'); if (cur.data.excerpt && !d.excerpt.trim()) blank.push('excerpt'); if (cur.data.cover_image && !d.cover_image.trim()) blank.push('cover'); if (blank.length && !confirm('PERINGATAN ANTI-HAPUS\n\nKolom berikut akan TERHAPUS karena kosong di form: ' + blank.join(', ') + '\n\nKalau ini TIDAK disengaja: klik Batal, TUTUP form, lalu klik Edit lagi dari daftar artikel (data akan dimuat ulang dari server).\n\nTetap simpan dan benar-benar kosongkan kolom itu?')) { showNotification('⛔ Simpan dibatalkan — data lama aman.', 'error'); return; } } } catch (ge) { console.error(ge); } }
+    try { var r = id ? await db.from('articles').update(d).eq('id', id) : await db.from('articles').insert(d); if (r.error) throw r.error; showNotification(id ? 'Updated!' : 'Added!'); hideArticleForm(); loadAdminArticles(); loadDashboardStats(); } catch (e) { showNotification('Error: ' + e.message, 'error'); } }
 
 async function loadAdminArticles() {
     var tb = document.getElementById('articlesTableBody');
@@ -1437,7 +1441,7 @@ async function loadAdminArticles() {
                 '<td data-label="Status"><span class="status-badge ' + (a.is_published ? 'status-published' : 'status-draft') + '">' + (a.is_published ? 'Live' : 'Draft') + '</span></td>' +
                 '<td data-label="Tanggal">' + formatDate(a.created_at) + '</td>' +
                 '<td data-label=""><div class="action-buttons">' +
-                '<button class="btn btn-sm btn-primary" onclick=\'showArticleForm(' + JSON.stringify(a) + ')\'>Edit</button> ' +
+                '<button class="btn btn-sm btn-primary" onclick="editArticleById(\'' + a.id + '\')">Edit</button> ' +
                 '<button class="btn btn-sm btn-danger" onclick="deleteArticle(\'' + a.id + '\')">Hapus</button>' +
                 '</div></td></tr>';
         }).join('');
