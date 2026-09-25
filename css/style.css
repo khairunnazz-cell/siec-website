@@ -1619,11 +1619,18 @@ body.home .navbar.scrolled {
         padding: 20px;
         box-shadow: var(--shadow-lg);
         transform: translateY(-120%);
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
         transition: var(--transition);
+        z-index: 999;
     }
 
     .nav-menu.active {
         transform: translateY(0);
+        visibility: visible;
+        opacity: 1;
+        pointer-events: auto;
     }
 
     .nav-toggle {
