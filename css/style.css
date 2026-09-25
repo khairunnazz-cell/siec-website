@@ -171,6 +171,17 @@ img {
     box-shadow: var(--shadow-md);
 }
 
+/* Beranda: saat di paling atas, navbar transparan menyatu dengan hero.
+   Setelah digulir (>50px), kembali putih blur via kelas .scrolled */
+body.home .navbar {
+    background: transparent;
+    border-bottom-color: transparent;
+}
+body.home .navbar.scrolled {
+    background: rgba(255, 255, 255, 0.95);
+    border-bottom: 1px solid var(--gray-200);
+}
+
 .nav-container {
     display: flex;
     align-items: center;
