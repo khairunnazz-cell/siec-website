@@ -60,7 +60,7 @@ function onFakultasChange() {
 function getQrUrl(t,s){return'https://api.qrserver.com/v1/create-qr-code/?size='+(s||150)+'x'+(s||150)+'&data='+encodeURIComponent(t||location.origin)+'&ecc=H&margin=4&format=png'}
 function generateQr(id,t,s){var e=document.getElementById(id);if(!e)return;var z=parseInt(s)||100,l=Math.round(z*.22);e.innerHTML='<div style="position:relative;display:inline-block;width:'+z+'px;height:'+z+'px"><img src="'+getQrUrl(t,z)+'" width="'+z+'" height="'+z+'" style="display:block;border-radius:4px"><div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:'+l+'px;height:'+l+'px;border-radius:50%;overflow:hidden;background:#fff;border:2px solid #fff;box-shadow:0 0 0 1px #2563eb"><img src="'+LOGO_URL+'" style="width:100%;height:100%;object-fit:contain" onerror="this.parentElement.innerHTML=\'<div style=width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#fff><span style=font-weight:800;color:#2563eb;font-size:'+Math.round(l*.35)+'px>SIEC</span></div>\'"></div></div>'}
 
-async function embedQrInPdf(file, qrText, idText, posXPct, posYPct, qrSizePx, pageIndex) {
+async function embedQrInPdf(file, qrText, idText, posXPct, posYPct, qrSizePx, pageIndex, showId, caption) {
     var ab = await file.arrayBuffer();
     var doc = await PDFLib.PDFDocument.load(ab);
     var pages = doc.getPages();
@@ -75,22 +75,24 @@ async function embedQrInPdf(file, qrText, idText, posXPct, posYPct, qrSizePx, pa
     var qrBuf = await resp.arrayBuffer();
     var qrImg = await doc.embedPng(qrBuf);
     var sz = parseInt(qrSizePx) || 80;
-    var adjustedY = (posYPct - 5) / 90 * 100;
-    if (adjustedY < 0) adjustedY = 0;
-    if (adjustedY > 100) adjustedY = 100;
+    // --- PERBAIKAN MELESET: X & Y dihitung SIMETRIS — pos = % dari pojok kiri-atas,
+    //     persis seperti yang dihitung preview drag. Dulu Y di-remap (pos-5)/90 → geser ~4%. ---
     var pdfX = (posXPct / 100) * pw - (sz / 2);
-    var pdfY = ph - ((adjustedY / 100) * ph) - (sz / 2);
+    var pdfY = ph - ((posYPct / 100) * ph) - (sz / 2);
+    // Caption ID hanya digambar kalau checkbox "ID" dicentang
+    var hasCap = !!(idText && showId !== false);
+    var padB = hasCap ? 22 : 4;
     if (pdfX < 5) pdfX = 5;
     if (pdfX > pw - sz - 5) pdfX = pw - sz - 5;
-    if (pdfY < 25) pdfY = 25;
+    if (pdfY < padB + 3) pdfY = padB + 3;
     if (pdfY > ph - sz - 5) pdfY = ph - sz - 5;
-    pg.drawRectangle({ x: pdfX - 4, y: pdfY - 22, width: sz + 8, height: sz + 26, color: PDFLib.rgb(1, 1, 1) });
+    pg.drawRectangle({ x: pdfX - 4, y: pdfY - padB, width: sz + 8, height: sz + padB + 4, color: PDFLib.rgb(1, 1, 1) });
     pg.drawImage(qrImg, { x: pdfX, y: pdfY, width: sz, height: sz });
-    if (idText) {
+    if (hasCap) {
         var font = await doc.embedFont(PDFLib.StandardFonts.Helvetica);
         var tw = font.widthOfTextAtSize(idText, 7);
         pg.drawText(idText, { x: pdfX + (sz - tw) / 2, y: pdfY - 10, size: 7, font: font, color: PDFLib.rgb(0, 0, 0) });
-        var vt = 'Scan QR untuk verifikasi';
+        var vt = caption || 'Scan QR untuk verifikasi';
         var vw = font.widthOfTextAtSize(vt, 5);
         pg.drawText(vt, { x: pdfX + (sz - vw) / 2, y: pdfY - 18, size: 5, font: font, color: PDFLib.rgb(0.5, 0.5, 0.5) });
     }
@@ -1523,6 +1525,14 @@ function removeFilePreview(type) {
     var fr = document.getElementById(type + 'PreviewFrame'); if (fr) fr.src = '';
 }
 
+// Pusat GAMBAR QR di dalam overlay (abaikan label teks di bawahnya) — anti-meleset
+function qrOverlayCenter(el) {
+    var cv = el.firstElementChild;
+    var w = cv && cv.offsetWidth ? cv.offsetWidth : el.offsetWidth;
+    var h = cv && cv.offsetHeight ? cv.offsetHeight : el.offsetHeight;
+    return { x: el.offsetLeft + w / 2, y: el.offsetTop + h / 2, w: w, h: h };
+}
+
 function initDrag(type) {
     var el = document.getElementById(type + 'QrDrag'), co = document.getElementById(type + 'PreviewPage');
     if (!el || !co) return;
@@ -1535,9 +1545,9 @@ function initDrag(type) {
         var nl = Math.max(0, Math.min(ol + (x - sx), cw - el.offsetWidth));
         var nt = Math.max(0, Math.min(ot + (y - sy), ch - el.offsetHeight));
         el.style.left = nl + 'px'; el.style.top = nt + 'px';
-        var cx = nl + el.offsetWidth / 2, cy = nt + el.offsetHeight / 2;
-        var px = Math.max(5, Math.min(95, Math.round(cx / cw * 100)));
-        var py = Math.max(5, Math.min(95, Math.round(cy / ch * 100)));
+        var ct = qrOverlayCenter(el);
+        var px = Math.max(5, Math.min(95, Math.round(ct.x / cw * 100)));
+        var py = Math.max(5, Math.min(95, Math.round(ct.y / ch * 100)));
         var a = document.getElementById(type + 'PosX'); if (a) a.textContent = px + '%';
         var b = document.getElementById(type + 'PosY'); if (b) b.textContent = py + '%';
         var c = document.getElementById(type + 'QrX'); if (c) c.value = px;
@@ -1554,12 +1564,12 @@ function initDrag(type) {
 
 function saveToeflPos(el, co) {
     var r = document.getElementById('toeflRememberPos'); if (!r || !r.checked) return;
-    var cx = el.offsetLeft + el.offsetWidth / 2, cy = el.offsetTop + el.offsetHeight / 2;
-    localStorage.setItem('siec_toefl_qr', JSON.stringify({ x: Math.round(cx / co.offsetWidth * 100), y: Math.round(cy / co.offsetHeight * 100), size: document.getElementById('toeflQrSize') ? document.getElementById('toeflQrSize').value : 80 }));
+    var ct = qrOverlayCenter(el);
+    localStorage.setItem('siec_toefl_qr', JSON.stringify({ x: Math.round(ct.x / co.offsetWidth * 100), y: Math.round(ct.y / co.offsetHeight * 100), size: document.getElementById('toeflQrSize') ? document.getElementById('toeflQrSize').value : 80 }));
 }
 function loadSavedToeflPositionToLive() {
     var s = localStorage.getItem('siec_toefl_qr'); if (!s) return;
-    try { var p = JSON.parse(s), el = document.getElementById('toeflQrDrag'), co = document.getElementById('toeflPreviewPage'); if (el && co) setTimeout(function() { var cw = co.offsetWidth, ch = co.offsetHeight; if (cw === 0 || ch === 0) return; var nl = (p.x / 100) * cw - el.offsetWidth / 2, nt = (p.y / 100) * ch - el.offsetHeight / 2; nl = Math.max(0, Math.min(nl, cw - el.offsetWidth)); nt = Math.max(0, Math.min(nt, ch - el.offsetHeight)); el.style.left = nl + 'px'; el.style.top = nt + 'px'; var a = document.getElementById('toeflPosX'); if (a) a.textContent = p.x + '%'; var b = document.getElementById('toeflPosY'); if (b) b.textContent = p.y + '%'; }, 1000); var sz = document.getElementById('toeflQrSize'); if (sz && p.size) sz.value = p.size; } catch (e) {}
+    try { var p = JSON.parse(s), el = document.getElementById('toeflQrDrag'), co = document.getElementById('toeflPreviewPage'); if (el && co) setTimeout(function() { var cw = co.offsetWidth, ch = co.offsetHeight; if (cw === 0 || ch === 0) return; var ct = qrOverlayCenter(el); var nl = (p.x / 100) * cw - ct.w / 2, nt = (p.y / 100) * ch - ct.h / 2; nl = Math.max(0, Math.min(nl, cw - el.offsetWidth)); nt = Math.max(0, Math.min(nt, ch - el.offsetHeight)); el.style.left = nl + 'px'; el.style.top = nt + 'px'; var a = document.getElementById('toeflPosX'); if (a) a.textContent = p.x + '%'; var b = document.getElementById('toeflPosY'); if (b) b.textContent = p.y + '%'; }, 1000); var sz = document.getElementById('toeflQrSize'); if (sz && p.size) sz.value = p.size; } catch (e) {}
 }
 function loadSavedToeflPosition() { var s = localStorage.getItem('siec_toefl_qr'); if (!s) return; try { var p = JSON.parse(s); var x = document.getElementById('toeflQrX'); if (x) x.value = p.x; var y = document.getElementById('toeflQrY'); if (y) y.value = p.y; var sz = document.getElementById('toeflQrSize'); if (sz) sz.value = p.size || 80; updateSmallPreview('toefl'); } catch (e) {} }
 function resetToeflPosition() { ['toeflQrX', 'toeflQrY'].forEach(function(id, i) { var e = document.getElementById(id); if (e) e.value = i === 0 ? 80 : 85; }); var s = document.getElementById('toeflQrSize'); if (s) s.value = 80; localStorage.removeItem('siec_toefl_qr'); updateSmallPreview('toefl'); var d = document.getElementById('toeflQrDrag'); if (d) { d.style.left = '80%'; d.style.top = '85%'; } showNotification('Reset!'); }
@@ -1579,9 +1589,9 @@ function initTtdDrag() {
         var nl = Math.max(0, Math.min(ol + (x - sx), cw - el.offsetWidth));
         var nt = Math.max(0, Math.min(ot + (y - sy), ch - el.offsetHeight));
         el.style.left = nl + 'px'; el.style.top = nt + 'px';
-        var cx = nl + el.offsetWidth / 2, cy = nt + el.offsetHeight / 2;
-        var px = Math.max(5, Math.min(95, Math.round(cx / cw * 100)));
-        var py = Math.max(5, Math.min(95, Math.round(cy / ch * 100)));
+        var ct = qrOverlayCenter(el);
+        var px = Math.max(5, Math.min(95, Math.round(ct.x / cw * 100)));
+        var py = Math.max(5, Math.min(95, Math.round(ct.y / ch * 100)));
         var a = document.getElementById('toeflSigPosX'); if (a) a.textContent = px + '%';
         var b = document.getElementById('toeflSigPosY'); if (b) b.textContent = py + '%';
         var c = document.getElementById('toeflSigQrX'); if (c) c.value = px;
@@ -1597,30 +1607,33 @@ function initTtdDrag() {
 }
 function saveTtdPos(el, co) {
     var r = document.getElementById('toeflRememberPos'); if (!r || !r.checked) return;
-    var cx = el.offsetLeft + el.offsetWidth / 2, cy = el.offsetTop + el.offsetHeight / 2;
-    localStorage.setItem('siec_toefl_ttd_qr', JSON.stringify({ x: Math.round(cx / co.offsetWidth * 100), y: Math.round(cy / co.offsetHeight * 100), size: document.getElementById('toeflSigQrSize') ? document.getElementById('toeflSigQrSize').value : 90 }));
+    var ct = qrOverlayCenter(el);
+    localStorage.setItem('siec_toefl_ttd_qr', JSON.stringify({ x: Math.round(ct.x / co.offsetWidth * 100), y: Math.round(ct.y / co.offsetHeight * 100), size: document.getElementById('toeflSigQrSize') ? document.getElementById('toeflSigQrSize').value : 90 }));
 }
 function loadSavedTtdPositionToLive() {
     var s = localStorage.getItem('siec_toefl_ttd_qr'); if (!s) return;
-    try { var p = JSON.parse(s), el = document.getElementById('toeflSigQrDrag'), co = document.getElementById('toeflPreviewPage'); if (el && co) setTimeout(function() { var cw = co.offsetWidth, ch = co.offsetHeight; if (cw === 0 || ch === 0) return; var nl = (p.x / 100) * cw - el.offsetWidth / 2, nt = (p.y / 100) * ch - el.offsetHeight / 2; nl = Math.max(0, Math.min(nl, cw - el.offsetWidth)); nt = Math.max(0, Math.min(nt, ch - el.offsetHeight)); el.style.left = nl + 'px'; el.style.top = nt + 'px'; var a = document.getElementById('toeflSigPosX'); if (a) a.textContent = p.x + '%'; var b = document.getElementById('toeflSigPosY'); if (b) b.textContent = p.y + '%'; }, 1000); var sz = document.getElementById('toeflSigQrSize'); if (sz && p.size) sz.value = p.size; } catch (e) {}
+    try { var p = JSON.parse(s), el = document.getElementById('toeflSigQrDrag'), co = document.getElementById('toeflPreviewPage'); if (el && co) setTimeout(function() { var cw = co.offsetWidth, ch = co.offsetHeight; if (cw === 0 || ch === 0) return; var ct = qrOverlayCenter(el); var nl = (p.x / 100) * cw - ct.w / 2, nt = (p.y / 100) * ch - ct.h / 2; nl = Math.max(0, Math.min(nl, cw - el.offsetWidth)); nt = Math.max(0, Math.min(nt, ch - el.offsetHeight)); el.style.left = nl + 'px'; el.style.top = nt + 'px'; var a = document.getElementById('toeflSigPosX'); if (a) a.textContent = p.x + '%'; var b = document.getElementById('toeflSigPosY'); if (b) b.textContent = p.y + '%'; }, 1000); var sz = document.getElementById('toeflSigQrSize'); if (sz && p.size) sz.value = p.size; } catch (e) {}
 }
 function loadSavedTtdPosition() { var s = localStorage.getItem('siec_toefl_ttd_qr'); if (!s) return; try { var p = JSON.parse(s); var x = document.getElementById('toeflSigQrX'); if (x) x.value = p.x; var y = document.getElementById('toeflSigQrY'); if (y) y.value = p.y; var sz = document.getElementById('toeflSigQrSize'); if (sz) sz.value = p.size || 90; } catch (e) {} }
 function resetToeflSigPosition() { ['toeflSigQrX', 'toeflSigQrY'].forEach(function(id, i) { var e = document.getElementById(id); if (e) e.value = i === 0 ? 20 : 85; }); var s = document.getElementById('toeflSigQrSize'); if (s) s.value = 90; var sv = document.getElementById('toeflSigQrSizeVal'); if (sv) sv.textContent = '90px'; localStorage.removeItem('siec_toefl_ttd_qr'); updateSmallPreview('toefl'); var d = document.getElementById('toeflSigQrDrag'); if (d) { d.style.left = '20%'; d.style.top = '85%'; } var a = document.getElementById('toeflSigPosX'); if (a) a.textContent = '20%'; var b = document.getElementById('toeflSigPosY'); if (b) b.textContent = '85%'; showNotification('Reset TTD!'); }
-function resizeSigQr() { var s = document.getElementById('toeflSigQrSize'); if (!s) return; var v = parseInt(s.value) || 90; var sv = document.getElementById('toeflSigQrSizeVal'); if (sv) sv.textContent = v + 'px'; var lv = document.getElementById('toeflLivePreview'); if (lv && lv.style.display !== 'none') { generateQr('toeflSigQrCanvas', location.origin + '/signature-info.html?id=SIG-SAMPLE', v); } }
+function resizeSigQr() { var s = document.getElementById('toeflSigQrSize'); if (!s) return; var v = parseInt(s.value) || 90; var sv = document.getElementById('toeflSigQrSizeVal'); if (sv) sv.textContent = v + 'px'; var sm2 = document.getElementById('toeflSigQrSizeSm'); if (sm2) sm2.textContent = v + 'px'; var lv = document.getElementById('toeflLivePreview'); if (lv && lv.style.display !== 'none') { generateQr('toeflSigQrCanvas', location.origin + '/signature-info.html?id=SIG-SAMPLE', v); } }
 function sigQrSizeUp() { var s = document.getElementById('toeflSigQrSize'); if (!s) return; s.value = Math.min(parseInt(s.value) + 10, 150); resizeSigQr(); }
 function sigQrSizeDown() { var s = document.getElementById('toeflSigQrSize'); if (!s) return; s.value = Math.max(parseInt(s.value) - 10, 40); resizeSigQr(); }
 function getToeflSigPosition() {
     var lv = document.getElementById('toeflLivePreview');
     var sz = parseInt(document.getElementById('toeflSigQrSize') ? document.getElementById('toeflSigQrSize').value : 90) || 90;
+    var si = document.getElementById('toeflSigShowId');
+    var showId = si ? si.checked : false;
     if (lv && lv.style.display !== 'none') {
         var el = document.getElementById('toeflSigQrDrag'), co = document.getElementById('toeflPreviewPage');
         if (el && co && co.offsetWidth > 0) {
-            var cx = el.offsetLeft + el.offsetWidth / 2, cy = el.offsetTop + el.offsetHeight / 2;
-            return { x: Math.max(5, Math.min(95, Math.round(cx / co.offsetWidth * 100))), y: Math.max(5, Math.min(95, Math.round(cy / co.offsetHeight * 100))), size: sz };
+            var ct = qrOverlayCenter(el);
+            return { x: Math.max(5, Math.min(95, Math.round(ct.x / co.offsetWidth * 100))), y: Math.max(5, Math.min(95, Math.round(ct.y / co.offsetHeight * 100))), size: sz, showId: showId };
         }
     }
-    return { x: parseInt(document.getElementById('toeflSigQrX') ? document.getElementById('toeflSigQrX').value : 20) || 20, y: parseInt(document.getElementById('toeflSigQrY') ? document.getElementById('toeflSigQrY').value : 85) || 85, size: sz };
+    return { x: parseInt(document.getElementById('toeflSigQrX') ? document.getElementById('toeflSigQrX').value : 20) || 20, y: parseInt(document.getElementById('toeflSigQrY') ? document.getElementById('toeflSigQrY').value : 85) || 85, size: sz, showId: showId };
 }
+function toggleSigQrId() { var s = document.getElementById('toeflSigShowId'), t = document.getElementById('toeflSigQrIdText'); if (s && t) { t.style.display = s.checked ? 'block' : 'none'; if (s.checked) t.textContent = 'SIG-XXXX'; } }
 
 // ============================================
 // PIPELINE: pengambil profil penandatangan + kunci PDF (rasterize)
@@ -1657,7 +1670,7 @@ async function rasterizePdfLock(blob) {
     }
     return new Blob([await out.save()], { type: 'application/pdf' });
 }
-function resizeQr(type) { var s = document.getElementById(type + 'QrSize'); if (!s) return; var v = parseInt(s.value); var sv = document.getElementById(type + 'QrSizeVal'); if (sv) sv.textContent = v + 'px'; var lv = document.getElementById(type + 'LivePreview'); if (lv && lv.style.display !== 'none') { generateQr(type + 'QrCanvas', location.origin + '/verify.html?id=SIEC-TF-2024-0001', v); } }
+function resizeQr(type) { var s = document.getElementById(type + 'QrSize'); if (!s) return; var v = parseInt(s.value); var sv = document.getElementById(type + 'QrSizeVal'); if (sv) sv.textContent = v + 'px'; var sm2 = document.getElementById(type + 'QrSizeSm'); if (sm2) sm2.textContent = v + 'px'; var lv = document.getElementById(type + 'LivePreview'); if (lv && lv.style.display !== 'none') { generateQr(type + 'QrCanvas', location.origin + '/verify.html?id=SIEC-TF-2024-0001', v); } }
 function qrSizeUp(type) { var s = document.getElementById(type + 'QrSize'); s.value = Math.min(parseInt(s.value) + 10, 150); resizeQr(type); }
 function qrSizeDown(type) { var s = document.getElementById(type + 'QrSize'); s.value = Math.max(parseInt(s.value) - 10, 40); resizeQr(type); }
 function toggleQrId(type) { var s = document.getElementById(type + 'ShowId'), t = document.getElementById(type + 'QrIdText'); if (s && t) t.style.display = s.checked ? 'block' : 'none'; }
@@ -1669,8 +1682,8 @@ function getQrPosition(type) {
     if (lv && lv.style.display !== 'none') {
         var el = document.getElementById(type + 'QrDrag'), co = document.getElementById(type + 'PreviewPage');
         if (el && co && co.offsetWidth > 0) {
-            var cx = el.offsetLeft + el.offsetWidth / 2, cy = el.offsetTop + el.offsetHeight / 2;
-            return { x: Math.max(5, Math.min(95, Math.round(cx / co.offsetWidth * 100))), y: Math.max(5, Math.min(95, Math.round(cy / co.offsetHeight * 100))), size: parseInt(document.getElementById(type + 'QrSize').value) || 80, showId: document.getElementById(type + 'ShowId').checked };
+            var ct = qrOverlayCenter(el);
+            return { x: Math.max(5, Math.min(95, Math.round(ct.x / co.offsetWidth * 100))), y: Math.max(5, Math.min(95, Math.round(ct.y / co.offsetHeight * 100))), size: parseInt(document.getElementById(type + 'QrSize').value) || 80, showId: document.getElementById(type + 'ShowId').checked };
         }
     }
     return { x: parseInt(document.getElementById(type + 'QrX').value) || 80, y: parseInt(document.getElementById(type + 'QrY').value) || 85, size: parseInt(document.getElementById(type + 'QrSize').value) || 80, showId: document.getElementById(type + 'ShowId').checked };
@@ -1691,14 +1704,14 @@ async function saveToefl() {
             showNotification('Processing...', 'info');
             if (toeflFileData.type === 'application/pdf') {
                 // 1) Tempel QR verifikasi TOEFL (kanan bawah / posisi drag utama)
-                var mp = await embedQrInPdf(toeflFileData, url, cid || certId || id, pos.x, pos.y, pos.size);
+                var mp = await embedQrInPdf(toeflFileData, url, cid || certId || id, pos.x, pos.y, pos.size, 0, pos.showId, 'Scan QR verifikasi sertifikat');
                 // 2) Tempel QR tanda tangan digital (kiri bawah) — kalau ada profil penandatangan
                 var signer = await getDefaultSignerForCert();
                 if (signer) {
                     sigId = 'SIG-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substr(2, 4).toUpperCase();
                     sigPos = getToeflSigPosition();
                     showNotification('✍️ Menempel QR tanda tangan...', 'info');
-                    mp = await embedQrInPdf(mp, location.origin + '/signature-info.html?id=' + sigId, null, sigPos.x, sigPos.y, sigPos.size);
+                    mp = await embedQrInPdf(mp, location.origin + '/signature-info.html?id=' + sigId, sigId, sigPos.x, sigPos.y, sigPos.size, 0, sigPos.showId, 'Scan QR info tanda tangan');
                 } else {
                     showNotification('⚠️ Belum ada profil penandatangan — QR TTD dilewati', 'error');
                 }
