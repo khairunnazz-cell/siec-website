@@ -1780,6 +1780,48 @@ async function sendToeflResultWa(id) {
 }
 
 // ============================================
+// JEMBATAN: Pendaftaran Tes → Pipeline Sertifikat
+// ============================================
+async function startToeflFromReg(id) {
+    try {
+        var r = await db.from('test_registrations').select('*').eq('id', id).single();
+        if (r.error) throw r.error;
+        var t = r.data;
+        switchSection('toefl');
+        showToeflForm();
+        document.getElementById('toeflName').value = t.full_name || '';
+        document.getElementById('toeflEmail').value = t.email || '';
+        document.getElementById('toeflPhone').value = t.phone || '';
+        document.getElementById('toeflTestDate').value = t.test_date || '';
+        document.getElementById('toeflNotes').value = 'Dari pendaftaran ' + (t.reg_code || '') + (t.test_type ? ' (' + t.test_type + ')' : '');
+        showNotification('📜 Data ' + (t.full_name || '') + ' terisi otomatis — isi skor L/S/R + upload PDF, lalu simpan: QR TTD & QR verify ditempel, PDF dikunci 🔒');
+    } catch (e) { showNotification('Gagal: ' + e.message, 'error'); }
+}
+function normPhoneDigits(p) { p = (p || '').replace(/\D/g, ''); if (p.indexOf('62') === 0) p = p.substr(2); if (p.indexOf('0') === 0) p = p.substr(1); return p; }
+async function findCertForReg(t) {
+    try {
+        var r = await db.from('toefl_certificates').select('*').order('created_at', { ascending: false }).limit(200);
+        if (!r.data) return null;
+        var ph = normPhoneDigits(t.phone), nm = (t.full_name || '').trim().toLowerCase();
+        for (var i = 0; i < r.data.length; i++) {
+            var c = r.data[i];
+            if (ph && normPhoneDigits(c.participant_phone) === ph) return c;
+            if (nm && (c.participant_name || '').trim().toLowerCase() === nm) return c;
+        }
+    } catch (e) { console.error(e); }
+    return null;
+}
+async function sendTestRegResultWa(id) {
+    try {
+        var r = await db.from('test_registrations').select('*').eq('id', id).single();
+        if (r.error) throw r.error;
+        var c = await findCertForReg(r.data);
+        if (!c) { showNotification('⚠️ Sertifikat ' + (r.data.full_name || '') + ' belum dibuat — klik tombol ungu 📜 Sertif dulu', 'error'); return; }
+        sendToeflResultWa(c.id);
+    } catch (e) { showNotification('Gagal: ' + e.message, 'error'); }
+}
+
+// ============================================
 // ADMIN: KELOLA TESTIMONI
 // ============================================
 async function loadTestimonialsAdmin() {
@@ -2722,6 +2764,8 @@ async function loadTestRegs() {
                     actions += '<button class="btn btn-sm btn-info" onclick="showTestInfoForm(\'' + t.id + '\')" title="Edit Info"><i class="fas fa-edit"></i> Edit Info</button> ';
                     actions += '<button class="btn btn-sm" style="background:#10b981;color:white" onclick="resendTestInfo(\'' + t.id + '\')" title="Kirim Ulang WA"><i class="fab fa-whatsapp"></i> Kirim Ulang</button> ';
                 }
+                actions += '<button class="btn btn-sm" style="background:#7c3aed;color:white" onclick="startToeflFromReg(\'' + t.id + '\')" title="Input skor & buat sertifikat (pipeline QR TTD + kunci PDF)"><i class="fas fa-certificate"></i> Sertif</button> ';
+                actions += '<button class="btn btn-sm" style="background:#25d366;color:white;border-color:#25d366" onclick="sendTestRegResultWa(\'' + t.id + '\')" title="Kirim hasil tes + link download sertifikat via WA"><i class="fab fa-whatsapp"></i> Hasil</button> ';
             }
             actions += '<button class="btn btn-sm btn-danger" onclick="deleteTestReg(\'' + t.id + '\')" title="Hapus"><i class="fas fa-trash"></i></button>';
 
