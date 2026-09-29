@@ -1507,8 +1507,8 @@ function handleFilePreview(input, type) {
                 if (fr) { fr.src = URL.createObjectURL(f); fr.style.display = 'block'; fr.style.height = ch + 'px'; }
                 var sid = 'SIEC-TF-2024-0001';
                 setTimeout(function() { generateQr(type + 'QrCanvas', location.origin + '/verify.html?id=' + sid, 80); }, 600);
-                if (type === 'toefl') loadSavedToeflPositionToLive();
-                setTimeout(function() { initDrag(type); }, 1500);
+                if (type === 'toefl') { loadSavedToeflPositionToLive(); loadSavedTtdPositionToLive(); setTimeout(function() { generateQr('toeflSigQrCanvas', location.origin + '/signature-info.html?id=SIG-SAMPLE', parseInt(document.getElementById('toeflSigQrSize') ? document.getElementById('toeflSigQrSize').value : 90) || 90); }, 700); }
+                setTimeout(function() { initDrag(type); if (type === 'toefl') initTtdDrag(); }, 1500);
             } catch (err) { console.error(err); }
         };
         reader.readAsArrayBuffer(f);
@@ -1563,11 +1563,106 @@ function loadSavedToeflPositionToLive() {
 }
 function loadSavedToeflPosition() { var s = localStorage.getItem('siec_toefl_qr'); if (!s) return; try { var p = JSON.parse(s); var x = document.getElementById('toeflQrX'); if (x) x.value = p.x; var y = document.getElementById('toeflQrY'); if (y) y.value = p.y; var sz = document.getElementById('toeflQrSize'); if (sz) sz.value = p.size || 80; updateSmallPreview('toefl'); } catch (e) {} }
 function resetToeflPosition() { ['toeflQrX', 'toeflQrY'].forEach(function(id, i) { var e = document.getElementById(id); if (e) e.value = i === 0 ? 80 : 85; }); var s = document.getElementById('toeflQrSize'); if (s) s.value = 80; localStorage.removeItem('siec_toefl_qr'); updateSmallPreview('toefl'); var d = document.getElementById('toeflQrDrag'); if (d) { d.style.left = '80%'; d.style.top = '85%'; } showNotification('Reset!'); }
+
+// ============================================
+// QR TANDA TANGAN (TTD) — overlay kedua TOEFL
+// ============================================
+function initTtdDrag() {
+    var el = document.getElementById('toeflSigQrDrag'), co = document.getElementById('toeflPreviewPage');
+    if (!el || !co) return;
+    if (co.offsetWidth === 0 || co.offsetHeight === 0) { setTimeout(initTtdDrag, 500); return; }
+    var d = false, sx = 0, sy = 0, ol = 0, ot = 0;
+    function st(x, y) { d = true; el.classList.add('dragging'); sx = x; sy = y; ol = el.offsetLeft; ot = el.offsetTop; }
+    function mv(x, y) {
+        if (!d) return;
+        var cw = co.offsetWidth, ch = co.offsetHeight;
+        var nl = Math.max(0, Math.min(ol + (x - sx), cw - el.offsetWidth));
+        var nt = Math.max(0, Math.min(ot + (y - sy), ch - el.offsetHeight));
+        el.style.left = nl + 'px'; el.style.top = nt + 'px';
+        var cx = nl + el.offsetWidth / 2, cy = nt + el.offsetHeight / 2;
+        var px = Math.max(5, Math.min(95, Math.round(cx / cw * 100)));
+        var py = Math.max(5, Math.min(95, Math.round(cy / ch * 100)));
+        var a = document.getElementById('toeflSigPosX'); if (a) a.textContent = px + '%';
+        var b = document.getElementById('toeflSigPosY'); if (b) b.textContent = py + '%';
+        var c = document.getElementById('toeflSigQrX'); if (c) c.value = px;
+        var dd = document.getElementById('toeflSigQrY'); if (dd) dd.value = py;
+    }
+    function en() { if (!d) return; d = false; el.classList.remove('dragging'); saveTtdPos(el, co); }
+    el.onmousedown = function(e) { st(e.clientX, e.clientY); e.preventDefault(); };
+    document.addEventListener('mousemove', function(e) { mv(e.clientX, e.clientY); });
+    document.addEventListener('mouseup', en);
+    el.ontouchstart = function(e) { var t = e.touches[0]; st(t.clientX, t.clientY); e.preventDefault(); };
+    document.addEventListener('touchmove', function(e) { if (!d) return; var t = e.touches[0]; mv(t.clientX, t.clientY); e.preventDefault(); }, { passive: false });
+    document.addEventListener('touchend', en);
+}
+function saveTtdPos(el, co) {
+    var r = document.getElementById('toeflRememberPos'); if (!r || !r.checked) return;
+    var cx = el.offsetLeft + el.offsetWidth / 2, cy = el.offsetTop + el.offsetHeight / 2;
+    localStorage.setItem('siec_toefl_ttd_qr', JSON.stringify({ x: Math.round(cx / co.offsetWidth * 100), y: Math.round(cy / co.offsetHeight * 100), size: document.getElementById('toeflSigQrSize') ? document.getElementById('toeflSigQrSize').value : 90 }));
+}
+function loadSavedTtdPositionToLive() {
+    var s = localStorage.getItem('siec_toefl_ttd_qr'); if (!s) return;
+    try { var p = JSON.parse(s), el = document.getElementById('toeflSigQrDrag'), co = document.getElementById('toeflPreviewPage'); if (el && co) setTimeout(function() { var cw = co.offsetWidth, ch = co.offsetHeight; if (cw === 0 || ch === 0) return; var nl = (p.x / 100) * cw - el.offsetWidth / 2, nt = (p.y / 100) * ch - el.offsetHeight / 2; nl = Math.max(0, Math.min(nl, cw - el.offsetWidth)); nt = Math.max(0, Math.min(nt, ch - el.offsetHeight)); el.style.left = nl + 'px'; el.style.top = nt + 'px'; var a = document.getElementById('toeflSigPosX'); if (a) a.textContent = p.x + '%'; var b = document.getElementById('toeflSigPosY'); if (b) b.textContent = p.y + '%'; }, 1000); var sz = document.getElementById('toeflSigQrSize'); if (sz && p.size) sz.value = p.size; } catch (e) {}
+}
+function loadSavedTtdPosition() { var s = localStorage.getItem('siec_toefl_ttd_qr'); if (!s) return; try { var p = JSON.parse(s); var x = document.getElementById('toeflSigQrX'); if (x) x.value = p.x; var y = document.getElementById('toeflSigQrY'); if (y) y.value = p.y; var sz = document.getElementById('toeflSigQrSize'); if (sz) sz.value = p.size || 90; } catch (e) {} }
+function resetToeflSigPosition() { ['toeflSigQrX', 'toeflSigQrY'].forEach(function(id, i) { var e = document.getElementById(id); if (e) e.value = i === 0 ? 20 : 85; }); var s = document.getElementById('toeflSigQrSize'); if (s) s.value = 90; var sv = document.getElementById('toeflSigQrSizeVal'); if (sv) sv.textContent = '90px'; localStorage.removeItem('siec_toefl_ttd_qr'); updateSmallPreview('toefl'); var d = document.getElementById('toeflSigQrDrag'); if (d) { d.style.left = '20%'; d.style.top = '85%'; } var a = document.getElementById('toeflSigPosX'); if (a) a.textContent = '20%'; var b = document.getElementById('toeflSigPosY'); if (b) b.textContent = '85%'; showNotification('Reset TTD!'); }
+function resizeSigQr() { var s = document.getElementById('toeflSigQrSize'); if (!s) return; var v = parseInt(s.value) || 90; var sv = document.getElementById('toeflSigQrSizeVal'); if (sv) sv.textContent = v + 'px'; var lv = document.getElementById('toeflLivePreview'); if (lv && lv.style.display !== 'none') { generateQr('toeflSigQrCanvas', location.origin + '/signature-info.html?id=SIG-SAMPLE', v); } }
+function sigQrSizeUp() { var s = document.getElementById('toeflSigQrSize'); if (!s) return; s.value = Math.min(parseInt(s.value) + 10, 150); resizeSigQr(); }
+function sigQrSizeDown() { var s = document.getElementById('toeflSigQrSize'); if (!s) return; s.value = Math.max(parseInt(s.value) - 10, 40); resizeSigQr(); }
+function getToeflSigPosition() {
+    var lv = document.getElementById('toeflLivePreview');
+    var sz = parseInt(document.getElementById('toeflSigQrSize') ? document.getElementById('toeflSigQrSize').value : 90) || 90;
+    if (lv && lv.style.display !== 'none') {
+        var el = document.getElementById('toeflSigQrDrag'), co = document.getElementById('toeflPreviewPage');
+        if (el && co && co.offsetWidth > 0) {
+            var cx = el.offsetLeft + el.offsetWidth / 2, cy = el.offsetTop + el.offsetHeight / 2;
+            return { x: Math.max(5, Math.min(95, Math.round(cx / co.offsetWidth * 100))), y: Math.max(5, Math.min(95, Math.round(cy / co.offsetHeight * 100))), size: sz };
+        }
+    }
+    return { x: parseInt(document.getElementById('toeflSigQrX') ? document.getElementById('toeflSigQrX').value : 20) || 20, y: parseInt(document.getElementById('toeflSigQrY') ? document.getElementById('toeflSigQrY').value : 85) || 85, size: sz };
+}
+
+// ============================================
+// PIPELINE: pengambil profil penandatangan + kunci PDF (rasterize)
+// ============================================
+async function getDefaultSignerForCert() {
+    try {
+        var r = await db.from('signer_profiles').select('*').order('is_default', { ascending: false }).limit(1);
+        if (r.error) throw r.error;
+        return (r.data && r.data.length) ? r.data[0] : null;
+    } catch (e) { console.error(e); return null; }
+}
+async function rasterizePdfLock(blob) {
+    if (typeof pdfjsLib === 'undefined') throw new Error('pdf.js belum termuat — periksa koneksi CDN');
+    if (!pdfjsLib.GlobalWorkerOptions.workerSrc) pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+    var ab = await blob.arrayBuffer();
+    var src = await pdfjsLib.getDocument({ data: ab }).promise;
+    var out = await PDFLib.PDFDocument.create();
+    out.setTitle('Sertifikat TOEFL SIEC (Terkunci)');
+    out.setProducer('SIEC Pekanbaru — Secure Test Result Pipeline');
+    for (var i = 1; i <= src.numPages; i++) {
+        var page = await src.getPage(i);
+        var vp1 = page.getViewport({ scale: 1 });
+        var scale = Math.max(1.5, Math.min(3, 2200 / vp1.width));
+        var vp = page.getViewport({ scale: scale });
+        var canvas = document.createElement('canvas');
+        canvas.width = Math.round(vp.width); canvas.height = Math.round(vp.height);
+        var ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
+        await page.render({ canvasContext: ctx, viewport: vp }).promise;
+        var jpg = await out.embedJpg(canvas.toDataURL('image/jpeg', 0.92));
+        var p = out.addPage([vp1.width, vp1.height]);
+        p.drawImage(jpg, { x: 0, y: 0, width: vp1.width, height: vp1.height });
+        canvas.width = 0; canvas.height = 0;
+    }
+    return new Blob([await out.save()], { type: 'application/pdf' });
+}
 function resizeQr(type) { var s = document.getElementById(type + 'QrSize'); if (!s) return; var v = parseInt(s.value); var sv = document.getElementById(type + 'QrSizeVal'); if (sv) sv.textContent = v + 'px'; var lv = document.getElementById(type + 'LivePreview'); if (lv && lv.style.display !== 'none') { generateQr(type + 'QrCanvas', location.origin + '/verify.html?id=SIEC-TF-2024-0001', v); } }
 function qrSizeUp(type) { var s = document.getElementById(type + 'QrSize'); s.value = Math.min(parseInt(s.value) + 10, 150); resizeQr(type); }
 function qrSizeDown(type) { var s = document.getElementById(type + 'QrSize'); s.value = Math.max(parseInt(s.value) - 10, 40); resizeQr(type); }
 function toggleQrId(type) { var s = document.getElementById(type + 'ShowId'), t = document.getElementById(type + 'QrIdText'); if (s && t) t.style.display = s.checked ? 'block' : 'none'; }
-function updateSmallPreview(type) { var xE = document.getElementById(type + 'QrX'), yE = document.getElementById(type + 'QrY'); if (!xE || !yE) return; var x = xE.value || 80, y = yE.value || 85; var xv = document.getElementById(type + 'QrXVal'), yv = document.getElementById(type + 'QrYVal'); if (xv) xv.textContent = x + '%'; if (yv) yv.textContent = y + '%'; var ov = document.getElementById(type + 'SmallQr'); if (ov) { ov.style.left = x + '%'; ov.style.top = y + '%'; } generateQr(type + 'SmallQrCanvas', location.origin + '/verify.html?id=SIEC-SAMPLE', 50); }
+function updateSmallPreview(type) { var xE = document.getElementById(type + 'QrX'), yE = document.getElementById(type + 'QrY'); if (!xE || !yE) return; var x = xE.value || 80, y = yE.value || 85; var xv = document.getElementById(type + 'QrXVal'), yv = document.getElementById(type + 'QrYVal'); if (xv) xv.textContent = x + '%'; if (yv) yv.textContent = y + '%'; var ov = document.getElementById(type + 'SmallQr'); if (ov) { ov.style.left = x + '%'; ov.style.top = y + '%'; } generateQr(type + 'SmallQrCanvas', location.origin + '/verify.html?id=SIEC-SAMPLE', 50);
+    if (type === 'toefl') { var sxE = document.getElementById('toeflSigQrX'), syE = document.getElementById('toeflSigQrY'); if (sxE && syE) { var sx2 = sxE.value || 20, sy2 = syE.value || 85; var sxv = document.getElementById('toeflSigQrXVal'), syv = document.getElementById('toeflSigQrYVal'); if (sxv) sxv.textContent = sx2 + '%'; if (syv) syv.textContent = sy2 + '%'; var sov = document.getElementById('toeflSigSmallQr'); if (sov) { sov.style.left = sx2 + '%'; sov.style.top = sy2 + '%'; } generateQr('toeflSigSmallQrCanvas', location.origin + '/signature-info.html?id=SIG-SAMPLE', 50); } } }
 
 function getQrPosition(type) {
     var lv = document.getElementById(type + 'LivePreview');
@@ -1581,7 +1676,7 @@ function getQrPosition(type) {
     return { x: parseInt(document.getElementById(type + 'QrX').value) || 80, y: parseInt(document.getElementById(type + 'QrY').value) || 85, size: parseInt(document.getElementById(type + 'QrSize').value) || 80, showId: document.getElementById(type + 'ShowId').checked };
 }
 
-function showToeflForm(c) { var f = document.getElementById('toeflForm'); f.style.display = 'block'; f.scrollIntoView({ behavior: 'smooth' }); toeflFileData = null; removeFilePreview('toefl'); if (c) { document.getElementById('toeflId').value = c.id; document.getElementById('toeflName').value = c.participant_name; document.getElementById('toeflTestDate').value = c.test_date; document.getElementById('toeflEmail').value = c.participant_email || ''; document.getElementById('toeflPhone').value = c.participant_phone || ''; document.getElementById('toeflListening').value = c.listening_score; document.getElementById('toeflStructure').value = c.structure_score; document.getElementById('toeflReading').value = c.reading_score; document.getElementById('toeflTotal').value = c.total_score; document.getElementById('toeflNotes').value = c.notes || ''; if (c.qr_position) { try { var p = JSON.parse(c.qr_position); var x = document.getElementById('toeflQrX'); if (x) x.value = p.x; var y = document.getElementById('toeflQrY'); if (y) y.value = p.y; var s = document.getElementById('toeflQrSize'); if (s) s.value = p.size || 80; } catch (e) {} } } else { ['toeflId', 'toeflName', 'toeflTestDate', 'toeflEmail', 'toeflPhone', 'toeflListening', 'toeflStructure', 'toeflReading', 'toeflTotal', 'toeflNotes'].forEach(function(id) { var e = document.getElementById(id); if (e) e.value = ''; }); loadSavedToeflPosition(); } setTimeout(function() { updateSmallPreview('toefl'); }, 300); }
+function showToeflForm(c) { var f = document.getElementById('toeflForm'); f.style.display = 'block'; f.scrollIntoView({ behavior: 'smooth' }); toeflFileData = null; removeFilePreview('toefl'); if (c) { document.getElementById('toeflId').value = c.id; var ci = document.getElementById('toeflCertId'); if (ci) ci.value = c.certificate_id || ''; document.getElementById('toeflName').value = c.participant_name; document.getElementById('toeflTestDate').value = c.test_date; document.getElementById('toeflEmail').value = c.participant_email || ''; document.getElementById('toeflPhone').value = c.participant_phone || ''; document.getElementById('toeflListening').value = c.listening_score; document.getElementById('toeflStructure').value = c.structure_score; document.getElementById('toeflReading').value = c.reading_score; document.getElementById('toeflTotal').value = c.total_score; document.getElementById('toeflNotes').value = c.notes || ''; if (c.qr_position) { try { var p = JSON.parse(c.qr_position); var x = document.getElementById('toeflQrX'); if (x) x.value = p.x; var y = document.getElementById('toeflQrY'); if (y) y.value = p.y; var s = document.getElementById('toeflQrSize'); if (s) s.value = p.size || 80; } catch (e) {} } if (c.qr_ttd_position) { try { var tp = JSON.parse(c.qr_ttd_position); var tx = document.getElementById('toeflSigQrX'); if (tx) tx.value = tp.x; var ty = document.getElementById('toeflSigQrY'); if (ty) ty.value = tp.y; var ts = document.getElementById('toeflSigQrSize'); if (ts) ts.value = tp.size || 90; } catch (e) {} } } else { ['toeflId', 'toeflCertId', 'toeflName', 'toeflTestDate', 'toeflEmail', 'toeflPhone', 'toeflListening', 'toeflStructure', 'toeflReading', 'toeflTotal', 'toeflNotes'].forEach(function(id) { var e = document.getElementById(id); if (e) e.value = ''; }); loadSavedToeflPosition(); loadSavedTtdPosition(); } setTimeout(function() { updateSmallPreview('toefl'); }, 300); }
 function hideToeflForm() { document.getElementById('toeflForm').style.display = 'none'; }
 
 async function saveToefl() {
@@ -1589,10 +1684,53 @@ async function saveToefl() {
     if (!nm || !td) { showNotification('Nama & tanggal wajib!', 'error'); return; }
     var id = document.getElementById('toeflId').value, l = parseInt(document.getElementById('toeflListening').value) || 0, s = parseInt(document.getElementById('toeflStructure').value) || 0, r2 = parseInt(document.getElementById('toeflReading').value) || 0, total = Math.round((l + s + r2) * 10 / 3), pos = getQrPosition('toefl');
     var re = document.getElementById('toeflRememberPos'); if (re && re.checked) localStorage.setItem('siec_toefl_qr', JSON.stringify(pos));
-    var fu = '', fn = '', cid = id ? null : generateDocumentId('TF'), url = location.origin + '/verify.html?id=' + (cid || id) + '&type=toefl';
-    if (toeflFileData) { try { showNotification('Processing...', 'info'); if (toeflFileData.type === 'application/pdf') { var mp = await embedQrInPdf(toeflFileData, url, cid || id, pos.x, pos.y, pos.size); var ext = toeflFileData.name.split('.').pop(), nm2 = 'certificates/' + Date.now() + '-' + Math.random().toString(36).substr(2, 9) + '.' + ext; var r = await db.storage.from('uploads').upload(nm2, mp, { cacheControl: '3600', upsert: false }); if (r.error) throw r.error; fu = db.storage.from('uploads').getPublicUrl(nm2).data.publicUrl; fn = toeflFileData.name; } else { var up = await uploadFile(toeflFileData, 'certificates'); fu = up.url; fn = up.name; } } catch (e) { showNotification('Error: ' + e.message, 'error'); return; } }
-    var d = { participant_name: nm, test_date: td, participant_email: document.getElementById('toeflEmail').value, participant_phone: document.getElementById('toeflPhone').value, listening_score: l, structure_score: s, reading_score: r2, total_score: total, qr_position: JSON.stringify(pos), file_url: fu, file_name: fn, notes: document.getElementById('toeflNotes').value, verified: true, status: 'valid' };
-    try { var r; if (id) { r = await db.from('toefl_certificates').update(d).eq('id', id); if (r.error) throw r.error; showNotification('Updated!'); } else { d.certificate_id = cid; d.barcode_data = url; r = await db.from('toefl_certificates').insert(d); if (r.error) throw r.error; showNotification('✅ ID: ' + cid); showCertPrint(d); } hideToeflForm(); loadAdminToefl(); loadDashboardStats(); } catch (e) { showNotification('Error: ' + e.message, 'error'); }
+    var certId = id ? (document.getElementById('toeflCertId') ? document.getElementById('toeflCertId').value : '') : '';
+    var fu = '', fn = '', ofu = '', ofn = '', sigId = null, sigPos = null, pdfDone = false, cid = id ? null : generateDocumentId('TF'), url = location.origin + '/verify.html?id=' + (cid || certId || id) + '&type=toefl';
+    if (toeflFileData) {
+        try {
+            showNotification('Processing...', 'info');
+            if (toeflFileData.type === 'application/pdf') {
+                // 1) Tempel QR verifikasi TOEFL (kanan bawah / posisi drag utama)
+                var mp = await embedQrInPdf(toeflFileData, url, cid || certId || id, pos.x, pos.y, pos.size);
+                // 2) Tempel QR tanda tangan digital (kiri bawah) — kalau ada profil penandatangan
+                var signer = await getDefaultSignerForCert();
+                if (signer) {
+                    sigId = 'SIG-' + Date.now().toString(36).toUpperCase() + '-' + Math.random().toString(36).substr(2, 4).toUpperCase();
+                    sigPos = getToeflSigPosition();
+                    showNotification('✍️ Menempel QR tanda tangan...', 'info');
+                    mp = await embedQrInPdf(mp, location.origin + '/signature-info.html?id=' + sigId, null, sigPos.x, sigPos.y, sigPos.size);
+                } else {
+                    showNotification('⚠️ Belum ada profil penandatangan — QR TTD dilewati', 'error');
+                }
+                // 3) Upload versi bertanda (cadangan admin)
+                showNotification('Upload versi bertanda...', 'info');
+                var stampName = 'certificates/' + Date.now() + '-' + Math.random().toString(36).substr(2, 9) + '-stamped.pdf';
+                var rUp = await db.storage.from('uploads').upload(stampName, mp, { cacheControl: '3600', upsert: false });
+                if (rUp.error) throw rUp.error;
+                ofu = db.storage.from('uploads').getPublicUrl(stampName).data.publicUrl;
+                ofn = toeflFileData.name;
+                // 4) KUNCI: rasterize tiap halaman → JPG → PDF baru (murni gambar, teks tak bisa dicopy/diedit)
+                showNotification('🔒 Mengunci PDF (jpg → pdf terkunci)...', 'info');
+                var locked = await rasterizePdfLock(mp);
+                var lockName = 'certificates/' + Date.now() + '-' + Math.random().toString(36).substr(2, 9) + '-locked.pdf';
+                var rLock = await db.storage.from('uploads').upload(lockName, locked, { cacheControl: '3600', upsert: false });
+                if (rLock.error) throw rLock.error;
+                fu = db.storage.from('uploads').getPublicUrl(lockName).data.publicUrl;
+                fn = (toeflFileData.name || 'sertifikat.pdf').replace(/\.pdf$/i, '') + '-terkunci.pdf';
+                pdfDone = true;
+                // 5) Catat TTD digital → sinkron otomatis halaman Tanda Tangan
+                if (signer && sigId) {
+                    var sigRow = { signature_id: sigId, signer_name: signer.full_name, signer_title: signer.title, signer_role: signer.role, signer_email: signer.email, signer_phone: signer.phone, document_name: 'Sertifikat TOEFL - ' + nm, document_type: 'Sertifikat TOEFL', document_url: fu, document_description: 'QR TTD otomatis dari pipeline hasil tes. Sertifikat: ' + (cid || certId || id), signed_date: td, signed_time: null, location: 'Pekanbaru, Riau', notes: null, is_valid: true };
+                    var rSig = await db.from('digital_signatures').insert(sigRow);
+                    if (rSig.error) { console.warn('digital_signatures gagal:', rSig.error); showNotification('⚠️ TTD tidak tersimpan: ' + rSig.error.message, 'error'); sigId = null; }
+                }
+            } else { var up = await uploadFile(toeflFileData, 'certificates'); fu = up.url; fn = up.name; }
+        } catch (e) { showNotification('Error: ' + e.message, 'error'); return; }
+    }
+    var d = { participant_name: nm, test_date: td, participant_email: document.getElementById('toeflEmail').value, participant_phone: document.getElementById('toeflPhone').value, listening_score: l, structure_score: s, reading_score: r2, total_score: total, qr_position: JSON.stringify(pos), notes: document.getElementById('toeflNotes').value, verified: true, status: 'valid' };
+    if (fu) { d.file_url = fu; d.file_name = fn; }
+    if (pdfDone) { d.original_file_url = ofu; d.original_file_name = ofn; if (sigId) { d.signature_id = sigId; d.qr_ttd_position = JSON.stringify(sigPos); } else { d.signature_id = null; d.qr_ttd_position = null; } }
+    try { var r; if (id) { r = await db.from('toefl_certificates').update(d).eq('id', id); if (r.error) throw r.error; showNotification('Updated!'); } else { d.certificate_id = cid; d.barcode_data = url; d.has_reviewed = false; r = await db.from('toefl_certificates').insert(d); if (r.error) throw r.error; showNotification('✅ ID: ' + cid); showCertPrint(d); } hideToeflForm(); loadAdminToefl(); loadDashboardStats(); } catch (e) { showNotification('Error: ' + e.message, 'error'); }
 }
 
 function showCertPrint(cert) { var m = document.getElementById('certPrintModal'), c = document.getElementById('certPrintContent'), dl = document.getElementById('certDownloadLink'); if (dl) { if (cert.file_url) { dl.href = cert.file_url; dl.style.display = 'inline-flex'; } else dl.style.display = 'none'; } c.innerHTML = '<div style="padding:20px;text-align:center"><p style="font-size:1.2rem;font-weight:700;color:#10b981;margin-bottom:12px">✅ QR tertempel!</p><p style="font-size:1.3rem;font-weight:700">' + cert.participant_name + '</p><p>L:' + cert.listening_score + ' S:' + cert.structure_score + ' R:' + cert.reading_score + ' = <strong style="font-size:1.5rem;color:#2563eb">' + cert.total_score + '</strong></p><p><b>ID:</b> ' + cert.certificate_id + '</p>' + (cert.file_url ? '<iframe src="' + cert.file_url + '" style="width:100%;height:500px;border:2px solid #ddd;border-radius:8px;margin-top:12px"></iframe>' : '') + '</div>'; m.style.display = 'flex'; }
@@ -1606,8 +1744,9 @@ async function loadAdminToefl() {
         var r = await db.from('toefl_certificates').select('*').order('created_at', { ascending: false });
         if (!r.data || !r.data.length) { tb.innerHTML = '<tr><td colspan="7" class="loading-cell">Kosong</td></tr>'; return; }
         tb.innerHTML = r.data.map(function(c) {
-            var fb = c.file_url ? '<a href="' + c.file_url + '" target="_blank" class="file-badge"><i class="fas fa-file-pdf"></i> PDF</a>' : '-';
+            var fb = c.file_url ? '<a href="' + c.file_url + '" target="_blank" class="file-badge"><i class="fas fa-file-pdf"></i> PDF' + (c.original_file_url ? ' 🔒' : '') + '</a>' : '-';
             var dl = c.file_url ? '<a href="' + c.file_url + '" target="_blank" class="btn btn-sm btn-primary"><i class="fas fa-download"></i></a>' : '';
+            var wa = '<button class="btn btn-sm btn-success" title="Kirim Hasil Tes via WhatsApp" onclick="sendToeflResultWa(\'' + c.id + '\')" style="background:#25d366;border-color:#25d366"><i class="fab fa-whatsapp"></i></button> ';
             return '<tr>' +
                 '<td data-label="ID"><strong style="color:var(--primary)">' + c.certificate_id + '</strong></td>' +
                 '<td data-label="Nama">' + c.participant_name + '</td>' +
@@ -1618,6 +1757,7 @@ async function loadAdminToefl() {
                 '<td data-label=""><div class="action-buttons">' +
                 '<button class="btn btn-sm btn-success" onclick="viewCertById(\'' + c.id + '\')">View</button> ' +
                 dl + ' ' +
+                wa +
                 '<button class="btn btn-sm btn-warning" onclick="editToeflById(\'' + c.id + '\')">Edit</button> ' +
                 '<button class="btn btn-sm btn-danger" onclick="deleteToefl(\'' + c.id + '\')">Hapus</button>' +
                 '</div></td></tr>';
@@ -1625,6 +1765,19 @@ async function loadAdminToefl() {
     } catch (e) { console.error(e); }
 }
 async function deleteToefl(id) { if (!confirm('Hapus?')) return; await db.from('toefl_certificates').delete().eq('id', id); showNotification('Deleted!'); loadAdminToefl(); loadDashboardStats(); }
+async function sendToeflResultWa(id) {
+    try {
+        var r = await db.from('toefl_certificates').select('*').eq('id', id).single();
+        if (r.error) throw r.error;
+        var c = r.data;
+        var link = location.origin + '/verify.html?id=' + c.certificate_id + '&type=toefl';
+        var msg = "Assalamu'alaikum " + c.participant_name + " 🙏\n\nAlhamdulillah, hasil TOEFL Prediction Test kamu di SIEC Pekanbaru sudah terbit:\n\n• Listening: " + c.listening_score + "\n• Structure: " + c.structure_score + "\n• Reading: " + c.reading_score + "\n• TOTAL SCORE: *" + c.total_score + "*\n\nSertifikat resmi (ber-QR & terkunci) dapat diverifikasi & di-download di:\n" + link + "\n\nSebelum download, mohon isi testimoni singkat dulu ya (±30 detik) ⭐🙏\n\n— SIEC • Syaf Intensive English Course";
+        var ph = (c.participant_phone || '').replace(/\D/g, '');
+        if (ph.indexOf('0') === 0) ph = '62' + ph.substr(1);
+        else if (ph.indexOf('8') === 0) ph = '62' + ph;
+        window.open(ph ? 'https://wa.me/' + ph + '?text=' + encodeURIComponent(msg) : 'https://wa.me/?text=' + encodeURIComponent(msg), '_blank');
+    } catch (e) { showNotification('Gagal: ' + e.message, 'error'); }
+}
 
 // ============================================
 // ADMIN: KELOLA TESTIMONI

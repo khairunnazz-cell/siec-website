@@ -148,13 +148,33 @@ function renderResult(data, type) {
             '<p style="margin-top:16px;color:var(--success);font-size:0.85rem;text-align:center">' +
             '<i class="fas fa-shield-alt"></i> Dokumen ini resmi diterbitkan oleh SIEC</p>';
     } else {
+        var hasReviewedCert = data.has_reviewed === true;
         var dlBtn = '';
         if (data.file_url) {
-            dlBtn =
-                '<div class="download-section">' +
-                '<a href="' + data.file_url + '" target="_blank" class="btn btn-success download-btn">' +
-                '<i class="fas fa-download"></i> Download Sertifikat</a>' +
-                '</div>';
+            if (hasReviewedCert) {
+                dlBtn =
+                    '<div class="download-section">' +
+                    '<a href="' + data.file_url + '" target="_blank" class="btn btn-success download-btn">' +
+                    '<i class="fas fa-download"></i> Download Sertifikat</a>' +
+                    '<p class="thank-you-msg">💚 Terima kasih atas review Anda!</p>' +
+                    '</div>';
+            } else {
+                dlBtn =
+                    '<div class="review-prompt-section">' +
+                    '<div class="review-prompt-card">' +
+                    '<div class="review-icon">⭐</div>' +
+                    '<h3>Selamat, Hasil Tesmu Sudah Terbit! 🎉</h3>' +
+                    '<p class="review-message">' +
+                    'Sebelum mendownload sertifikat, kami akan sangat menghargai jika Ananda berkenan meluangkan waktu sejenak untuk berbagi pengalaman mengikuti tes di SIEC. ' +
+                    'Masukan Anda sangat berarti bagi pengembangan SIEC dan membantu calon peserta lainnya. 🙏' +
+                    '</p>' +
+                    '<button class="btn btn-primary review-btn" onclick="showReviewForm()">' +
+                    '<i class="fas fa-star"></i> Berikan Testimoni & Lanjut Download' +
+                    '</button>' +
+                    '<p class="review-hint">Hanya butuh 30 detik ⏱️</p>' +
+                    '</div>' +
+                    '</div>';
+            }
         }
         html =
             '<div class="result-header"><i class="fas fa-check-circle"></i><span>SERTIFIKAT TERVERIFIKASI ✅</span></div>' +
@@ -244,7 +264,7 @@ async function showReviewForm() {
         '</div>' +
         '<div class="review-modal-body">' +
 
-        '<p class="review-greeting">Halo <strong>' + currentDoc.client_name + '</strong> 👋</p>' +
+        '<p class="review-greeting">Halo <strong>' + (currentDoc.client_name || currentDoc.participant_name) + '</strong> 👋</p>' +
         '<p class="review-intro">Bagaimana pengalaman Anda menggunakan layanan SIEC? Kami sangat menantikan masukan Anda untuk terus meningkatkan kualitas layanan kami.</p>' +
 
         '<div class="rating-section">' +
@@ -329,19 +349,31 @@ async function submitReview() {
     try {
         // Kirim via fungsi server (RPC): jalur resmi & aman — server memaksa status pending,
         // kebal dari trigger/policy misterius di tabel.
-        var ins = await db.rpc('submit_testimonial', {
-            p_client_id: currentDoc.id,
-            p_document_id: currentDoc.document_id,
-            p_client_name: currentDoc.client_name,
-            p_document_type: currentDoc.document_type,
-            p_universitas: currentDoc.universitas || null,
-            p_rating: selectedRating,
-            p_review_text: reviewText
-        });
-        if (ins.error) throw new Error(ins.error.message || 'Gagal mengirim testimoni');
+        if (currentDoc._type === 'toefl') {
+            // Jalur sertifikat TOEFL: RPC khusus; server juga membalik has_reviewed → gerbang download terbuka
+            var insT = await db.rpc('submit_toefl_testimonial', {
+                p_cert_id: currentDoc.id,
+                p_document_id: currentDoc.certificate_id,
+                p_client_name: currentDoc.participant_name,
+                p_rating: selectedRating,
+                p_review_text: reviewText
+            });
+            if (insT.error) throw new Error(insT.error.message || 'Gagal mengirim testimoni');
+        } else {
+            var ins = await db.rpc('submit_testimonial', {
+                p_client_id: currentDoc.id,
+                p_document_id: currentDoc.document_id,
+                p_client_name: currentDoc.client_name,
+                p_document_type: currentDoc.document_type,
+                p_universitas: currentDoc.universitas || null,
+                p_rating: selectedRating,
+                p_review_text: reviewText
+            });
+            if (ins.error) throw new Error(ins.error.message || 'Gagal mengirim testimoni');
 
-        var upd = await db.from('translation_clients').update({ has_reviewed: true }).eq('id', currentDoc.id);
-        if (upd.error) console.warn('has_reviewed gagal diupdate:', upd.error);
+            var upd = await db.from('translation_clients').update({ has_reviewed: true }).eq('id', currentDoc.id);
+            if (upd.error) console.warn('has_reviewed gagal diupdate:', upd.error);
+        }
 
         showNotification('🎉 Terima kasih! Testimoni Anda akan tampil setelah diverifikasi tim kami 🙏');
         closeReviewModal();
