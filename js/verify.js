@@ -179,8 +179,10 @@ function renderResult(data, type) {
         html =
             '<div class="result-header"><i class="fas fa-check-circle"></i><span>SERTIFIKAT TERVERIFIKASI ✅</span></div>' +
             '<div class="result-details">' +
-            '<div class="result-item"><label>ID Sertifikat</label><p>' + data.certificate_id + '</p></div>' +
+            '<div class="result-item"><label>ID Verifikasi</label><p>' + data.certificate_id + '</p></div>' +
+            (data.printed_certificate_number ? '<div class="result-item"><label>Nomor Sertifikat</label><p>' + data.printed_certificate_number + '</p></div>' : '') +
             '<div class="result-item"><label>Nama Peserta</label><p>' + data.participant_name + '</p></div>' +
+            (data.birth_date ? '<div class="result-item"><label>Tanggal Lahir</label><p>' + formatDate(data.birth_date) + '</p></div>' : '') +
             '<div class="result-item"><label>Tanggal Tes</label><p>' + formatDate(data.test_date) + '</p></div>' +
             '<div class="result-item"><label>Listening</label><p>' + data.listening_score + '</p></div>' +
             '<div class="result-item"><label>Structure</label><p>' + data.structure_score + '</p></div>' +
