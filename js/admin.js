@@ -70,7 +70,7 @@ async function embedQrInPdf(file, qrText, idText, posXPct, posYPct, qrSizePx, pa
     if (pi > pages.length - 1) pi = pages.length - 1;
     var pg = pages[pi];
     var pw = pg.getWidth(), ph = pg.getHeight();
-    var resp = await fetch(getQrUrl(qrText, 300));
+    var resp = await fetch(getQrUrl(qrText, 500));
     if (!resp.ok) throw new Error('QR fetch fail');
     var qrBuf = await resp.arrayBuffer();
     var qrImg = await doc.embedPng(qrBuf);
@@ -1062,7 +1062,7 @@ function getUploadQrPosition() {
     };
 }
 
-function resizeQrU() { var s = document.getElementById('uploadQrSize'); var v = parseInt(s.value); document.getElementById('uploadQrSizeVal').textContent = v + 'px'; generateQr('uploadQrCanvas', location.origin + '/verify.html?id=SIEC-TR-PREVIEW', v); }
+function resizeQrU() { var s = document.getElementById('uploadQrSize'); var v = parseInt(s.value) || 80; document.getElementById('uploadQrSizeVal').textContent = v + 'pt'; var lv = document.getElementById('uploadLivePreview'); if (lv && lv.style.display !== 'none') { generateQr('uploadQrCanvas', location.origin + '/verify.html?id=SIEC-TR-PREVIEW', Math.round(v * pdfPreviewScaleFor('upload'))); applyLivePos('upload', false); } else { generateQr('uploadQrCanvas', location.origin + '/verify.html?id=SIEC-TR-PREVIEW', v); } }
 function qrSizeUpU() { var s = document.getElementById('uploadQrSize'); s.value = Math.min(parseInt(s.value) + 10, 150); resizeQrU(); }
 function qrSizeDownU() { var s = document.getElementById('uploadQrSize'); s.value = Math.max(parseInt(s.value) - 10, 40); resizeQrU(); }
 function toggleQrIdU() { var s = document.getElementById('uploadShowId'), t = document.getElementById('uploadQrIdText'); if (s && t) t.style.display = s.checked ? 'block' : 'none'; }
@@ -1506,10 +1506,20 @@ function handleFilePreview(input, type) {
                 var ch = Math.round(cw * (ph / pw));
                 page.style.width = cw + 'px';
                 page.style.height = ch + 'px';
-                if (fr) { fr.src = URL.createObjectURL(f); fr.style.display = 'block'; fr.style.height = ch + 'px'; }
+                pdfPagePt[type] = { w: pw, h: ph };
+                // view=FitH + toolbar=0 → halaman PDF mengisi lebar preview persis (skala & posisi makin presisi)
+                if (fr) { fr.src = URL.createObjectURL(f) + '#toolbar=0&navpanes=0&statusbar=0&view=FitH'; fr.style.display = 'block'; fr.style.height = ch + 'px'; }
                 var sid = 'SIEC-TF-2024-0001';
-                setTimeout(function() { generateQr(type + 'QrCanvas', location.origin + '/verify.html?id=' + sid, 80); }, 600);
-                if (type === 'toefl') { loadSavedToeflPositionToLive(); loadSavedTtdPositionToLive(); setTimeout(function() { generateQr('toeflSigQrCanvas', location.origin + '/signature-info.html?id=SIG-SAMPLE', parseInt(document.getElementById('toeflSigQrSize') ? document.getElementById('toeflSigQrSize').value : 90) || 90); }, 700); }
+                var sc0 = pdfPreviewScaleFor(type);
+                var sv0 = document.getElementById(type + 'QrSize');
+                var pt0 = sv0 ? (parseInt(sv0.value) || 80) : 80;
+                setTimeout(function() { generateQr(type + 'QrCanvas', location.origin + '/verify.html?id=' + sid, Math.round(pt0 * sc0)); }, 600);
+                if (type === 'toefl') {
+                    loadSavedToeflPositionToLive(); loadSavedTtdPositionToLive();
+                    var st0 = document.getElementById('toeflSigQrSize');
+                    var pts0 = st0 ? (parseInt(st0.value) || 90) : 90;
+                    setTimeout(function() { generateQr('toeflSigQrCanvas', location.origin + '/signature-info.html?id=SIG-SAMPLE', Math.round(pts0 * sc0)); }, 700);
+                }
                 setTimeout(function() { initDrag(type); if (type === 'toefl') initTtdDrag(); }, 1500);
             } catch (err) { console.error(err); }
         };
@@ -1531,6 +1541,14 @@ function qrOverlayCenter(el) {
     var w = cv && cv.offsetWidth ? cv.offsetWidth : el.offsetWidth;
     var h = cv && cv.offsetHeight ? cv.offsetHeight : el.offsetHeight;
     return { x: el.offsetLeft + w / 2, y: el.offsetTop + h / 2, w: w, h: h };
+}
+
+// --- SKALA SEBENARNYA: pt PDF → px preview, supaya QR di preview = ukuran QR di PDF ---
+var pdfPagePt = {};                 // type -> {w,h} ukuran halaman PDF dalam pt
+function pdfPreviewScaleFor(type) {
+    var co = document.getElementById(type + 'PreviewPage'), pt = pdfPagePt[type];
+    if (!co || !co.offsetWidth || !pt || !pt.w) return 1;
+    return co.offsetWidth / pt.w;   // px preview per 1 pt PDF
 }
 
 function initDrag(type) {
@@ -1615,9 +1633,17 @@ function loadSavedTtdPositionToLive() {
     try { var p = JSON.parse(s), el = document.getElementById('toeflSigQrDrag'), co = document.getElementById('toeflPreviewPage'); if (el && co) setTimeout(function() { var cw = co.offsetWidth, ch = co.offsetHeight; if (cw === 0 || ch === 0) return; var ct = qrOverlayCenter(el); var nl = (p.x / 100) * cw - ct.w / 2, nt = (p.y / 100) * ch - ct.h / 2; nl = Math.max(0, Math.min(nl, cw - el.offsetWidth)); nt = Math.max(0, Math.min(nt, ch - el.offsetHeight)); el.style.left = nl + 'px'; el.style.top = nt + 'px'; var a = document.getElementById('toeflSigPosX'); if (a) a.textContent = p.x + '%'; var b = document.getElementById('toeflSigPosY'); if (b) b.textContent = p.y + '%'; }, 1000); var sz = document.getElementById('toeflSigQrSize'); if (sz && p.size) sz.value = p.size; } catch (e) {}
 }
 function loadSavedTtdPosition() { var s = localStorage.getItem('siec_toefl_ttd_qr'); if (!s) return; try { var p = JSON.parse(s); var x = document.getElementById('toeflSigQrX'); if (x) x.value = p.x; var y = document.getElementById('toeflSigQrY'); if (y) y.value = p.y; var sz = document.getElementById('toeflSigQrSize'); if (sz) sz.value = p.size || 90; } catch (e) {} }
-function resetToeflSigPosition() { ['toeflSigQrX', 'toeflSigQrY'].forEach(function(id, i) { var e = document.getElementById(id); if (e) e.value = i === 0 ? 20 : 85; }); var s = document.getElementById('toeflSigQrSize'); if (s) s.value = 90; var sv = document.getElementById('toeflSigQrSizeVal'); if (sv) sv.textContent = '90px'; localStorage.removeItem('siec_toefl_ttd_qr'); updateSmallPreview('toefl'); var d = document.getElementById('toeflSigQrDrag'); if (d) { d.style.left = '20%'; d.style.top = '85%'; } var a = document.getElementById('toeflSigPosX'); if (a) a.textContent = '20%'; var b = document.getElementById('toeflSigPosY'); if (b) b.textContent = '85%'; showNotification('Reset TTD!'); }
-function resizeSigQr() { var s = document.getElementById('toeflSigQrSize'); if (!s) return; var v = parseInt(s.value) || 90; var sv = document.getElementById('toeflSigQrSizeVal'); if (sv) sv.textContent = v + 'px'; var sm2 = document.getElementById('toeflSigQrSizeSm'); if (sm2) sm2.textContent = v + 'px'; var lv = document.getElementById('toeflLivePreview'); if (lv && lv.style.display !== 'none') { generateQr('toeflSigQrCanvas', location.origin + '/signature-info.html?id=SIG-SAMPLE', v); } }
-function sigQrSizeUp() { var s = document.getElementById('toeflSigQrSize'); if (!s) return; s.value = Math.min(parseInt(s.value) + 10, 150); resizeSigQr(); }
+function resetToeflSigPosition() { ['toeflSigQrX', 'toeflSigQrY'].forEach(function(id, i) { var e = document.getElementById(id); if (e) e.value = i === 0 ? 20 : 85; }); var s = document.getElementById('toeflSigQrSize'); if (s) s.value = 90; var sv = document.getElementById('toeflSigQrSizeVal'); if (sv) sv.textContent = '90pt'; localStorage.removeItem('siec_toefl_ttd_qr'); updateSmallPreview('toefl'); var d = document.getElementById('toeflSigQrDrag'); if (d) { d.style.left = '20%'; d.style.top = '85%'; } var a = document.getElementById('toeflSigPosX'); if (a) a.textContent = '20%'; var b = document.getElementById('toeflSigPosY'); if (b) b.textContent = '85%'; showNotification('Reset TTD!'); }
+function resizeSigQr() { var s = document.getElementById('toeflSigQrSize'); if (!s) return; var v = parseInt(s.value) || 90; var sv = document.getElementById('toeflSigQrSizeVal'); if (sv) sv.textContent = v + 'pt'; var sm2 = document.getElementById('toeflSigQrSizeSm'); if (sm2) sm2.textContent = v + 'pt'; var lv = document.getElementById('toeflLivePreview'); if (lv && lv.style.display !== 'none') { generateQr('toeflSigQrCanvas', location.origin + '/signature-info.html?id=SIG-SAMPLE', Math.round(v * pdfPreviewScaleFor('toefl'))); applyLivePos('toefl', true); } }
+function nudgeSigQr(axis, delta) {
+    var xE = document.getElementById('toeflSigQrX'), yE = document.getElementById('toeflSigQrY');
+    if (!xE || !yE) return;
+    var e = axis === 'x' ? xE : yE, dflt = axis === 'x' ? 20 : 85;
+    e.value = Math.max(5, Math.min(95, (parseInt(e.value) || dflt) + delta));
+    updateSmallPreview('toefl');
+    applyLivePos('toefl', true);
+}
+function sigQrSizeUp() { var s = document.getElementById('toeflSigQrSize'); if (!s) return; s.value = Math.min(parseInt(s.value) + 10, 200); resizeSigQr(); }
 function sigQrSizeDown() { var s = document.getElementById('toeflSigQrSize'); if (!s) return; s.value = Math.max(parseInt(s.value) - 10, 40); resizeSigQr(); }
 function getToeflSigPosition() {
     var lv = document.getElementById('toeflLivePreview');
@@ -1645,6 +1671,25 @@ async function getDefaultSignerForCert() {
         return (r.data && r.data.length) ? r.data[0] : null;
     } catch (e) { console.error(e); return null; }
 }
+// Ambil resolusi gambar asli di halaman (biar raster pas 1:1, bukan di-downscale)
+async function getPageSourceWidth(page) {
+    try {
+        var ops = await page.getOperatorList();
+        var OPS = pdfjsLib.OPS, maxW = 0;
+        for (var i = 0; i < ops.fnArray.length; i++) {
+            var fn = ops.fnArray[i];
+            if (fn === OPS.paintImageXObject || fn === OPS.paintInlineImageXObject || fn === OPS.paintImageMaskXObject || fn === OPS.paintJpegXObject) {
+                var a = ops.argsArray[i][0];
+                if (typeof a === 'string') {
+                    var img = null;
+                    try { img = page.objs.get(a); } catch (e) { img = null; }
+                    if (img && img.width) maxW = Math.max(maxW, img.width);
+                } else if (a && a.width) { maxW = Math.max(maxW, a.width); }
+            }
+        }
+        return maxW;
+    } catch (e) { return 0; }
+}
 async function rasterizePdfLock(blob) {
     if (typeof pdfjsLib === 'undefined') throw new Error('pdf.js belum termuat — periksa koneksi CDN');
     if (!pdfjsLib.GlobalWorkerOptions.workerSrc) pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
@@ -1656,26 +1701,66 @@ async function rasterizePdfLock(blob) {
     for (var i = 1; i <= src.numPages; i++) {
         var page = await src.getPage(i);
         var vp1 = page.getViewport({ scale: 1 });
-        var scale = Math.max(1.5, Math.min(3, 2200 / vp1.width));
+        // KUALITAS 1:1 — skala render mengikuti resolusi gambar asli (kalau tak ada gambar → 300 DPI).
+        // Jadi tidak ada penurunan mutu / pecah saat di-download.
+        var srcW = await getPageSourceWidth(page);
+        var scale = srcW > 0 ? (srcW / vp1.width) : (300 / 72);
+        scale = Math.max(1, Math.min(scale, 8));
+        var maxPx = 6000;
+        if (vp1.width * scale > maxPx) scale = maxPx / vp1.width;
         var vp = page.getViewport({ scale: scale });
         var canvas = document.createElement('canvas');
         canvas.width = Math.round(vp.width); canvas.height = Math.round(vp.height);
         var ctx = canvas.getContext('2d');
         ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvas.width, canvas.height);
-        await page.render({ canvasContext: ctx, viewport: vp }).promise;
-        var jpg = await out.embedJpg(canvas.toDataURL('image/jpeg', 0.92));
+        await page.render({ canvasContext: ctx, viewport: vp, intent: 'print' }).promise;
+        // PNG = lossless (piksel persis seperti aslinya). Kalau kegedean (>8MB) baru JPEG kualitas maks 0.98.
+        var pngBlob = await new Promise(function(res) { canvas.toBlob(function(b) { res(b); }, 'image/png'); });
+        var img;
+        if (pngBlob && pngBlob.size <= 8 * 1024 * 1024) {
+            img = await out.embedPng(await pngBlob.arrayBuffer());
+        } else {
+            var jpgBlob = await new Promise(function(res) { canvas.toBlob(function(b) { res(b); }, 'image/jpeg', 0.98); });
+            img = await out.embedJpg(await jpgBlob.arrayBuffer());
+        }
         var p = out.addPage([vp1.width, vp1.height]);
-        p.drawImage(jpg, { x: 0, y: 0, width: vp1.width, height: vp1.height });
+        p.drawImage(img, { x: 0, y: 0, width: vp1.width, height: vp1.height });
         canvas.width = 0; canvas.height = 0;
     }
     return new Blob([await out.save()], { type: 'application/pdf' });
 }
-function resizeQr(type) { var s = document.getElementById(type + 'QrSize'); if (!s) return; var v = parseInt(s.value); var sv = document.getElementById(type + 'QrSizeVal'); if (sv) sv.textContent = v + 'px'; var sm2 = document.getElementById(type + 'QrSizeSm'); if (sm2) sm2.textContent = v + 'px'; var lv = document.getElementById(type + 'LivePreview'); if (lv && lv.style.display !== 'none') { generateQr(type + 'QrCanvas', location.origin + '/verify.html?id=SIEC-TF-2024-0001', v); } }
-function qrSizeUp(type) { var s = document.getElementById(type + 'QrSize'); s.value = Math.min(parseInt(s.value) + 10, 150); resizeQr(type); }
+function resizeQr(type) { var s = document.getElementById(type + 'QrSize'); if (!s) return; var v = parseInt(s.value) || 80; var sv = document.getElementById(type + 'QrSizeVal'); if (sv) sv.textContent = v + 'pt'; var sm2 = document.getElementById(type + 'QrSizeSm'); if (sm2) sm2.textContent = v + 'pt'; var lv = document.getElementById(type + 'LivePreview'); if (lv && lv.style.display !== 'none') { generateQr(type + 'QrCanvas', location.origin + '/verify.html?id=SIEC-TF-2024-0001', Math.round(v * pdfPreviewScaleFor(type))); applyLivePos(type, false); } }
+// Geser QR dengan tombol (langkah 2%) — sinkron ke preview kecil & preview drag
+function nudgeQr(type, axis, delta) {
+    var xE = document.getElementById(type + 'QrX'), yE = document.getElementById(type + 'QrY');
+    if (!xE || !yE) return;
+    var e = axis === 'x' ? xE : yE, dflt = axis === 'x' ? 80 : 85;
+    e.value = Math.max(5, Math.min(95, (parseInt(e.value) || dflt) + delta));
+    updateSmallPreview(type);
+    applyLivePos(type, false);
+}
+function applyLivePos(type, sigQr) {
+    var lv = document.getElementById(type + 'LivePreview');
+    if (!lv || lv.style.display === 'none') return;
+    var co = document.getElementById(type + 'PreviewPage');
+    var el = document.getElementById(type + (sigQr ? 'SigQrDrag' : 'QrDrag'));
+    if (!co || !el || !co.offsetWidth) return;
+    var xE = document.getElementById(sigQr ? 'toeflSigQrX' : type + 'QrX');
+    var yE = document.getElementById(sigQr ? 'toeflSigQrY' : type + 'QrY');
+    if (!xE || !yE) return;
+    var x = parseInt(xE.value) || (sigQr ? 20 : 80), y = parseInt(yE.value) || (sigQr ? 85 : 85);
+    var ct = qrOverlayCenter(el);
+    var nl = Math.max(0, Math.min((x / 100) * co.offsetWidth - ct.w / 2, co.offsetWidth - el.offsetWidth));
+    var nt = Math.max(0, Math.min((y / 100) * co.offsetHeight - ct.h / 2, co.offsetHeight - el.offsetHeight));
+    el.style.left = nl + 'px'; el.style.top = nt + 'px';
+    var px = document.getElementById(type + (sigQr ? 'SigPosX' : 'PosX')); if (px) px.textContent = x + '%';
+    var py = document.getElementById(type + (sigQr ? 'SigPosY' : 'PosY')); if (py) py.textContent = y + '%';
+}
+function qrSizeUp(type) { var s = document.getElementById(type + 'QrSize'); s.value = Math.min(parseInt(s.value) + 10, 200); resizeQr(type); }
 function qrSizeDown(type) { var s = document.getElementById(type + 'QrSize'); s.value = Math.max(parseInt(s.value) - 10, 40); resizeQr(type); }
 function toggleQrId(type) { var s = document.getElementById(type + 'ShowId'), t = document.getElementById(type + 'QrIdText'); if (s && t) t.style.display = s.checked ? 'block' : 'none'; }
 function updateSmallPreview(type) { var xE = document.getElementById(type + 'QrX'), yE = document.getElementById(type + 'QrY'); if (!xE || !yE) return; var x = xE.value || 80, y = yE.value || 85; var xv = document.getElementById(type + 'QrXVal'), yv = document.getElementById(type + 'QrYVal'); if (xv) xv.textContent = x + '%'; if (yv) yv.textContent = y + '%'; var ov = document.getElementById(type + 'SmallQr'); if (ov) { ov.style.left = x + '%'; ov.style.top = y + '%'; } generateQr(type + 'SmallQrCanvas', location.origin + '/verify.html?id=SIEC-SAMPLE', 50);
-    if (type === 'toefl') { var sxE = document.getElementById('toeflSigQrX'), syE = document.getElementById('toeflSigQrY'); if (sxE && syE) { var sx2 = sxE.value || 20, sy2 = syE.value || 85; var sxv = document.getElementById('toeflSigQrXVal'), syv = document.getElementById('toeflSigQrYVal'); if (sxv) sxv.textContent = sx2 + '%'; if (syv) syv.textContent = sy2 + '%'; var sov = document.getElementById('toeflSigSmallQr'); if (sov) { sov.style.left = sx2 + '%'; sov.style.top = sy2 + '%'; } generateQr('toeflSigSmallQrCanvas', location.origin + '/signature-info.html?id=SIG-SAMPLE', 50); } } }
+    if (type === 'toefl') { var sxE = document.getElementById('toeflSigQrX'), syE = document.getElementById('toeflSigQrY'); if (sxE && syE) { var sx2 = sxE.value || 20, sy2 = syE.value || 85; var sxv = document.getElementById('toeflSigQrXVal'), syv = document.getElementById('toeflSigQrYVal'); if (sxv) sxv.textContent = sx2 + '%'; if (syv) syv.textContent = sy2 + '%'; var sov = document.getElementById('toeflSigSmallQr'); if (sov) { sov.style.left = sx2 + '%'; sov.style.top = sy2 + '%'; } generateQr('toeflSigSmallQrCanvas', location.origin + '/signature-info.html?id=SIG-SAMPLE', 50); } } if (type === 'toefl') { applyLivePos('toefl', false); applyLivePos('toefl', true); } }
 
 function getQrPosition(type) {
     var lv = document.getElementById(type + 'LivePreview');
@@ -1723,7 +1808,7 @@ async function saveToefl() {
                 ofu = db.storage.from('uploads').getPublicUrl(stampName).data.publicUrl;
                 ofn = toeflFileData.name;
                 // 4) KUNCI: rasterize tiap halaman → JPG → PDF baru (murni gambar, teks tak bisa dicopy/diedit)
-                showNotification('🔒 Mengunci PDF (jpg → pdf terkunci)...', 'info');
+                showNotification('🔒 Mengunci PDF (kualitas 1:1, PNG lossless)...', 'info');
                 var locked = await rasterizePdfLock(mp);
                 var lockName = 'certificates/' + Date.now() + '-' + Math.random().toString(36).substr(2, 9) + '-locked.pdf';
                 var rLock = await db.storage.from('uploads').upload(lockName, locked, { cacheControl: '3600', upsert: false });
