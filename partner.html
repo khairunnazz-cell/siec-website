@@ -59,9 +59,22 @@
         <section class="data-card">
           <div class="data-head"><div><p class="eyebrow">Daftar referral</p><h2>Klien Partner</h2></div><button class="ghost-btn" id="exportPartnerCsv">Export CSV</button></div>
           <div class="table-wrap">
-            <table><thead><tr><th>Tanggal</th><th>Kode</th><th>Klien</th><th>Layanan</th><th>Harga Dasar</th><th>Status</th><th id="commissionHeader">Komisi 20%</th></tr></thead><tbody id="partnerRows"><tr><td colspan="7" class="empty-cell">Memuat data…</td></tr></tbody></table>
+            <table><thead><tr><th>Tanggal</th><th>Kode</th><th>Klien</th><th>Layanan</th><th>Harga Dasar</th><th>Status</th><th id="commissionHeader">Komisi</th><th>Pencairan</th><th>Aksi</th></tr></thead><tbody id="partnerRows"><tr><td colspan="9" class="empty-cell">Memuat data…</td></tr></tbody></table>
           </div>
           <div class="privacy-strip">Data yang tidak ditampilkan: NIK, KTP, alamat, bukti pembayaran, dan file internal peserta.</div>
+        </section>
+
+        <section class="payout-panel" id="partnerPayoutSection">
+          <div class="data-head"><div><p class="eyebrow">Administrasi kerja sama</p><h2>Pengajuan Pencairan Komisi</h2></div><div class="available-pill"><span>Tersedia</span><strong id="availablePayout">Rp 0</strong></div></div>
+          <div class="payout-form-grid">
+            <div><label for="payoutBank">Nama bank</label><input id="payoutBank" placeholder="Contoh: BSI" autocomplete="organization"></div>
+            <div><label for="payoutAccount">Nomor rekening</label><input id="payoutAccount" placeholder="Nomor rekening" inputmode="numeric"></div>
+            <div><label for="payoutHolder">Nama pemilik rekening</label><input id="payoutHolder" placeholder="Sesuai rekening"></div>
+            <div class="wide"><label for="payoutNotes">Catatan (opsional)</label><input id="payoutNotes" placeholder="Catatan untuk admin SIEC"></div>
+            <button class="primary-btn wide" id="submitPayout">Ajukan Seluruh Komisi Tersedia</button>
+            <p class="payout-hint wide">Sistem otomatis memasukkan seluruh komisi IDR valid yang belum pernah diajukan. Transaksi yang sudah masuk pengajuan tidak dapat dihitung dua kali.</p>
+          </div>
+          <div class="payout-history"><h3>Riwayat pencairan</h3><div id="payoutHistory"><p class="empty-cell">Belum ada pengajuan.</p></div></div>
         </section>
       </div>
     </section>

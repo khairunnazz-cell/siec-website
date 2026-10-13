@@ -38,6 +38,7 @@
             <a href="#" class="sidebar-link" data-section="penerjemah"><i class="fas fa-user-tie"></i> Penerjemah</a>
             <a href="#" class="sidebar-link" data-section="qr-pages"><i class="fas fa-qrcode"></i> QR Halaman</a>
             <a href="#" class="sidebar-link" data-section="test-reg"><i class="fas fa-clipboard-check"></i> Pendaftaran Tes</a>
+            <a href="#" class="sidebar-link" data-section="partner-payouts"><i class="fas fa-money-bill-transfer"></i> Pencairan Partner <span id="partnerPayoutBadge" style="display:none;margin-left:auto;background:#ef4444;color:#fff;border-radius:999px;padding:2px 7px;font-size:.65rem">0</span></a>
             <a href="#" class="sidebar-link" data-section="signatures"><i class="fas fa-file-signature"></i> Tanda Tangan Digital</a>
             <a href="#" class="sidebar-link" data-section="testimonials"><i class="fas fa-star"></i> Testimoni</a>
             <a href="#" class="sidebar-link" data-section="toefl"><i class="fas fa-certificate"></i> TOEFL</a>
@@ -293,9 +294,10 @@
                             <th>Bahasa</th>
                             <th onclick="sortTable('status')" style="cursor:pointer">Status ⇅</th>
                             <th onclick="sortTable('created_at')" style="cursor:pointer">Durasi ⇅</th>
+                            <th>Sumber</th>
                             <th>Aksi</th>
                         </tr></thead>
-                        <tbody id="terjemahanTableBody"><tr><td colspan="9" class="loading-cell"><div class="spinner"></div></td></tr></tbody>
+                        <tbody id="terjemahanTableBody"><tr><td colspan="10" class="loading-cell"><div class="spinner"></div></td></tr></tbody>
                     </table>
                 </div>
             </section>
@@ -516,6 +518,13 @@
 </section>
 
             <!-- TESTIMONIALS SECTION -->
+<section class="admin-section" id="section-partner-payouts">
+    <div class="section-toolbar"><h3>Pencairan Komisi Partner</h3><button class="btn btn-outline" onclick="loadPartnerPayouts()"><i class="fas fa-sync"></i> Refresh</button></div>
+    <div style="background:#ecfdf5;border:1px solid #86efac;padding:12px 14px;border-radius:10px;margin-bottom:14px;color:#166534;font-size:.82rem">STAIN: terjemahan 15%, tes 20%. IAISSH menggunakan harga khusus dan tidak memiliki pencairan komisi.</div>
+    <div class="data-table-container"><table class="data-table"><thead><tr><th>Kode</th><th>Partner</th><th>Diajukan</th><th>Transaksi</th><th>Rekening</th><th>Status</th><th>Aksi</th></tr></thead><tbody id="partnerPayoutTableBody"><tr><td colspan="7" class="loading-cell"><div class="spinner"></div></td></tr></tbody></table></div>
+    <div id="partnerPayoutModal" class="print-preview-modal" style="display:none"><div class="print-modal-content" style="max-width:760px"><div class="print-modal-header"><h4>Proses Pencairan Partner</h4><button onclick="closePrintPreview('partnerPayoutModal')" class="btn-close">&times;</button></div><div id="partnerPayoutDetail"></div><div class="form-group"><label>Catatan Admin</label><textarea id="payoutAdminNotes" rows="2"></textarea></div><div class="form-row"><div class="form-group"><label>Bukti Pencairan (JPG/PNG/PDF)</label><input type="file" id="payoutProofFile" accept=".jpg,.jpeg,.png,.pdf"></div><div class="form-group"><label>Berkas Laporan (PDF)</label><input type="file" id="payoutReportFile" accept=".pdf"></div></div><div class="print-actions"><button class="btn btn-info" onclick="processPartnerPayout('processing')"><i class="fas fa-hourglass-half"></i> Tandai Diproses</button><button class="btn btn-success" onclick="processPartnerPayout('paid')"><i class="fas fa-check"></i> Upload & Selesaikan</button><button class="btn btn-danger" onclick="processPartnerPayout('rejected')"><i class="fas fa-times"></i> Tolak</button><button class="btn btn-outline" onclick="closePrintPreview('partnerPayoutModal')">Tutup</button></div></div></div>
+</section>
+
 <section class="admin-section" id="section-testimonials">
     <div class="section-toolbar">
         <h3>Kelola Testimoni</h3>

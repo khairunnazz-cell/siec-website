@@ -128,7 +128,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (darkBtn) darkBtn.addEventListener('click', toggleDarkMode);
 
     loadDashboardStats(); loadAdminArticles(); loadAdminPrograms();
-    loadTerjemahan(); loadAdminToefl();
+    loadTerjemahan(); loadAdminToefl(); loadPartnerPayoutBadge();
 
     setTimeout(loadAnalytics, 1000);
 });
@@ -143,7 +143,7 @@ function switchSection(s) {
     document.querySelectorAll('.sidebar-link').forEach(function(x) { x.classList.remove('active'); });
     var e = document.getElementById('section-' + s); if (e) e.classList.add('active');
     var l = document.querySelector('[data-section="' + s + '"]'); if (l) l.classList.add('active');
-    var m = { 'dashboard': 'Dashboard', 'articles': 'Artikel', 'programs': 'Program', 'terjemahan': 'Terjemahan', 'toefl': 'TOEFL', 'testimonials': 'Testimoni', 'online-reg': 'Pendaftaran Online', 'penerjemah': 'Penerjemah', 'qr-pages': 'QR Halaman', 'test-reg': 'Pendaftaran Tes', 'signatures': 'Tanda Tangan Digital' };
+    var m = { 'dashboard': 'Dashboard', 'articles': 'Artikel', 'programs': 'Program', 'terjemahan': 'Terjemahan', 'toefl': 'TOEFL', 'testimonials': 'Testimoni', 'online-reg': 'Pendaftaran Online', 'penerjemah': 'Penerjemah', 'qr-pages': 'QR Halaman', 'test-reg': 'Pendaftaran Tes', 'partner-payouts': 'Pencairan Partner', 'signatures': 'Tanda Tangan Digital' };
     if (s === 'signatures') {
         m['signatures'] = 'Tanda Tangan Digital';
         loadSignerProfiles();
@@ -157,6 +157,7 @@ function switchSection(s) {
     if (s === 'penerjemah') loadTranslators();
     if (s === 'qr-pages') loadQrPages();
     if (s === 'test-reg') loadTestRegs();
+    if (s === 'partner-payouts') loadPartnerPayouts();
     if (s === 'tampilan') loadThemeAdmin();
 }
 
@@ -558,7 +559,7 @@ function renderTerjemahanTable(data) {
     });
 
     if (!data.length) {
-        tb.innerHTML = '<tr><td colspan="9" class="loading-cell">Tidak ada data</td></tr>';
+        tb.innerHTML = '<tr><td colspan="10" class="loading-cell">Tidak ada data</td></tr>';
         document.getElementById('selectedCount').textContent = '0';
         return;
     }
@@ -598,6 +599,7 @@ function renderTerjemahanTable(data) {
             '<td data-label="Bahasa">' + c.source_language + '→' + c.target_language + '</td>' +
             '<td data-label="Status">' + statusBadge + '</td>' +
             '<td data-label="Durasi">' + duration + '</td>' +
+            '<td data-label="Sumber">' + partnerSourceSelect('manual_translation', c.id, c.partner_code) + partnerSchemeBadge(c.partner_code, 'manual_translation') + '</td>' +
             '<td data-label=""><div class="action-buttons">' + actions + '</div></td>' +
             '</tr>';
     }).join('');
@@ -2159,7 +2161,7 @@ async function deleteTestimonial(id) {
 // SUMBER PARTNER: Umum / STAIN Sultan Abdurrahman
 // ============================================
 function partnerNameFromCode(code) { return code === 'iaissh-siak' ? 'IAISSH Siak' : (code === 'stain-sultan-abdurrahman' ? 'STAIN Sultan Abdurrahman' : 'Umum'); }
-function partnerSchemeBadge(code) { return code === 'iaissh-siak' ? '<br><small style="color:#7c3aed;font-weight:700">Harga khusus • tanpa komisi</small>' : (code ? '<br><small style="color:#059669;font-weight:700">Komisi 20%</small>' : ''); }
+function partnerSchemeBadge(code, kind) { if (code === 'iaissh-siak') return '<br><small style="color:#7c3aed;font-weight:700">Harga khusus • tanpa komisi</small>'; if (!code) return ''; return '<br><small style="color:#059669;font-weight:700">Komisi ' + (kind === 'test' ? '20%' : '15%') + '</small>'; }
 function partnerSourceSelect(kind, id, partnerCode) {
     partnerCode = partnerCode || '';
     return '<select aria-label="Sumber klien" data-old-value="' + partnerCode + '" onchange="setRegistrationPartner(this,\'' + kind + '\',\'' + id + '\')" style="padding:6px 8px;border:1px solid #cbd5e1;border-radius:7px;font-size:.75rem;min-width:122px;background:' + (partnerCode ? '#ecfdf5' : '#fff') + '">' +
@@ -2175,9 +2177,9 @@ async function setRegistrationPartner(selectEl, kind, id) {
         var r = await db.rpc('assign_registration_partner', { p_kind: kind, p_registration_id: id, p_partner_code: selectEl.value || null });
         if (r.error) throw r.error;
         var partnerLabel = selectEl.value === 'iaissh-siak' ? 'IAISSH Siak' : 'STAIN Sultan Abdurrahman';
-        var scheme = selectEl.value === 'iaissh-siak' ? 'harga khusus, tanpa komisi tambahan' : 'komisi 20%';
+        var scheme = selectEl.value === 'iaissh-siak' ? 'harga khusus, tanpa komisi tambahan' : ('komisi ' + (kind === 'test' ? '20%' : '15%'));
         showNotification(selectEl.value ? '✅ Klien ditandai sebagai partner ' + partnerLabel + ' (' + scheme + ')' : '✅ Klien dikembalikan menjadi Umum');
-        if (kind === 'translation') loadOnlineReg(); else loadTestRegs();
+        if (kind === 'translation') loadOnlineReg(); else if (kind === 'manual_translation') loadTerjemahan(); else loadTestRegs();
     } catch(e) {
         selectEl.value = old; selectEl.disabled = false;
         showNotification('Gagal mengubah sumber: ' + e.message, 'error');
@@ -2235,7 +2237,7 @@ async function loadOnlineReg() {
                 '<td data-label="Bahasa">' + reg.language_1 + '</td>' +
                 '<td data-label="Total">' + formatRp(reg.total_price) + '</td>' +
                 '<td data-label="Bayar">' + badge + '</td>' +
-                '<td data-label="Sumber">' + partnerSourceSelect('translation', reg.id, reg.partner_code) + partnerSchemeBadge(reg.partner_code) + '</td>' +
+                '<td data-label="Sumber">' + partnerSourceSelect('translation', reg.id, reg.partner_code) + partnerSchemeBadge(reg.partner_code, 'translation') + '</td>' +
                 '<td data-label="Penerjemah">' + (reg.translator_status === 'assigned' ? '✅' : '-') + '</td>' +
                 '<td data-label=""><div class="action-buttons">' + actions + '</div></td>' +
                 '</tr>';
@@ -2265,7 +2267,7 @@ async function showRegDetail(id) {
             '<div class="reg-detail-item"><label>Bahasa</label><p>' + reg.language_1 + (reg.language_2 ? ' & ' + reg.language_2 : '') + '</p></div>' +
             '<div class="reg-detail-item"><label>Total Bayar</label><p style="color:#2563eb;font-size:1.2rem">' + formatRp(reg.total_price) + ' (kode unik: ' + reg.unique_code + ')</p></div>' +
             '<div class="reg-detail-item"><label>Sumber Klien</label><p>' + (reg.partner_id ? '🤝 ' + partnerNameFromCode(reg.partner_code) : 'Umum') + '</p></div>' +
-            (reg.partner_id ? (reg.partner_code === 'iaissh-siak' ? '<div class="reg-detail-item"><label>Skema Partner</label><p style="color:#7c3aed;font-weight:700">Harga layanan khusus — tanpa komisi tambahan</p></div>' : '<div class="reg-detail-item"><label>Komisi Partner</label><p style="color:#059669;font-weight:700">' + formatRp(reg.partner_commission_amount) + ' (20% harga dasar) — ' + (reg.partner_commission_state || 'pending') + '</p></div>') : '') +
+            (reg.partner_id ? (reg.partner_code === 'iaissh-siak' ? '<div class="reg-detail-item"><label>Skema Partner</label><p style="color:#7c3aed;font-weight:700">Harga layanan khusus — tanpa komisi tambahan</p></div>' : '<div class="reg-detail-item"><label>Komisi Partner</label><p style="color:#059669;font-weight:700">' + formatRp(reg.partner_commission_amount) + ' (15% harga dasar) — ' + (reg.partner_commission_state || 'pending') + '</p></div>') : '') +
             '</div>' +
             (reg.file_url ? '<div style="margin:12px 0"><a href="' + reg.file_url + '" target="_blank" class="btn btn-sm btn-primary"><i class="fas fa-download"></i> Download File Abstrak (' + (reg.file_name || 'file') + ')</a></div>' : '') +
             '<h4 style="margin-top:16px">📸 Bukti Transfer:</h4>' +
@@ -3068,7 +3070,7 @@ async function loadTestRegs() {
                 '<td data-label="Tes">' + t.test_type + '</td>' +
                 '<td data-label="Total">' + (t.test_currency === 'USD' ? '$' + t.total_price : formatRp(t.total_price)) + '</td>' +
                 '<td data-label="Status">' + badge + '</td>' +
-                '<td data-label="Sumber">' + partnerSourceSelect('test', t.id, t.partner_code) + partnerSchemeBadge(t.partner_code) + '</td>' +
+                '<td data-label="Sumber">' + partnerSourceSelect('test', t.id, t.partner_code) + partnerSchemeBadge(t.partner_code, 'test') + '</td>' +
                 '<td data-label=""><div class="action-buttons">' + actions + '</div></td></tr>';
         }).join('');
     } catch (e) { console.error(e); }
@@ -3901,4 +3903,56 @@ async function saveSigPdf() {
         btn.innerHTML = '<i class="fas fa-save"></i> Simpan PDF dengan QR TTD';
         btn.disabled = false;
     }
+}
+// ============================================
+// PENCAIRAN KOMISI PARTNER
+// ============================================
+var currentPartnerPayout = null;
+function payoutAdminStatus(s) { return { pending:'Menunggu', processing:'Diproses', paid:'Sudah Dicairkan', rejected:'Ditolak' }[s] || s; }
+async function loadPartnerPayoutBadge() {
+    try {
+        var r = await db.from('partner_payout_requests').select('id', { count:'exact', head:true }).in('status',['pending','processing']);
+        var b = document.getElementById('partnerPayoutBadge'), n = r.count || 0;
+        if (b) { b.textContent=n; b.style.display=n?'inline-block':'none'; }
+    } catch(e) { console.warn('Badge payout:',e); }
+}
+async function loadPartnerPayouts() {
+    var tb=document.getElementById('partnerPayoutTableBody'); if(!tb)return;
+    tb.innerHTML='<tr><td colspan="7" class="loading-cell"><div class="spinner"></div></td></tr>';
+    try {
+        var r=await db.from('partner_payout_requests').select('*,partners(name,code)').order('requested_at',{ascending:false});
+        if(r.error)throw r.error; var rows=r.data||[];
+        if(!rows.length){tb.innerHTML='<tr><td colspan="7" class="loading-cell">Belum ada pengajuan</td></tr>';loadPartnerPayoutBadge();return;}
+        tb.innerHTML=rows.map(function(p){var badge='<span class="status-badge" style="background:'+(p.status==='paid'?'#dcfce7':p.status==='rejected'?'#fee2e2':p.status==='processing'?'#dbeafe':'#fef3c7')+';color:'+(p.status==='paid'?'#166534':p.status==='rejected'?'#991b1b':p.status==='processing'?'#1d4ed8':'#92400e')+'">'+payoutAdminStatus(p.status)+'</span>';return '<tr><td><strong>'+escapeHtml(p.payout_code)+'</strong><br><small>'+formatDate(p.requested_at)+'</small></td><td>'+escapeHtml(p.partners&&p.partners.name||'-')+'</td><td><strong style="color:#059669">'+formatRp(p.total_amount)+'</strong></td><td>'+p.item_count+'</td><td>'+escapeHtml(p.bank_name)+'<br><small>'+escapeHtml(p.bank_account_number)+' • '+escapeHtml(p.bank_account_holder)+'</small></td><td>'+badge+'</td><td><button class="btn btn-sm btn-primary" onclick="openPartnerPayout(\''+p.id+'\')"><i class="fas fa-eye"></i> Proses</button></td></tr>'}).join('');
+        loadPartnerPayoutBadge();
+    } catch(e){tb.innerHTML='<tr><td colspan="7" class="loading-cell">Error: '+escapeHtml(e.message)+'</td></tr>';}
+}
+async function openPartnerPayout(id) {
+    try {
+        var a=await db.from('partner_payout_requests').select('*,partners(name,code)').eq('id',id).single(); if(a.error)throw a.error;
+        var b=await db.from('partner_payout_items').select('*').eq('payout_id',id).order('created_at'); if(b.error)throw b.error;
+        currentPartnerPayout=a.data; var p=a.data, items=b.data||[];
+        document.getElementById('partnerPayoutDetail').innerHTML='<div style="background:#f8fafc;padding:14px;border-radius:10px;margin-bottom:14px"><p><b>Partner:</b> '+escapeHtml(p.partners&&p.partners.name||'-')+'</p><p><b>Kode:</b> '+escapeHtml(p.payout_code)+' • <b>Total:</b> '+formatRp(p.total_amount)+' • '+p.item_count+' transaksi</p><p><b>Rekening:</b> '+escapeHtml(p.bank_name)+' / '+escapeHtml(p.bank_account_number)+' / '+escapeHtml(p.bank_account_holder)+'</p><p><b>Status:</b> '+payoutAdminStatus(p.status)+'</p></div><div style="max-height:230px;overflow:auto"><table class="data-table"><thead><tr><th>Klien</th><th>Layanan</th><th>Dasar</th><th>Rate</th><th>Komisi</th></tr></thead><tbody>'+items.map(function(i){return '<tr><td>'+escapeHtml(i.client_name)+'</td><td>'+escapeHtml(i.service_name)+'</td><td>'+formatRp(i.base_amount)+'</td><td>'+i.commission_rate+'%</td><td><strong>'+formatRp(i.commission_amount)+'</strong></td></tr>'}).join('')+'</tbody></table></div>'+(p.proof_url?'<p><a href="'+p.proof_url+'" target="_blank" class="btn btn-sm btn-success">Bukti sebelumnya</a></p>':'')+(p.report_url?'<p><a href="'+p.report_url+'" target="_blank" class="btn btn-sm btn-primary">Laporan sebelumnya</a></p>':'');
+        document.getElementById('payoutAdminNotes').value=p.admin_notes||'';document.getElementById('payoutProofFile').value='';document.getElementById('payoutReportFile').value='';document.getElementById('partnerPayoutModal').style.display='flex';
+    } catch(e){showNotification('Gagal memuat payout: '+e.message,'error');}
+}
+async function uploadPayoutAdminFile(file,kind) {
+    if(!file)return null;if(file.size>10*1024*1024)throw new Error('File maksimal 10MB');
+    var ext=(file.name.split('.').pop()||'bin').toLowerCase(),path='partner-payouts/'+Date.now()+'-'+Math.random().toString(36).slice(2,9)+'-'+kind+'.'+ext;
+    var r=await db.storage.from('uploads').upload(path,file,{cacheControl:'3600',upsert:false});if(r.error)throw r.error;
+    return {url:db.storage.from('uploads').getPublicUrl(path).data.publicUrl,name:file.name};
+}
+async function processPartnerPayout(action) {
+    if(!currentPartnerPayout)return;var msg=action==='paid'?'Selesaikan pencairan ini?':action==='rejected'?'Tolak pengajuan dan lepaskan semua transaksi agar dapat diajukan ulang?':'Tandai sedang diproses?';if(!confirm(msg))return;
+    try {
+        showNotification('Memproses pencairan...','info');var proof=null,report=null;
+        if(action==='paid'){
+            var pf=document.getElementById('payoutProofFile').files[0],rf=document.getElementById('payoutReportFile').files[0];
+            if(!pf&&!currentPartnerPayout.proof_url)throw new Error('Upload bukti pencairan');if(!rf&&!currentPartnerPayout.report_url)throw new Error('Upload berkas laporan PDF');
+            if(pf)proof=await uploadPayoutAdminFile(pf,'proof');if(rf)report=await uploadPayoutAdminFile(rf,'report');
+        }
+        var r=await db.rpc('admin_process_partner_payout',{p_payout_id:currentPartnerPayout.id,p_action:action,p_admin_notes:document.getElementById('payoutAdminNotes').value.trim()||null,p_proof_url:proof&&proof.url||null,p_proof_name:proof&&proof.name||null,p_report_url:report&&report.url||null,p_report_name:report&&report.name||null});if(r.error)throw r.error;
+        showNotification(action==='paid'?'✅ Pencairan selesai dan dokumen terkirim ke portal partner':action==='rejected'?'Pengajuan ditolak; transaksi dilepaskan':'Pengajuan ditandai sedang diproses');
+        closePrintPreview('partnerPayoutModal');currentPartnerPayout=null;loadPartnerPayouts();
+    } catch(e){showNotification('Gagal: '+e.message,'error');}
 }
