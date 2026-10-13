@@ -3907,7 +3907,7 @@ async function saveSigPdf() {
 // ============================================
 // PENCAIRAN KOMISI PARTNER
 // ============================================
-var currentPartnerPayout = null;
+var currentPartnerPayout = null, currentPartnerPayoutItems = [];
 function payoutAdminStatus(s) { return { pending:'Menunggu', processing:'Diproses', paid:'Sudah Dicairkan', rejected:'Ditolak' }[s] || s; }
 async function loadPartnerPayoutBadge() {
     try {
@@ -3931,9 +3931,9 @@ async function openPartnerPayout(id) {
     try {
         var a=await db.from('partner_payout_requests').select('*,partners(name,code)').eq('id',id).single(); if(a.error)throw a.error;
         var b=await db.from('partner_payout_items').select('*').eq('payout_id',id).order('created_at'); if(b.error)throw b.error;
-        currentPartnerPayout=a.data; var p=a.data, items=b.data||[];
+        currentPartnerPayout=a.data; currentPartnerPayoutItems=b.data||[]; var p=a.data, items=currentPartnerPayoutItems;
         document.getElementById('partnerPayoutDetail').innerHTML='<div style="background:#f8fafc;padding:14px;border-radius:10px;margin-bottom:14px"><p><b>Partner:</b> '+escapeHtml(p.partners&&p.partners.name||'-')+'</p><p><b>Kode:</b> '+escapeHtml(p.payout_code)+' • <b>Total:</b> '+formatRp(p.total_amount)+' • '+p.item_count+' transaksi</p><p><b>Rekening:</b> '+escapeHtml(p.bank_name)+' / '+escapeHtml(p.bank_account_number)+' / '+escapeHtml(p.bank_account_holder)+'</p><p><b>Status:</b> '+payoutAdminStatus(p.status)+'</p></div><div style="max-height:230px;overflow:auto"><table class="data-table"><thead><tr><th>Klien</th><th>Layanan</th><th>Dasar</th><th>Rate</th><th>Komisi</th></tr></thead><tbody>'+items.map(function(i){return '<tr><td>'+escapeHtml(i.client_name)+'</td><td>'+escapeHtml(i.service_name)+'</td><td>'+formatRp(i.base_amount)+'</td><td>'+i.commission_rate+'%</td><td><strong>'+formatRp(i.commission_amount)+'</strong></td></tr>'}).join('')+'</tbody></table></div>'+(p.proof_url?'<p><a href="'+p.proof_url+'" target="_blank" class="btn btn-sm btn-success">Bukti sebelumnya</a></p>':'')+(p.report_url?'<p><a href="'+p.report_url+'" target="_blank" class="btn btn-sm btn-primary">Laporan sebelumnya</a></p>':'');
-        document.getElementById('payoutAdminNotes').value=p.admin_notes||'';document.getElementById('payoutProofFile').value='';document.getElementById('payoutReportFile').value='';document.getElementById('partnerPayoutModal').style.display='flex';
+        document.getElementById('payoutAdminNotes').value=p.admin_notes||'';document.getElementById('payoutProofFile').value='';var inv=document.getElementById('payoutInvoiceStatus');if(inv)inv.innerHTML=p.report_url?'✅ <a href="'+p.report_url+'" target="_blank">'+escapeHtml(p.invoice_number||p.report_name||'Invoice resmi')+'</a> • QR TTD aktif':'Belum dibuat — generate invoice sebelum menyelesaikan pencairan.';document.getElementById('partnerPayoutModal').style.display='flex';
     } catch(e){showNotification('Gagal memuat payout: '+e.message,'error');}
 }
 async function uploadPayoutAdminFile(file,kind) {
@@ -3945,14 +3945,64 @@ async function uploadPayoutAdminFile(file,kind) {
 async function processPartnerPayout(action) {
     if(!currentPartnerPayout)return;var msg=action==='paid'?'Selesaikan pencairan ini?':action==='rejected'?'Tolak pengajuan dan lepaskan semua transaksi agar dapat diajukan ulang?':'Tandai sedang diproses?';if(!confirm(msg))return;
     try {
-        showNotification('Memproses pencairan...','info');var proof=null,report=null;
+        showNotification('Memproses pencairan...','info');var proof=null;
         if(action==='paid'){
-            var pf=document.getElementById('payoutProofFile').files[0],rf=document.getElementById('payoutReportFile').files[0];
-            if(!pf&&!currentPartnerPayout.proof_url)throw new Error('Upload bukti pencairan');if(!rf&&!currentPartnerPayout.report_url)throw new Error('Upload berkas laporan PDF');
-            if(pf)proof=await uploadPayoutAdminFile(pf,'proof');if(rf)report=await uploadPayoutAdminFile(rf,'report');
+            var pf=document.getElementById('payoutProofFile').files[0];
+            if(!pf&&!currentPartnerPayout.proof_url)throw new Error('Upload bukti pencairan');
+            if(!currentPartnerPayout.report_url)throw new Error('Generate Invoice + QR TTD terlebih dahulu');
+            if(pf)proof=await uploadPayoutAdminFile(pf,'proof');
         }
-        var r=await db.rpc('admin_process_partner_payout',{p_payout_id:currentPartnerPayout.id,p_action:action,p_admin_notes:document.getElementById('payoutAdminNotes').value.trim()||null,p_proof_url:proof&&proof.url||null,p_proof_name:proof&&proof.name||null,p_report_url:report&&report.url||null,p_report_name:report&&report.name||null});if(r.error)throw r.error;
+        var r=await db.rpc('admin_process_partner_payout',{p_payout_id:currentPartnerPayout.id,p_action:action,p_admin_notes:document.getElementById('payoutAdminNotes').value.trim()||null,p_proof_url:proof&&proof.url||null,p_proof_name:proof&&proof.name||null,p_report_url:null,p_report_name:null});if(r.error)throw r.error;
         showNotification(action==='paid'?'✅ Pencairan selesai dan dokumen terkirim ke portal partner':action==='rejected'?'Pengajuan ditolak; transaksi dilepaskan':'Pengajuan ditandai sedang diproses');
         closePrintPreview('partnerPayoutModal');currentPartnerPayout=null;loadPartnerPayouts();
     } catch(e){showNotification('Gagal: '+e.message,'error');}
+}
+
+// ===== INVOICE OTOMATIS PENCAIRAN + QR TTD =====
+function payoutPdfSafe(v) { return String(v == null ? '' : v).replace(/[–—→•✓]/g, function(c){ return c==='→'?' ke ':c==='✓'?'OK':c==='•'?' - ':'-'; }).replace(/[^ -~À-ÿ]/g,''); }
+function payoutWrapText(text, font, size, maxWidth) {
+    var words=payoutPdfSafe(text).split(/\s+/), lines=[],line='';
+    words.forEach(function(w){var test=line?line+' '+w:w;if(font.widthOfTextAtSize(test,size)<=maxWidth)line=test;else{if(line)lines.push(line);line=w;}});if(line)lines.push(line);return lines;
+}
+async function generatePartnerPayoutInvoice() {
+    if(!currentPartnerPayout)return;
+    if(currentPartnerPayout.status==='rejected'){showNotification('Pengajuan ditolak, invoice tidak dapat dibuat','error');return;}
+    if(currentPartnerPayout.report_url&&!confirm('Invoice sudah ada. Generate ulang dengan QR TTD baru?')){window.open(currentPartnerPayout.report_url,'_blank');return;}
+    try {
+        var signer=await getDefaultSignerForCert();if(!signer)throw new Error('Profil penandatangan default belum tersedia');
+        showNotification('Membuat invoice resmi + QR TTD...','info');
+        var p=currentPartnerPayout,items=currentPartnerPayoutItems||[];
+        var invoiceNo=p.invoice_number||('INV-'+p.payout_code.replace(/^PAY-/,''));
+        var sigId='SIG-'+Date.now().toString(36).toUpperCase()+'-'+Math.random().toString(36).slice(2,6).toUpperCase();
+        var verifyUrl=location.origin+'/signature-info.html?id='+sigId;
+        var pdf=await PDFLib.PDFDocument.create(), reg=await pdf.embedFont(PDFLib.StandardFonts.Helvetica), bold=await pdf.embedFont(PDFLib.StandardFonts.HelveticaBold);
+        var navy=PDFLib.rgb(.06,.24,.25), teal=PDFLib.rgb(.06,.46,.43), gray=PDFLib.rgb(.38,.45,.44), light=PDFLib.rgb(.94,.97,.96), gold=PDFLib.rgb(.82,.62,.18);
+        var W=595.28,H=841.89,margin=42,page,y;
+        var logo=null;try{var lr=await fetch('assets/logo.png');if(lr.ok)logo=await pdf.embedPng(await lr.arrayBuffer());}catch(e){}
+        function newPage(withTable){page=pdf.addPage([W,H]);y=H-margin;if(logo)page.drawImage(logo,{x:margin,y:y-48,width:42,height:42});page.drawText('SIEC',{x:logo?92:margin,y:y-18,size:19,font:bold,color:navy});page.drawText('SYAF INTENSIVE ENGLISH COURSE',{x:logo?92:margin,y:y-34,size:8.5,font:bold,color:teal});page.drawText('INVOICE & PERSETUJUAN PENCAIRAN',{x:margin,y:y-75,size:15,font:bold,color:navy});page.drawLine({start:{x:margin,y:y-84},end:{x:W-margin,y:y-84},thickness:2,color:gold});y-=105;if(withTable)drawTableHeader();}
+        function line(label,value,x,w){page.drawText(payoutPdfSafe(label),{x:x,y:y,size:8,font:bold,color:gray});var ls=payoutWrapText(value,reg,9,w);ls.forEach(function(t,i){page.drawText(t,{x:x,y:y-13-(i*11),size:9,font:reg,color:navy});});return 17+ls.length*11;}
+        function drawTableHeader(){page.drawRectangle({x:margin,y:y-20,width:W-margin*2,height:20,color:navy});['Klien','Layanan','Dasar','Rate','Komisi'].forEach(function(t,i){var xs=[margin+5,190,355,430,480];page.drawText(t,{x:xs[i],y:y-14,size:7.5,font:bold,color:PDFLib.rgb(1,1,1)});});y-=24;}
+        function ensure(h){if(y-h<70){newPage(true);}}
+        newPage(false);
+        page.drawText(payoutPdfSafe(invoiceNo),{x:W-margin-190,y:H-margin-18,size:10,font:bold,color:teal});
+        page.drawText('Tanggal: '+new Date().toLocaleDateString('id-ID'),{x:W-margin-190,y:H-margin-34,size:8,font:reg,color:gray});
+        var partnerName=p.partners&&p.partners.name||'Partner SIEC';
+        var h1=line('MITRA / PENERIMA',partnerName,margin,245),h2=line('KODE PENGAJUAN',p.payout_code,315,235);y-=Math.max(h1,h2)+4;
+        var r1=line('BANK TUJUAN',p.bank_name+' / '+p.bank_account_number,margin,245),r2=line('PEMILIK REKENING',p.bank_account_holder,315,235);y-=Math.max(r1,r2)+10;
+        page.drawRectangle({x:margin,y:y-43,width:W-margin*2,height:43,color:light});page.drawText('TOTAL PENCAIRAN',{x:margin+12,y:y-17,size:9,font:bold,color:gray});page.drawText(formatRp(p.total_amount),{x:margin+270,y:y-28,size:20,font:bold,color:teal});y-=60;
+        page.drawText('RINCIAN TRANSAKSI KOMISI',{x:margin,y:y,size:10,font:bold,color:navy});y-=10;drawTableHeader();
+        items.forEach(function(it,idx){var nameLines=payoutWrapText((idx+1)+'. '+it.client_name,reg,7.5,135),svcLines=payoutWrapText(it.service_name,reg,7.5,155),rh=Math.max(25,(Math.max(nameLines.length,svcLines.length)*9)+8);ensure(rh);if(idx%2===1)page.drawRectangle({x:margin,y:y-rh+2,width:W-margin*2,height:rh,color:light});nameLines.forEach(function(t,i){page.drawText(t,{x:margin+5,y:y-9-i*9,size:7.5,font:reg,color:navy});});svcLines.forEach(function(t,i){page.drawText(t,{x:190,y:y-9-i*9,size:7.5,font:reg,color:navy});});page.drawText(formatRp(it.base_amount),{x:355,y:y-9,size:7.5,font:reg,color:navy});page.drawText(Number(it.commission_rate||0)+'%',{x:435,y:y-9,size:7.5,font:reg,color:navy});page.drawText(formatRp(it.commission_amount),{x:480,y:y-9,size:7.5,font:bold,color:teal});page.drawLine({start:{x:margin,y:y-rh+2},end:{x:W-margin,y:y-rh+2},thickness:.4,color:PDFLib.rgb(.82,.87,.86)});y-=rh;});
+        if(y-155<70)newPage(false);y-=12;page.drawText('PERSETUJUAN SIEC',{x:margin,y:y,size:10,font:bold,color:navy});page.drawText('Dokumen ini menyatakan bahwa rincian pengajuan telah diperiksa dan disetujui untuk diproses.',{x:margin,y:y-16,size:8,font:reg,color:gray});
+        var qrResp=await fetch(getQrUrl(verifyUrl,500));if(!qrResp.ok)throw new Error('QR TTD gagal dibuat');var qr=await pdf.embedPng(await qrResp.arrayBuffer());page.drawRectangle({x:W-margin-105,y:y-120,width:105,height:112,color:PDFLib.rgb(1,1,1),borderColor:teal,borderWidth:1});page.drawImage(qr,{x:W-margin-96,y:y-104,width:78,height:78});page.drawText('QR TTD DIGITAL',{x:W-margin-95,y:y-116,size:6.5,font:bold,color:teal});
+        page.drawText(payoutPdfSafe(signer.full_name||'Penandatangan SIEC'),{x:margin,y:y-68,size:10,font:bold,color:navy});page.drawText(payoutPdfSafe(signer.title||signer.role||'SIEC'),{x:margin,y:y-82,size:8,font:reg,color:gray});page.drawText('ID TTD: '+sigId,{x:margin,y:y-101,size:7,font:reg,color:teal});
+        var pages=pdf.getPages();pages.forEach(function(pg,i){pg.drawLine({start:{x:margin,y:38},end:{x:W-margin,y:38},thickness:.5,color:PDFLib.rgb(.8,.85,.84)});pg.drawText('SIEC Pekanbaru | Invoice '+payoutPdfSafe(invoiceNo),{x:margin,y:24,size:6.5,font:reg,color:gray});pg.drawText('Halaman '+(i+1)+'/'+pages.length,{x:W-margin-55,y:24,size:6.5,font:reg,color:gray});});
+        pdf.setTitle('Invoice Pencairan '+invoiceNo);pdf.setAuthor('SIEC');pdf.setProducer('SIEC Partner Payout System');
+        var bytes=await pdf.save(),file=new File([bytes],invoiceNo+'.pdf',{type:'application/pdf'}),up=await uploadPayoutAdminFile(file,'invoice');
+        var sigRow={signature_id:sigId,signer_name:signer.full_name,signer_title:signer.title,signer_role:signer.role,signer_email:signer.email,signer_phone:signer.phone,document_name:'Invoice Pencairan Partner - '+invoiceNo,document_type:'Invoice Pencairan Partner',document_url:up.url,document_description:'Persetujuan pencairan '+p.payout_code+' untuk '+partnerName,signed_date:new Date().toISOString().slice(0,10),signed_time:null,location:'Pekanbaru, Riau',notes:'Generated otomatis dari pengajuan pencairan partner',is_valid:true};
+        var sr=await db.from('digital_signatures').upsert(sigRow,{onConflict:'signature_id'});if(sr.error)throw sr.error;
+        var ur=await db.from('partner_payout_requests').update({report_url:up.url,report_name:file.name,invoice_number:invoiceNo,signature_id:sigId,invoice_generated_at:new Date().toISOString(),updated_at:new Date().toISOString()}).eq('id',p.id);if(ur.error)throw ur.error;
+        currentPartnerPayout.report_url=up.url;currentPartnerPayout.report_name=file.name;currentPartnerPayout.invoice_number=invoiceNo;currentPartnerPayout.signature_id=sigId;
+        document.getElementById('payoutInvoiceStatus').innerHTML='✅ <a href="'+up.url+'" target="_blank">'+escapeHtml(invoiceNo)+'</a> • QR TTD '+escapeHtml(sigId);
+        showNotification('✅ Invoice resmi + QR TTD berhasil dibuat dan sinkron ke Tanda Tangan Digital');window.open(up.url,'_blank');
+    } catch(e){console.error(e);showNotification('Gagal generate invoice: '+e.message,'error');}
 }
