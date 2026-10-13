@@ -142,6 +142,11 @@
                     </div>
                     <div class="selected-service" id="selectedTest"></div>
                     <div class="reg-form">
+                        <div class="form-group" style="background:#ecfdf5;border:1px solid #86efac;padding:12px;border-radius:10px">
+                            <label>Kode Partner/Promo (Opsional)</label>
+                            <div style="display:flex;gap:8px"><input type="text" id="tPartnerCode" placeholder="Masukkan kode dari kampus" style="text-transform:uppercase"><button type="button" class="btn btn-success" onclick="applyTestPartnerCode()">Terapkan</button></div>
+                            <small id="tPartnerCodeStatus" style="display:block;margin-top:6px;color:#64748b">Kode partner berlaku sesuai jenis tes yang ditentukan.</small>
+                        </div>
                         <div class="form-row">
                             <div class="form-group"><label>Nama Lengkap (sesuai KTP) *</label><input type="text" id="tName" required placeholder="Nama lengkap"></div>
                             <div class="form-group"><label>NIK (16 digit) *</label><input type="text" id="tNik" required placeholder="3201234567890001" maxlength="16"></div>

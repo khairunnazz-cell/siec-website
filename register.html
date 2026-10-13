@@ -121,12 +121,18 @@
                         <div style="background:#f0f9ff;padding:16px;border-radius:12px;border:2px solid #2563eb;margin-bottom:16px">
                             <p style="margin:0 0 12px;font-weight:700;color:#2563eb"><i class="fas fa-graduation-cap"></i> Detail Akademik</p>
 
+                            <div class="form-group" style="background:#ecfdf5;border:1px solid #86efac;padding:12px;border-radius:10px">
+                                <label>Kode Partner/Promo (Opsional)</label>
+                                <div style="display:flex;gap:8px"><input type="text" id="rPartnerCode" placeholder="Masukkan kode dari kampus" style="text-transform:uppercase"><button type="button" class="btn btn-success" onclick="applyTranslationPartnerCode()">Terapkan</button></div>
+                                <small id="rPartnerCodeStatus" style="display:block;margin-top:6px;color:#64748b">Mahasiswa partner dapat memasukkan kode resmi kampus.</small>
+                            </div>
+
                             <div class="form-group">
                                 <label>Universitas *</label>
                                 <select id="rUniv" onchange="onUnivChange()">
                                     <option value="">-- Pilih Universitas --</option>
                                     <option value="Universitas Islam Negeri Sultan Syarif Kasim Riau">UIN Sultan Syarif Kasim Riau</option>
-                                    <option value="Institut Agama Islam Sulthan Syarif Hasyim Siak Sri Indrapura">Institut Sulthan Syarif Hasyim Siak</option>
+                                    <option value="Institut Agama Islam Sulthan Syarif Hasyim Siak Sri Indrapura Riau">Institut Agama Islam Sulthan Syarif Hasyim Siak Sri Indrapura Riau</option>
                                     <option value="lainnya">Universitas Lainnya</option>
                                 </select>
                             </div>
@@ -145,9 +151,10 @@
 
                             <div class="form-group" id="rJurusanGroup" style="display:none">
                                 <label>Jurusan *</label>
-                                <select id="rJurusan">
+                                <select id="rJurusan" onchange="onJurusanInfoChange()">
                                     <option value="">-- Pilih Jurusan --</option>
                                 </select>
+                                <a id="rJurusanInfoLink" href="#" target="_blank" rel="noopener noreferrer" style="display:none;margin-top:7px;font-size:.78rem;color:#2563eb;font-weight:700">Lihat informasi program studi ↗</a>
                             </div>
 
                             <div class="form-row">

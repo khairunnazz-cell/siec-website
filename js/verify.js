@@ -221,7 +221,7 @@ async function showReviewForm() {
                 if (t.document_type === 'Abstrak Skripsi' && t.universitas) {
                     var short = t.universitas;
                     if (short.indexOf('Sultan Syarif Kasim') !== -1) short = 'UIN Suska Riau';
-                    else if (short.indexOf('Sulthan Syarif Hasyim') !== -1) short = 'STAI SSH Siak';
+                    else if (short.indexOf('Sulthan Syarif Hasyim') !== -1) short = 'IAISSH Siak';
                     univLabel = '<span class="mini-univ">🎓 ' + short + '</span>';
                 }
 

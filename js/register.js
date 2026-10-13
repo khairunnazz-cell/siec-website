@@ -6,16 +6,26 @@ var DATA_KAMPUS_REG = {
         },
         prices: { 'id-en': 100000, 'id-ar': 100000, 'id-en-ar': 200000 }
     },
-    'Institut Agama Islam Sulthan Syarif Hasyim Siak Sri Indrapura': {
+    'Institut Agama Islam Sulthan Syarif Hasyim Siak Sri Indrapura Riau': {
         fakultas: null,
-        jurusan: ['S1 - Pendidikan Guru Madrasah Ibtidaiyah','S1 - Ekonomi Syariah','S1 - Pendidikan Agama Islam','S1 - Hukum Keluarga Islam (Ahwal Syakhshiyyah)'],
-        prices: { 'id-en-ar': 300000 }
+        jurusan: ['Ekonomi Syariah','Hukum Keluarga Islam (Ahwal Syakhshiyyah)','Pendidikan Agama Islam','Pendidikan Guru Madrasah Ibtidaiyah'],
+        programLinks: {
+            'Ekonomi Syariah': 'https://staisiak.sevimaplatform.com/spmbfront/program-studi-detail/detail/60206',
+            'Hukum Keluarga Islam (Ahwal Syakhshiyyah)': 'https://staisiak.sevimaplatform.com/spmbfront/program-studi-detail/detail/74230',
+            'Pendidikan Agama Islam': 'https://staisiak.sevimaplatform.com/spmbfront/program-studi-detail/detail/86208',
+            'Pendidikan Guru Madrasah Ibtidaiyah': 'https://staisiak.sevimaplatform.com/spmbfront/program-studi-detail/detail/86232'
+        },
+        prices: { 'id-en-ar': 300000 },
+        partnerPrice: 75000,
+        partnerCode: 'SIEC-IAISSH'
     }
 };
 
 var regFileData = null, receiptFileData = null;
 var regUniqueCode = Math.floor(Math.random() * 99) + 1;
-var regPrice = 0, regTotal = 0, regLangChoice = '', regLangCount = 1;
+var regPrice = 0, regStandardPrice = 0, regTotal = 0, regLangChoice = '', regLangCount = 1;
+var regPartnerCode = '', regPartnerDiscount = false;
+var IAISSH_NAME = 'Institut Agama Islam Sulthan Syarif Hasyim Siak Sri Indrapura Riau';
 
 function formatRupiah(n) { return 'Rp ' + (n||0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
 
@@ -65,6 +75,12 @@ function onDocTypeReg() {
 
 function onUnivChange() {
     var univ = document.getElementById('rUniv').value;
+    regLangChoice = ''; regPrice = 0; regTotal = 0;
+    if (regPartnerDiscount && univ !== IAISSH_NAME) {
+        regPartnerDiscount = false; regPartnerCode = '';
+        var pci = document.getElementById('rPartnerCode'), pcs = document.getElementById('rPartnerCodeStatus');
+        if (pci) pci.value = ''; if (pcs) { pcs.textContent = 'Kode partner dinonaktifkan karena kampus diubah.'; pcs.style.color = '#b45309'; }
+    }
     var customGroup = document.getElementById('customUnivGroup');
     var fakultasGroup = document.getElementById('rFakultasGroup');
     var jurusanGroup = document.getElementById('rJurusanGroup');
@@ -81,6 +97,7 @@ function onUnivChange() {
 
     document.getElementById('rFakultas').innerHTML = '<option value="">-- Pilih --</option>';
     document.getElementById('rJurusan').innerHTML = '<option value="">-- Pilih --</option>';
+    var jil = document.getElementById('rJurusanInfoLink'); if (jil) jil.style.display = 'none';
 
     if (!univ) return;
 
@@ -106,6 +123,13 @@ function onUnivChange() {
             showLangOptions(univ);
         }
     }
+}
+
+function onJurusanInfoChange() {
+    var univ = document.getElementById('rUniv').value, jur = document.getElementById('rJurusan').value;
+    var link = document.getElementById('rJurusanInfoLink');
+    var url = DATA_KAMPUS_REG[univ] && DATA_KAMPUS_REG[univ].programLinks ? DATA_KAMPUS_REG[univ].programLinks[jur] : '';
+    if (link) { link.style.display = url ? 'inline-block' : 'none'; if (url) link.href = url; }
 }
 
 function onFakultasChange() {
@@ -137,8 +161,8 @@ function showLangOptions(univ) {
     var langOptions = document.getElementById('langOptions');
 
     var prices = { 'id-en': 100000, 'id-ar': 100000, 'id-en-ar': 200000 };
-    if (univ === 'Institut Agama Islam Sulthan Syarif Hasyim Siak Sri Indrapura') {
-        prices = { 'id-en-ar': 300000 };
+    if (univ === IAISSH_NAME) {
+        prices = { 'id-en-ar': regPartnerDiscount ? 75000 : 300000 };
     } else if (DATA_KAMPUS_REG[univ] && DATA_KAMPUS_REG[univ].prices) {
         prices = DATA_KAMPUS_REG[univ].prices;
     }
@@ -157,18 +181,38 @@ function selectLangChoice(choice) {
     var univ = document.getElementById('rUniv').value;
     var prices = { 'id-en': 100000, 'id-ar': 100000, 'id-en-ar': 200000 };
 
-    if (univ === 'Institut Agama Islam Sulthan Syarif Hasyim Siak Sri Indrapura') {
-        prices = { 'id-en-ar': 300000 };
+    if (univ === IAISSH_NAME) {
+        prices = { 'id-en-ar': regPartnerDiscount ? 75000 : 300000 };
     } else if (DATA_KAMPUS_REG[univ] && DATA_KAMPUS_REG[univ].prices) {
         prices = DATA_KAMPUS_REG[univ].prices;
     }
 
+    regStandardPrice = (DATA_KAMPUS_REG[univ] && DATA_KAMPUS_REG[univ].prices ? DATA_KAMPUS_REG[univ].prices[choice] : prices[choice]) || 0;
     regPrice = prices[choice] || 0;
     regLangCount = choice === 'id-en-ar' ? 2 : 1;
     regTotal = regPrice + regUniqueCode;
 
     document.getElementById('fileUploadSection').style.display = 'block';
     document.getElementById('btnToStep3').style.display = 'inline-flex';
+}
+
+function applyTranslationPartnerCode() {
+    var input = document.getElementById('rPartnerCode');
+    var status = document.getElementById('rPartnerCodeStatus');
+    var code = (input.value || '').trim().toUpperCase();
+    if (code !== 'SIEC-IAISSH') {
+        regPartnerCode = ''; regPartnerDiscount = false;
+        status.textContent = code ? '❌ Kode partner tidak valid.' : 'Masukkan kode partner terlebih dahulu.';
+        status.style.color = code ? '#dc2626' : '#64748b';
+        if (regLangChoice) selectLangChoice(regLangChoice);
+        return;
+    }
+    regPartnerCode = code; regPartnerDiscount = true;
+    var univ = document.getElementById('rUniv');
+    univ.value = IAISSH_NAME; onUnivChange();
+    status.textContent = '✅ Kode IAISSH aktif — paket terjemahan menjadi Rp75.000.';
+    status.style.color = '#15803d'; status.style.fontWeight = '700';
+    showNotification('✅ Diskon partner IAISSH aktif: Rp75.000');
 }
 
 function onRegFileSelect(input) {
@@ -207,7 +251,7 @@ function goToStep3() {
         if (!document.getElementById('rFakultas').value) { showNotification('Pilih Fakultas!', 'error'); return; }
         if (!document.getElementById('rJurusan').value) { showNotification('Pilih Jurusan!', 'error'); return; }
     }
-    if (univ === 'Institut Agama Islam Sulthan Syarif Hasyim Siak Sri Indrapura') {
+    if (univ === IAISSH_NAME) {
         if (!document.getElementById('rJurusan').value) { showNotification('Pilih Jurusan!', 'error'); return; }
     }
 
@@ -232,6 +276,7 @@ function goToStep3() {
         '<div class="payment-row"><span>Universitas</span><strong>' + univName + '</strong></div>' +
         '<div class="payment-row"><span>Dokumen</span><strong>' + docType + '</strong></div>' +
         '<div class="payment-row"><span>Terjemahan</span><strong>' + langLabels[regLangChoice] + '</strong></div>' +
+        (regPartnerDiscount ? '<div class="payment-row"><span>Partner</span><strong style="color:#15803d">IAISSH — SIEC-IAISSH ✓</strong></div>' : '') +
         '<div class="payment-row"><span>Biaya</span><strong>' + formatRupiah(regPrice) + '</strong></div>' +
         '<div class="payment-row"><span>Kode Unik</span><strong>+ Rp ' + regUniqueCode + '</strong></div>' +
         '<div class="payment-row total"><span>TOTAL TRANSFER</span><strong>' + formatRupiah(regTotal) + '</strong></div>';
@@ -331,6 +376,7 @@ async function submitRegistration() {
                 receipt_url: rUrl,
                 receipt_name: receiptFileData.name,
                 payment_status: 'checking',
+                partner_referral_code: regPartnerCode || null,
                 notes: document.getElementById('rNotes').value.trim() || null
             };
 

@@ -10,9 +10,9 @@ var DATA_KAMPUS = {
             'Ushuluddin': ['Akidah dan Filsafat Islam','Ilmu Hadis','Ilmu Al-Quran dan Tafsir','Studi Agama-Agama']
         }
     },
-    'STAI Sulthan Syarif Hasyim Siak Sri Indrapura Riau': {
+    'Institut Agama Islam Sulthan Syarif Hasyim Siak Sri Indrapura Riau': {
         fakultas: null,
-        jurusan: ['S1 - Pendidikan Guru Madrasah Ibtidaiyah','S1 - Ekonomi Syariah','S1 - Pendidikan Agama Islam','S1 - Hukum Keluarga Islam (Ahwal Syakhshiyyah)']
+        jurusan: ['Ekonomi Syariah','Hukum Keluarga Islam (Ahwal Syakhshiyyah)','Pendidikan Agama Islam','Pendidikan Guru Madrasah Ibtidaiyah']
     }
 };
 
@@ -2156,6 +2156,33 @@ async function deleteTestimonial(id) {
     } catch (e) { showNotification('Error: ' + e.message, 'error'); }
 }
 // ============================================
+// SUMBER PARTNER: Umum / STAIN Sultan Abdurrahman
+// ============================================
+function partnerNameFromCode(code) { return code === 'iaissh-siak' ? 'IAISSH Siak' : (code === 'stain-sultan-abdurrahman' ? 'STAIN Sultan Abdurrahman' : 'Umum'); }
+function partnerSourceSelect(kind, id, partnerCode) {
+    partnerCode = partnerCode || '';
+    return '<select aria-label="Sumber klien" data-old-value="' + partnerCode + '" onchange="setRegistrationPartner(this,\'' + kind + '\',\'' + id + '\')" style="padding:6px 8px;border:1px solid #cbd5e1;border-radius:7px;font-size:.75rem;min-width:122px;background:' + (partnerCode ? '#ecfdf5' : '#fff') + '">' +
+        '<option value=""' + (!partnerCode ? ' selected' : '') + '>Umum</option>' +
+        '<option value="stain-sultan-abdurrahman"' + (partnerCode === 'stain-sultan-abdurrahman' ? ' selected' : '') + '>STAIN</option>' +
+        '<option value="iaissh-siak"' + (partnerCode === 'iaissh-siak' ? ' selected' : '') + '>IAISSH Siak</option>' +
+        '</select>';
+}
+async function setRegistrationPartner(selectEl, kind, id) {
+    var old = selectEl.dataset.oldValue || '';
+    selectEl.disabled = true;
+    try {
+        var r = await db.rpc('assign_registration_partner', { p_kind: kind, p_registration_id: id, p_partner_code: selectEl.value || null });
+        if (r.error) throw r.error;
+        var partnerLabel = selectEl.value === 'iaissh-siak' ? 'IAISSH Siak' : 'STAIN Sultan Abdurrahman';
+        showNotification(selectEl.value ? '✅ Klien ditandai sebagai partner ' + partnerLabel + ' (komisi 20%)' : '✅ Klien dikembalikan menjadi Umum');
+        if (kind === 'translation') loadOnlineReg(); else loadTestRegs();
+    } catch(e) {
+        selectEl.value = old; selectEl.disabled = false;
+        showNotification('Gagal mengubah sumber: ' + e.message, 'error');
+    }
+}
+
+// ============================================
 // PENDAFTARAN ONLINE
 // ============================================
 async function loadOnlineReg() {
@@ -2166,7 +2193,7 @@ async function loadOnlineReg() {
         var query = db.from('online_registrations').select('*').order('created_at', { ascending: false });
         if (statusFilter) query = query.eq('payment_status', statusFilter);
         var r = await query;
-        if (!r.data || !r.data.length) { tb.innerHTML = '<tr><td colspan="8" class="loading-cell">Belum ada pendaftaran</td></tr>'; return; }
+        if (!r.data || !r.data.length) { tb.innerHTML = '<tr><td colspan="9" class="loading-cell">Belum ada pendaftaran</td></tr>'; return; }
 
         tb.innerHTML = r.data.map(function(reg) {
             var statusColor = { checking: '#f59e0b', valid: '#10b981', rejected: '#ef4444', in_progress: '#2563eb', completed: '#065f46' };
@@ -2206,6 +2233,7 @@ async function loadOnlineReg() {
                 '<td data-label="Bahasa">' + reg.language_1 + '</td>' +
                 '<td data-label="Total">' + formatRp(reg.total_price) + '</td>' +
                 '<td data-label="Bayar">' + badge + '</td>' +
+                '<td data-label="Sumber">' + partnerSourceSelect('translation', reg.id, reg.partner_code) + (reg.partner_id ? '<br><small style="color:#059669;font-weight:700">Komisi 20%</small>' : '') + '</td>' +
                 '<td data-label="Penerjemah">' + (reg.translator_status === 'assigned' ? '✅' : '-') + '</td>' +
                 '<td data-label=""><div class="action-buttons">' + actions + '</div></td>' +
                 '</tr>';
@@ -2234,6 +2262,8 @@ async function showRegDetail(id) {
             '<div class="reg-detail-item" style="grid-column:span 2"><label>Judul Skripsi</label><p>' + reg.judul_skripsi + '</p></div>' +
             '<div class="reg-detail-item"><label>Bahasa</label><p>' + reg.language_1 + (reg.language_2 ? ' & ' + reg.language_2 : '') + '</p></div>' +
             '<div class="reg-detail-item"><label>Total Bayar</label><p style="color:#2563eb;font-size:1.2rem">' + formatRp(reg.total_price) + ' (kode unik: ' + reg.unique_code + ')</p></div>' +
+            '<div class="reg-detail-item"><label>Sumber Klien</label><p>' + (reg.partner_id ? '🤝 ' + partnerNameFromCode(reg.partner_code) : 'Umum') + '</p></div>' +
+            (reg.partner_id ? '<div class="reg-detail-item"><label>Komisi Partner</label><p style="color:#059669;font-weight:700">' + formatRp(reg.partner_commission_amount) + ' (20% harga dasar) — ' + (reg.partner_commission_state || 'pending') + '</p></div>' : '') +
             '</div>' +
             (reg.file_url ? '<div style="margin:12px 0"><a href="' + reg.file_url + '" target="_blank" class="btn btn-sm btn-primary"><i class="fas fa-download"></i> Download File Abstrak (' + (reg.file_name || 'file') + ')</a></div>' : '') +
             '<h4 style="margin-top:16px">📸 Bukti Transfer:</h4>' +
@@ -3006,7 +3036,7 @@ async function loadTestRegs() {
         if (filter === 'info_sent') query = query.eq('info_sent', true);
         else if (filter) query = query.eq('payment_status', filter);
         var r = await query;
-        if (!r.data || !r.data.length) { tb.innerHTML = '<tr><td colspan="6" class="loading-cell">Belum ada</td></tr>'; return; }
+        if (!r.data || !r.data.length) { tb.innerHTML = '<tr><td colspan="7" class="loading-cell">Belum ada</td></tr>'; return; }
 
         tb.innerHTML = r.data.map(function(t) {
             var statusColor = { checking: '#f59e0b', valid: '#10b981', rejected: '#ef4444' };
@@ -3036,6 +3066,7 @@ async function loadTestRegs() {
                 '<td data-label="Tes">' + t.test_type + '</td>' +
                 '<td data-label="Total">' + (t.test_currency === 'USD' ? '$' + t.total_price : formatRp(t.total_price)) + '</td>' +
                 '<td data-label="Status">' + badge + '</td>' +
+                '<td data-label="Sumber">' + partnerSourceSelect('test', t.id, t.partner_code) + (t.partner_id ? '<br><small style="color:#059669;font-weight:700">Komisi 20%</small>' : '') + '</td>' +
                 '<td data-label=""><div class="action-buttons">' + actions + '</div></td></tr>';
         }).join('');
     } catch (e) { console.error(e); }
@@ -3056,6 +3087,8 @@ async function showTestDetail(id) {
         '<div class="reg-detail-item" style="grid-column:span 2"><label>Alamat</label><p>' + t.address + '</p></div>' +
         '<div class="reg-detail-item"><label>Total Bayar</label><p style="color:#2563eb;font-size:1.2rem">' + (t.test_currency === 'USD' ? '$' + t.total_price : formatRp(t.total_price)) + '</p></div>' +
         '<div class="reg-detail-item"><label>Status</label><p>' + t.payment_status + (t.info_sent ? ' ✅ Info terkirim' : '') + '</p></div>' +
+        '<div class="reg-detail-item"><label>Sumber Klien</label><p>' + (t.partner_id ? '🤝 ' + partnerNameFromCode(t.partner_code) : 'Umum') + '</p></div>' +
+        (t.partner_id ? '<div class="reg-detail-item"><label>Komisi Partner</label><p style="color:#059669;font-weight:700">' + (t.partner_commission_currency === 'USD' ? '$' + t.partner_commission_amount : formatRp(t.partner_commission_amount)) + ' (20% harga dasar) — ' + (t.partner_commission_state || 'pending') + '</p></div>' : '') +
         '</div>' +
         (t.ktp_url ? '<h4>📄 KTP:</h4><img src="' + t.ktp_url + '" class="receipt-preview-large" onclick="window.open(\'' + t.ktp_url + '\')">' : '') +
         (t.receipt_url ? '<h4>📸 Bukti Transfer:</h4><img src="' + t.receipt_url + '" class="receipt-preview-large" onclick="window.open(\'' + t.receipt_url + '\')">' : '') +

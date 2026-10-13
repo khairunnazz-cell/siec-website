@@ -1,6 +1,7 @@
 var tSelectedTest = null;
 var tUniqueCode = Math.floor(Math.random() * 99) + 1;
-var tPrice = 0, tTotal = 0, tCurrency = 'IDR';
+var tPrice = 0, tStandardPrice = 0, tTotal = 0, tCurrency = 'IDR';
+var tPartnerCode = '', tPartnerDiscount = false;
 var tKtpFile = null, tReceiptFile = null;
 
 function formatRp(n) { return 'Rp ' + (n||0).toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
@@ -12,16 +13,25 @@ function switchTStep(from, to) {
     window.scrollTo(0, 0);
 }
 
+function isIaisPredictionTest(name) { return name === 'TOEFL Prediction/EPT' || name === 'TOAFL Prediction/APT'; }
+
 function selectTest(name, price, currency) {
     tSelectedTest = name;
-    tPrice = price;
+    tStandardPrice = price;
     tCurrency = currency;
-    tTotal = currency === 'IDR' ? price + tUniqueCode : price;
+    if (tPartnerDiscount && (currency !== 'IDR' || !isIaisPredictionTest(name))) {
+        tPartnerDiscount = false; tPartnerCode = '';
+        var pci = document.getElementById('tPartnerCode'), pcs = document.getElementById('tPartnerCodeStatus');
+        if (pci) pci.value = ''; if (pcs) { pcs.textContent = 'Kode partner dinonaktifkan karena jenis tes diubah.'; pcs.style.color = '#b45309'; }
+    }
+    tPrice = (tPartnerDiscount && currency === 'IDR' && isIaisPredictionTest(name)) ? 50000 : price;
+    tTotal = currency === 'IDR' ? tPrice + tUniqueCode : tPrice;
 
     document.getElementById('selectedTest').innerHTML =
         '<div style="background:#dbeafe;padding:12px;border-radius:8px;margin-bottom:16px">' +
         '<p style="margin:0"><b>Tes:</b> ' + name + '</p>' +
-        '<p style="margin:0"><b>Biaya:</b> ' + formatPrice(price, currency) +
+        (tPartnerDiscount && isIaisPredictionTest(name) ? '<p style="margin:4px 0;color:#15803d"><b>Partner IAISSH:</b> kode SIEC-IAISSH aktif ✓</p>' : '') +
+        '<p style="margin:0"><b>Biaya:</b> ' + formatPrice(tPrice, currency) +
         (currency === 'IDR' ? ' + Rp ' + tUniqueCode + ' (kode unik) = <strong>' + formatRp(tTotal) + '</strong>' : '') +
         '</p></div>';
 
@@ -30,6 +40,29 @@ function selectTest(name, price, currency) {
 
 function tBackToStep1() { switchTStep('tStep2', 'tStep1'); }
 function tBackToStep2() { switchTStep('tStep3', 'tStep2'); }
+
+function applyTestPartnerCode() {
+    var input = document.getElementById('tPartnerCode'), status = document.getElementById('tPartnerCodeStatus');
+    var code = (input.value || '').trim().toUpperCase();
+    if (code !== 'SIEC-IAISSH') {
+        tPartnerCode = ''; tPartnerDiscount = false;
+        status.textContent = code ? '❌ Kode partner tidak valid.' : 'Masukkan kode partner terlebih dahulu.';
+        status.style.color = code ? '#dc2626' : '#64748b';
+        if (tSelectedTest) selectTest(tSelectedTest, tStandardPrice, tCurrency);
+        return;
+    }
+    if (!isIaisPredictionTest(tSelectedTest) || tCurrency !== 'IDR') {
+        tPartnerCode = ''; tPartnerDiscount = false;
+        status.textContent = '⚠️ Kode IAISSH hanya berlaku untuk TOEFL Prediction/EPT atau TOAFL Prediction/APT.';
+        status.style.color = '#b45309';
+        return;
+    }
+    tPartnerCode = code; tPartnerDiscount = true;
+    selectTest(tSelectedTest, tStandardPrice, tCurrency);
+    status.textContent = '✅ Kode IAISSH aktif — biaya tes menjadi Rp50.000.';
+    status.style.color = '#15803d'; status.style.fontWeight = '700';
+    showNotification('✅ Diskon partner IAISSH aktif: Rp50.000');
+}
 
 function onKtpSelect(input) {
     var f = input.files[0]; if (!f) return;
@@ -74,6 +107,7 @@ function tGoToStep3() {
         '<div class="payment-row"><span>Nama</span><strong>' + name + '</strong></div>' +
         '<div class="payment-row"><span>NIK</span><strong>' + nik + '</strong></div>' +
         '<div class="payment-row"><span>Jenis Tes</span><strong>' + tSelectedTest + '</strong></div>' +
+        (tPartnerDiscount ? '<div class="payment-row"><span>Partner</span><strong style="color:#15803d">IAISSH — SIEC-IAISSH ✓</strong></div>' : '') +
         '<div class="payment-row"><span>Biaya</span><strong>' + formatPrice(tPrice, tCurrency) + '</strong></div>' +
         (tCurrency === 'IDR' ? '<div class="payment-row"><span>Kode Unik</span><strong>+ Rp ' + tUniqueCode + '</strong></div>' : '') +
         '<div class="payment-row total"><span>TOTAL</span><strong>' + formatPrice(tTotal, tCurrency) + '</strong></div>';
@@ -123,6 +157,7 @@ async function submitTestReg() {
             ktp_name: tKtpFile.name,
             receipt_url: rUrl,
             receipt_name: tReceiptFile.name,
+            partner_referral_code: tPartnerCode || null,
             payment_status: 'checking'
         };
 

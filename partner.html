@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="theme-color" content="#164e63">
+  <link rel="icon" type="image/png" href="assets/logo.png">
+  <title>Portal Partner — SIEC</title>
+  <link rel="stylesheet" href="css/partner.css">
+</head>
+<body>
+  <main>
+    <section id="partnerLogin" class="login-shell">
+      <div class="login-card">
+        <div class="brand-lockup"><img src="assets/logo.png" alt="SIEC"><div><span>PORTAL PARTNER</span><strong>SIEC PARTNER</strong></div></div>
+        <div class="login-copy">
+          <p class="eyebrow">Akses kolaborasi resmi</p>
+          <h1>Pantau klien dan komisi dalam satu halaman.</h1>
+          <p>Portal khusus institusi pendidikan yang bekerja sama secara resmi dengan SIEC.</p>
+        </div>
+        <form id="partnerLoginForm">
+          <label for="partnerToken">Kode akses partner</label>
+          <div class="token-input"><input id="partnerToken" type="password" autocomplete="current-password" placeholder="Masukkan kode akses" required><button type="button" id="togglePartnerToken" aria-label="Tampilkan kode">Lihat</button></div>
+          <button class="primary-btn" id="partnerLoginBtn" type="submit">Masuk ke Dashboard</button>
+          <p id="partnerLoginError" class="form-error" hidden></p>
+        </form>
+        <p class="security-note">🔒 Kode tidak disimpan permanen dan data sensitif peserta tidak ditampilkan.</p>
+      </div>
+    </section>
+
+    <section id="partnerDashboard" class="dashboard" hidden>
+      <header class="topbar">
+        <div class="brand-lockup compact"><img src="assets/logo.png" alt="SIEC"><div><span>PORTAL PARTNER</span><strong>SIEC PARTNER</strong></div></div>
+        <div class="top-actions"><span id="lastUpdated">—</span><button class="ghost-btn" id="refreshPartner">↻ Refresh</button><button class="logout-btn" id="partnerLogout">Keluar</button></div>
+      </header>
+
+      <div class="dashboard-wrap">
+        <div class="welcome-row">
+          <div><p class="eyebrow">Dashboard kerja sama</p><h1 id="partnerName">Institusi Partner</h1><p>Data di bawah hanya mencakup klien yang ditandai sebagai referral institusi partner oleh admin SIEC.</p></div>
+          <div class="rate-pill"><span>Komisi</span><strong id="partnerRate">20%</strong><small>dari harga dasar terverifikasi</small></div>
+        </div>
+
+        <div class="filters-card">
+          <div><label for="partnerFrom">Dari tanggal</label><input type="date" id="partnerFrom"></div>
+          <div><label for="partnerTo">Sampai tanggal</label><input type="date" id="partnerTo"></div>
+          <div><label for="partnerTypeFilter">Jenis layanan</label><select id="partnerTypeFilter"><option value="">Semua layanan</option><option value="translation">Terjemahan</option><option value="test">Tes</option></select></div>
+          <div><label for="partnerStatusFilter">Status komisi</label><select id="partnerStatusFilter"><option value="">Semua status</option><option value="earned">Hak komisi</option><option value="pending">Menunggu verifikasi</option><option value="cancelled">Dibatalkan</option></select></div>
+          <button class="primary-btn filter-btn" id="applyPartnerFilter">Terapkan</button>
+        </div>
+
+        <div class="summary-grid">
+          <article class="summary-card teal"><span>Total Klien</span><strong id="sumClients">0</strong><small id="sumVerified">0 pembayaran terverifikasi</small></article>
+          <article class="summary-card green"><span>Hak Komisi IDR</span><strong id="sumEarnedIdr">Rp 0</strong><small>Sudah valid dan dapat ditagihkan</small></article>
+          <article class="summary-card amber"><span>Potensi IDR</span><strong id="sumPendingIdr">Rp 0</strong><small>Menunggu verifikasi pembayaran</small></article>
+          <article class="summary-card navy"><span>Komisi USD</span><strong id="sumUsd">$0</strong><small id="sumUsdNote">Potensi: $0</small></article>
+        </div>
+
+        <section class="data-card">
+          <div class="data-head"><div><p class="eyebrow">Daftar referral</p><h2>Klien Partner</h2></div><button class="ghost-btn" id="exportPartnerCsv">Export CSV</button></div>
+          <div class="table-wrap">
+            <table><thead><tr><th>Tanggal</th><th>Kode</th><th>Klien</th><th>Layanan</th><th>Harga Dasar</th><th>Status</th><th>Komisi 20%</th></tr></thead><tbody id="partnerRows"><tr><td colspan="7" class="empty-cell">Memuat data…</td></tr></tbody></table>
+          </div>
+          <div class="privacy-strip">Data yang tidak ditampilkan: NIK, KTP, alamat, bukti pembayaran, dan file internal peserta.</div>
+        </section>
+      </div>
+    </section>
+  </main>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/app.js"></script>
+  <script src="js/partner.js"></script>
+</body>
+</html>
