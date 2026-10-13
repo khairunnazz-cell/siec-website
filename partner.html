@@ -38,28 +38,28 @@
       <div class="dashboard-wrap">
         <div class="welcome-row">
           <div><p class="eyebrow">Dashboard kerja sama</p><h1 id="partnerName">Institusi Partner</h1><p>Data di bawah hanya mencakup klien yang ditandai sebagai referral institusi partner oleh admin SIEC.</p></div>
-          <div class="rate-pill"><span>Komisi</span><strong id="partnerRate">20%</strong><small>dari harga dasar terverifikasi</small></div>
+          <div class="rate-pill"><span id="partnerSchemeLabel">Komisi</span><strong id="partnerRate">20%</strong><small id="partnerSchemeNote">dari harga dasar terverifikasi</small></div>
         </div>
 
         <div class="filters-card">
           <div><label for="partnerFrom">Dari tanggal</label><input type="date" id="partnerFrom"></div>
           <div><label for="partnerTo">Sampai tanggal</label><input type="date" id="partnerTo"></div>
           <div><label for="partnerTypeFilter">Jenis layanan</label><select id="partnerTypeFilter"><option value="">Semua layanan</option><option value="translation">Terjemahan</option><option value="test">Tes</option></select></div>
-          <div><label for="partnerStatusFilter">Status komisi</label><select id="partnerStatusFilter"><option value="">Semua status</option><option value="earned">Hak komisi</option><option value="pending">Menunggu verifikasi</option><option value="cancelled">Dibatalkan</option></select></div>
+          <div><label for="partnerStatusFilter">Status referral</label><select id="partnerStatusFilter"><option value="">Semua status</option><option value="earned">Pembayaran terverifikasi</option><option value="pending">Menunggu verifikasi</option><option value="cancelled">Dibatalkan</option></select></div>
           <button class="primary-btn filter-btn" id="applyPartnerFilter">Terapkan</button>
         </div>
 
         <div class="summary-grid">
-          <article class="summary-card teal"><span>Total Klien</span><strong id="sumClients">0</strong><small id="sumVerified">0 pembayaran terverifikasi</small></article>
-          <article class="summary-card green"><span>Hak Komisi IDR</span><strong id="sumEarnedIdr">Rp 0</strong><small>Sudah valid dan dapat ditagihkan</small></article>
-          <article class="summary-card amber"><span>Potensi IDR</span><strong id="sumPendingIdr">Rp 0</strong><small>Menunggu verifikasi pembayaran</small></article>
-          <article class="summary-card navy"><span>Komisi USD</span><strong id="sumUsd">$0</strong><small id="sumUsdNote">Potensi: $0</small></article>
+          <article class="summary-card teal" id="cardClients"><span>Total Klien</span><strong id="sumClients">0</strong><small id="sumVerified">0 pembayaran terverifikasi</small></article>
+          <article class="summary-card green" id="cardEarned"><span>Hak Komisi IDR</span><strong id="sumEarnedIdr">Rp 0</strong><small>Sudah valid dan dapat ditagihkan</small></article>
+          <article class="summary-card amber" id="cardPending"><span>Potensi IDR</span><strong id="sumPendingIdr">Rp 0</strong><small>Menunggu verifikasi pembayaran</small></article>
+          <article class="summary-card navy" id="cardUsd"><span>Komisi USD</span><strong id="sumUsd">$0</strong><small id="sumUsdNote">Potensi: $0</small></article>
         </div>
 
         <section class="data-card">
           <div class="data-head"><div><p class="eyebrow">Daftar referral</p><h2>Klien Partner</h2></div><button class="ghost-btn" id="exportPartnerCsv">Export CSV</button></div>
           <div class="table-wrap">
-            <table><thead><tr><th>Tanggal</th><th>Kode</th><th>Klien</th><th>Layanan</th><th>Harga Dasar</th><th>Status</th><th>Komisi 20%</th></tr></thead><tbody id="partnerRows"><tr><td colspan="7" class="empty-cell">Memuat data…</td></tr></tbody></table>
+            <table><thead><tr><th>Tanggal</th><th>Kode</th><th>Klien</th><th>Layanan</th><th>Harga Dasar</th><th>Status</th><th id="commissionHeader">Komisi 20%</th></tr></thead><tbody id="partnerRows"><tr><td colspan="7" class="empty-cell">Memuat data…</td></tr></tbody></table>
           </div>
           <div class="privacy-strip">Data yang tidak ditampilkan: NIK, KTP, alamat, bukti pembayaran, dan file internal peserta.</div>
         </section>

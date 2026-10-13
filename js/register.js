@@ -16,7 +16,7 @@ var DATA_KAMPUS_REG = {
             'Pendidikan Guru Madrasah Ibtidaiyah': 'https://staisiak.sevimaplatform.com/spmbfront/program-studi-detail/detail/86232'
         },
         prices: { 'id-en-ar': 300000 },
-        partnerPrice: 75000,
+        partnerPrice: 150000,
         partnerCode: 'SIEC-IAISSH'
     }
 };
@@ -162,7 +162,7 @@ function showLangOptions(univ) {
 
     var prices = { 'id-en': 100000, 'id-ar': 100000, 'id-en-ar': 200000 };
     if (univ === IAISSH_NAME) {
-        prices = { 'id-en-ar': regPartnerDiscount ? 75000 : 300000 };
+        prices = { 'id-en-ar': regPartnerDiscount ? 150000 : 300000 };
     } else if (DATA_KAMPUS_REG[univ] && DATA_KAMPUS_REG[univ].prices) {
         prices = DATA_KAMPUS_REG[univ].prices;
     }
@@ -182,7 +182,7 @@ function selectLangChoice(choice) {
     var prices = { 'id-en': 100000, 'id-ar': 100000, 'id-en-ar': 200000 };
 
     if (univ === IAISSH_NAME) {
-        prices = { 'id-en-ar': regPartnerDiscount ? 75000 : 300000 };
+        prices = { 'id-en-ar': regPartnerDiscount ? 150000 : 300000 };
     } else if (DATA_KAMPUS_REG[univ] && DATA_KAMPUS_REG[univ].prices) {
         prices = DATA_KAMPUS_REG[univ].prices;
     }
@@ -210,9 +210,9 @@ function applyTranslationPartnerCode() {
     regPartnerCode = code; regPartnerDiscount = true;
     var univ = document.getElementById('rUniv');
     univ.value = IAISSH_NAME; onUnivChange();
-    status.textContent = '✅ Kode IAISSH aktif — paket terjemahan menjadi Rp75.000.';
+    status.textContent = '✅ Kode IAISSH aktif — paket terjemahan menjadi Rp150.000.';
     status.style.color = '#15803d'; status.style.fontWeight = '700';
-    showNotification('✅ Diskon partner IAISSH aktif: Rp75.000');
+    showNotification('✅ Diskon partner IAISSH aktif: Rp150.000');
 }
 
 function onRegFileSelect(input) {

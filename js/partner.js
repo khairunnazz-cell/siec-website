@@ -3,6 +3,7 @@
 var TOKEN_KEY='siec_partner_access';
 var partnerToken='';
 var dashboardData={rows:[],summary:{}};
+var currentCommissionRate=20;
 
 function $(id){return document.getElementById(id)}
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
@@ -13,10 +14,19 @@ function statusLabel(s){return {checking:'Menunggu verifikasi',valid:'Pembayaran
 function commissionLabel(s){return {earned:'Hak komisi',pending:'Menunggu',cancelled:'Dibatalkan'}[s]||s}
 
 async function rpc(name,args){var r=await db.rpc(name,args);if(r.error)throw r.error;return r.data}
+function applyPartnerScheme(rate){
+  currentCommissionRate=Number(rate||0);var noCommission=currentCommissionRate<=0;
+  $('partnerSchemeLabel').textContent=noCommission?'Skema':'Komisi';
+  $('partnerRate').textContent=noCommission?'Harga khusus':currentCommissionRate+'%';
+  $('partnerSchemeNote').textContent=noCommission?'diskon langsung • tanpa komisi tambahan':'dari harga dasar terverifikasi';
+  ['cardEarned','cardPending','cardUsd'].forEach(function(id){$(id).hidden=noCommission});
+  $('cardClients').style.gridColumn=noCommission?'1 / -1':'';
+  $('commissionHeader').textContent=noCommission?'Skema Partner':'Komisi '+currentCommissionRate+'%';
+}
 async function doLogin(token){
   var info=await rpc('partner_login',{p_access_token:token});
   partnerToken=token;sessionStorage.setItem(TOKEN_KEY,token);
-  $('partnerName').textContent=info.partner_name;$('partnerRate').textContent=Number(info.commission_rate)+'%';
+  $('partnerName').textContent=info.partner_name;applyPartnerScheme(info.commission_rate);
   $('partnerLogin').hidden=true;$('partnerDashboard').hidden=false;
   await loadDashboard();
 }
@@ -25,7 +35,7 @@ async function loadDashboard(){
   try{
     var data=await rpc('get_partner_dashboard',{p_access_token:partnerToken,p_date_from:$('partnerFrom').value||null,p_date_to:$('partnerTo').value||null});
     dashboardData=data||{rows:[],summary:{}};
-    if(data.partner){$('partnerName').textContent=data.partner.name;$('partnerRate').textContent=Number(data.partner.commission_rate)+'%'}
+    if(data.partner){$('partnerName').textContent=data.partner.name;applyPartnerScheme(data.partner.commission_rate)}
     renderSummary();renderRows();
     $('lastUpdated').textContent='Diperbarui '+new Date().toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'});
   }catch(e){
@@ -42,11 +52,14 @@ function renderSummary(){var s=dashboardData.summary||{};
 function filteredRows(){var type=$('partnerTypeFilter').value,state=$('partnerStatusFilter').value;return (dashboardData.rows||[]).filter(function(r){return(!type||r.registration_type===type)&&(!state||r.commission_state===state)})}
 function renderRows(){var rows=filteredRows();if(!rows.length){$('partnerRows').innerHTML='<tr><td colspan="7" class="empty-cell">Belum ada klien pada filter ini.</td></tr>';return}
   $('partnerRows').innerHTML=rows.map(function(r){var phone=String(r.phone||'').replace(/\D/g,'');if(phone.indexOf('0')===0)phone='62'+phone.slice(1);else if(phone.indexOf('8')===0)phone='62'+phone;
-    return '<tr><td>'+dateId(r.created_at)+'</td><td><strong>'+esc(r.reg_code)+'</strong><small>'+(r.registration_type==='test'?'Tes':'Terjemahan')+'</small></td><td><strong>'+esc(r.client_name)+'</strong><small>'+(phone?'<a href="https://wa.me/'+phone+'" target="_blank" rel="noopener">'+esc(r.phone)+'</a>':esc(r.email||'-'))+'</small></td><td><span class="service-tag">'+esc(r.service)+'</span></td><td>'+money(r.base_price,r.currency)+'</td><td><span class="badge badge-'+esc(r.commission_state)+'">'+esc(commissionLabel(r.commission_state))+'</span><small>'+esc(statusLabel(r.payment_status))+'</small></td><td class="commission">'+money(r.commission_amount,r.currency)+'</td></tr>'
+    var noCommission=currentCommissionRate<=0;
+    var stateHtml=noCommission?'<span class="badge badge-earned">Harga partner</span><small>'+esc(statusLabel(r.payment_status))+'</small>':'<span class="badge badge-'+esc(r.commission_state)+'">'+esc(commissionLabel(r.commission_state))+'</span><small>'+esc(statusLabel(r.payment_status))+'</small>';
+    var commissionHtml=noCommission?'Harga khusus<br><small>Tanpa komisi</small>':money(r.commission_amount,r.currency);
+    return '<tr><td>'+dateId(r.created_at)+'</td><td><strong>'+esc(r.reg_code)+'</strong><small>'+(r.registration_type==='test'?'Tes':'Terjemahan')+'</small></td><td><strong>'+esc(r.client_name)+'</strong><small>'+(phone?'<a href="https://wa.me/'+phone+'" target="_blank" rel="noopener">'+esc(r.phone)+'</a>':esc(r.email||'-'))+'</small></td><td><span class="service-tag">'+esc(r.service)+'</span></td><td>'+money(r.base_price,r.currency)+'</td><td>'+stateHtml+'</td><td class="commission">'+commissionHtml+'</td></tr>'
   }).join('')
 }
 function csvCell(v){return '"'+String(v==null?'':v).replace(/"/g,'""')+'"'}
-function exportCsv(){var rows=filteredRows();if(!rows.length)return;var out=[['Tanggal','Kode','Jenis','Nama','HP','Email','Layanan','Harga Dasar','Mata Uang','Status Bayar','Status Komisi','Komisi'].map(csvCell).join(',')];rows.forEach(function(r){out.push([dateId(r.created_at),r.reg_code,r.registration_type,r.client_name,r.phone,r.email,r.service,r.base_price,r.currency,statusLabel(r.payment_status),commissionLabel(r.commission_state),r.commission_amount].map(csvCell).join(','))});var b=new Blob(['\ufeff'+out.join('\n')],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='referral-stain-'+new Date().toISOString().slice(0,10)+'.csv';a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},1000)}
+function exportCsv(){var rows=filteredRows();if(!rows.length)return;var noCommission=currentCommissionRate<=0;var out=[['Tanggal','Kode','Jenis','Nama','HP','Email','Layanan','Harga Dasar','Mata Uang','Status Bayar','Skema Partner','Komisi'].map(csvCell).join(',')];rows.forEach(function(r){out.push([dateId(r.created_at),r.reg_code,r.registration_type,r.client_name,r.phone,r.email,r.service,r.base_price,r.currency,statusLabel(r.payment_status),noCommission?'Harga khusus tanpa komisi':commissionLabel(r.commission_state),noCommission?0:r.commission_amount].map(csvCell).join(','))});var b=new Blob(['\ufeff'+out.join('\n')],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='referral-'+((dashboardData.partner&&dashboardData.partner.code)||'partner')+'-'+new Date().toISOString().slice(0,10)+'.csv';a.click();setTimeout(function(){URL.revokeObjectURL(a.href)},1000)}
 function logout(){partnerToken='';sessionStorage.removeItem(TOKEN_KEY);$('partnerDashboard').hidden=true;$('partnerLogin').hidden=false;$('partnerToken').value=''}
 
 document.addEventListener('DOMContentLoaded',function(){

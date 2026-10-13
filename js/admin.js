@@ -2159,6 +2159,7 @@ async function deleteTestimonial(id) {
 // SUMBER PARTNER: Umum / STAIN Sultan Abdurrahman
 // ============================================
 function partnerNameFromCode(code) { return code === 'iaissh-siak' ? 'IAISSH Siak' : (code === 'stain-sultan-abdurrahman' ? 'STAIN Sultan Abdurrahman' : 'Umum'); }
+function partnerSchemeBadge(code) { return code === 'iaissh-siak' ? '<br><small style="color:#7c3aed;font-weight:700">Harga khusus • tanpa komisi</small>' : (code ? '<br><small style="color:#059669;font-weight:700">Komisi 20%</small>' : ''); }
 function partnerSourceSelect(kind, id, partnerCode) {
     partnerCode = partnerCode || '';
     return '<select aria-label="Sumber klien" data-old-value="' + partnerCode + '" onchange="setRegistrationPartner(this,\'' + kind + '\',\'' + id + '\')" style="padding:6px 8px;border:1px solid #cbd5e1;border-radius:7px;font-size:.75rem;min-width:122px;background:' + (partnerCode ? '#ecfdf5' : '#fff') + '">' +
@@ -2174,7 +2175,8 @@ async function setRegistrationPartner(selectEl, kind, id) {
         var r = await db.rpc('assign_registration_partner', { p_kind: kind, p_registration_id: id, p_partner_code: selectEl.value || null });
         if (r.error) throw r.error;
         var partnerLabel = selectEl.value === 'iaissh-siak' ? 'IAISSH Siak' : 'STAIN Sultan Abdurrahman';
-        showNotification(selectEl.value ? '✅ Klien ditandai sebagai partner ' + partnerLabel + ' (komisi 20%)' : '✅ Klien dikembalikan menjadi Umum');
+        var scheme = selectEl.value === 'iaissh-siak' ? 'harga khusus, tanpa komisi tambahan' : 'komisi 20%';
+        showNotification(selectEl.value ? '✅ Klien ditandai sebagai partner ' + partnerLabel + ' (' + scheme + ')' : '✅ Klien dikembalikan menjadi Umum');
         if (kind === 'translation') loadOnlineReg(); else loadTestRegs();
     } catch(e) {
         selectEl.value = old; selectEl.disabled = false;
@@ -2233,7 +2235,7 @@ async function loadOnlineReg() {
                 '<td data-label="Bahasa">' + reg.language_1 + '</td>' +
                 '<td data-label="Total">' + formatRp(reg.total_price) + '</td>' +
                 '<td data-label="Bayar">' + badge + '</td>' +
-                '<td data-label="Sumber">' + partnerSourceSelect('translation', reg.id, reg.partner_code) + (reg.partner_id ? '<br><small style="color:#059669;font-weight:700">Komisi 20%</small>' : '') + '</td>' +
+                '<td data-label="Sumber">' + partnerSourceSelect('translation', reg.id, reg.partner_code) + partnerSchemeBadge(reg.partner_code) + '</td>' +
                 '<td data-label="Penerjemah">' + (reg.translator_status === 'assigned' ? '✅' : '-') + '</td>' +
                 '<td data-label=""><div class="action-buttons">' + actions + '</div></td>' +
                 '</tr>';
@@ -2263,7 +2265,7 @@ async function showRegDetail(id) {
             '<div class="reg-detail-item"><label>Bahasa</label><p>' + reg.language_1 + (reg.language_2 ? ' & ' + reg.language_2 : '') + '</p></div>' +
             '<div class="reg-detail-item"><label>Total Bayar</label><p style="color:#2563eb;font-size:1.2rem">' + formatRp(reg.total_price) + ' (kode unik: ' + reg.unique_code + ')</p></div>' +
             '<div class="reg-detail-item"><label>Sumber Klien</label><p>' + (reg.partner_id ? '🤝 ' + partnerNameFromCode(reg.partner_code) : 'Umum') + '</p></div>' +
-            (reg.partner_id ? '<div class="reg-detail-item"><label>Komisi Partner</label><p style="color:#059669;font-weight:700">' + formatRp(reg.partner_commission_amount) + ' (20% harga dasar) — ' + (reg.partner_commission_state || 'pending') + '</p></div>' : '') +
+            (reg.partner_id ? (reg.partner_code === 'iaissh-siak' ? '<div class="reg-detail-item"><label>Skema Partner</label><p style="color:#7c3aed;font-weight:700">Harga layanan khusus — tanpa komisi tambahan</p></div>' : '<div class="reg-detail-item"><label>Komisi Partner</label><p style="color:#059669;font-weight:700">' + formatRp(reg.partner_commission_amount) + ' (20% harga dasar) — ' + (reg.partner_commission_state || 'pending') + '</p></div>') : '') +
             '</div>' +
             (reg.file_url ? '<div style="margin:12px 0"><a href="' + reg.file_url + '" target="_blank" class="btn btn-sm btn-primary"><i class="fas fa-download"></i> Download File Abstrak (' + (reg.file_name || 'file') + ')</a></div>' : '') +
             '<h4 style="margin-top:16px">📸 Bukti Transfer:</h4>' +
@@ -3066,7 +3068,7 @@ async function loadTestRegs() {
                 '<td data-label="Tes">' + t.test_type + '</td>' +
                 '<td data-label="Total">' + (t.test_currency === 'USD' ? '$' + t.total_price : formatRp(t.total_price)) + '</td>' +
                 '<td data-label="Status">' + badge + '</td>' +
-                '<td data-label="Sumber">' + partnerSourceSelect('test', t.id, t.partner_code) + (t.partner_id ? '<br><small style="color:#059669;font-weight:700">Komisi 20%</small>' : '') + '</td>' +
+                '<td data-label="Sumber">' + partnerSourceSelect('test', t.id, t.partner_code) + partnerSchemeBadge(t.partner_code) + '</td>' +
                 '<td data-label=""><div class="action-buttons">' + actions + '</div></td></tr>';
         }).join('');
     } catch (e) { console.error(e); }
@@ -3088,7 +3090,7 @@ async function showTestDetail(id) {
         '<div class="reg-detail-item"><label>Total Bayar</label><p style="color:#2563eb;font-size:1.2rem">' + (t.test_currency === 'USD' ? '$' + t.total_price : formatRp(t.total_price)) + '</p></div>' +
         '<div class="reg-detail-item"><label>Status</label><p>' + t.payment_status + (t.info_sent ? ' ✅ Info terkirim' : '') + '</p></div>' +
         '<div class="reg-detail-item"><label>Sumber Klien</label><p>' + (t.partner_id ? '🤝 ' + partnerNameFromCode(t.partner_code) : 'Umum') + '</p></div>' +
-        (t.partner_id ? '<div class="reg-detail-item"><label>Komisi Partner</label><p style="color:#059669;font-weight:700">' + (t.partner_commission_currency === 'USD' ? '$' + t.partner_commission_amount : formatRp(t.partner_commission_amount)) + ' (20% harga dasar) — ' + (t.partner_commission_state || 'pending') + '</p></div>' : '') +
+        (t.partner_id ? (t.partner_code === 'iaissh-siak' ? '<div class="reg-detail-item"><label>Skema Partner</label><p style="color:#7c3aed;font-weight:700">Harga layanan khusus — tanpa komisi tambahan</p></div>' : '<div class="reg-detail-item"><label>Komisi Partner</label><p style="color:#059669;font-weight:700">' + (t.partner_commission_currency === 'USD' ? '$' + t.partner_commission_amount : formatRp(t.partner_commission_amount)) + ' (20% harga dasar) — ' + (t.partner_commission_state || 'pending') + '</p></div>') : '') +
         '</div>' +
         (t.ktp_url ? '<h4>📄 KTP:</h4><img src="' + t.ktp_url + '" class="receipt-preview-large" onclick="window.open(\'' + t.ktp_url + '\')">' : '') +
         (t.receipt_url ? '<h4>📸 Bukti Transfer:</h4><img src="' + t.receipt_url + '" class="receipt-preview-large" onclick="window.open(\'' + t.receipt_url + '\')">' : '') +
