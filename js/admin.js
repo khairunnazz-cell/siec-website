@@ -328,7 +328,7 @@ var currentMaterialHtml = null;
 function handleMaterialUpload(e) {
     var f = e.target.files[0];
     if (!f) return;
-    if (f.size > 10 * 1024 * 1024) { showNotification('File materi maks 10MB!', 'error'); e.target.value = ''; return; }
+    if (f.size > 20 * 1024 * 1024) { showNotification('File materi maks 20MB!', 'error'); e.target.value = ''; return; }
     var r = new FileReader();
     r.onload = function(ev) {
         currentMaterialHtml = ev.target.result;
